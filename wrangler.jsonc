@@ -4,6 +4,10 @@
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "forge",
   "compatibility_date": "2026-11-01",
+  // Adresse publique forge.<compte>.workers.dev, et une adresse de test par branche (versions de test).
+  "workers_dev": true,
+  "preview_urls": true,
+  "previews": {},
   "assets": {
     "directory": "./apps/web/dist",
     "not_found_handling": "single-page-application"
