@@ -1,0 +1,50 @@
+import { useEffect, useMemo } from 'react';
+import { Outlet, ScrollRestoration, useLocation } from 'react-router';
+import { repos, useMeta, useWeighIns } from '../db/hooks';
+import { nextOnboardingStep, ONBOARDING_KEY, type OnboardingState } from '../domain/onboarding';
+import { OnboardingFlow } from '../features/onboarding/OnboardingFlow';
+import { WeighInSheetProvider } from '../features/weight/WeighInSheet';
+import { nowIso } from '../lib/ids';
+import { isStandalone, requestPersistentStorage } from '../services/storage';
+import { TabBar } from '../ui/TabBar';
+import { UpdateBanner } from './UpdateBanner';
+
+/** Coquille de l'app : onboarding tant qu'il n'est pas terminé, puis les 5 espaces. */
+export function AppShell() {
+  return (
+    <WeighInSheetProvider>
+      <ShellContent />
+      <UpdateBanner />
+      <ScrollRestoration />
+    </WeighInSheetProvider>
+  );
+}
+
+function ShellContent() {
+  const onboarding = useMeta<OnboardingState>(ONBOARDING_KEY);
+  const weighIns = useWeighIns();
+  const standalone = useMemo(isStandalone, []);
+  const { pathname } = useLocation();
+
+  const loading = onboarding === undefined || weighIns === undefined;
+  const step = loading ? null : nextOnboardingStep(onboarding, { standalone, hasWeighIns: weighIns.length > 0 });
+
+  useEffect(() => {
+    if (step === 'done' && !onboarding?.completedAt) void repos.meta.merge<OnboardingState>(ONBOARDING_KEY, { completedAt: nowIso() });
+  }, [step, onboarding?.completedAt]);
+
+  // Dans l'app installée, on redemande la protection du stockage à chaque ouverture (sans effet si déjà accordée).
+  useEffect(() => {
+    if (standalone) void requestPersistentStorage();
+  }, [standalone]);
+
+  if (step === null) return <div className="min-h-dvh bg-noir" aria-busy="true" />;
+  if (step !== 'done') return <OnboardingFlow step={step} />;
+
+  return (
+    <div className="lg:pl-24">
+      <Outlet />
+      {!pathname.startsWith('/reglages') && <TabBar />}
+    </div>
+  );
+}

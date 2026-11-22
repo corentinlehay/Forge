@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- Icône FORGE : un F frappé, condensé, et une graduation de mesure. -->
+  <rect width="512" height="512" fill="#000000"/>
+  <path fill="#D6F64A" d="M130 112h196v76H212v46h96v70h-96v94h-82z"/>
+  <g fill="#A4A7AD">
+    <rect x="348" y="107" width="40" height="10" rx="3"/>
+    <rect x="362" y="176" width="26" height="10" rx="3"/>
+    <rect x="348" y="245" width="40" height="10" rx="3"/>
+    <rect x="362" y="314" width="26" height="10" rx="3"/>
+    <rect x="348" y="383" width="40" height="10" rx="3"/>
+  </g>
+</svg>

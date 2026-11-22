@@ -162,8 +162,13 @@ export async function markBackupDone(db: ForgeDB, now: Date = new Date()): Promi
 }
 
 /** Vrai si la dernière sauvegarde date de plus de `days` jours (ou n'existe pas). */
+export function isBackupOverdue(lastBackupAt: unknown, now: Date = new Date(), days = 7): boolean {
+  if (typeof lastBackupAt !== 'string') return true;
+  const at = new Date(lastBackupAt).getTime();
+  return Number.isNaN(at) || now.getTime() - at > days * 86_400_000;
+}
+
 export async function isBackupDue(db: ForgeDB, days = 7, now: Date = new Date()): Promise<boolean> {
   const entry = await db.meta.get(LAST_BACKUP_KEY);
-  if (!entry || typeof entry.value !== 'string') return true;
-  return now.getTime() - new Date(entry.value).getTime() > days * 86_400_000;
+  return isBackupOverdue(entry?.value, now, days);
 }

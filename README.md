@@ -26,13 +26,15 @@ npm run check      # les trois à la suite, obligatoire avant toute mise en lign
 
 ```text
 apps/web/src/
-  app/        coquille, navigation
-  design/     tokens et composants UI
-  db/         schéma Dexie, migrations, accès aux données
+  app/        coquille, routes, onboarding, bandeau de mise à jour
+  design/     tokens (couleurs, typographie, animations)
+  ui/         composants du design system
+  db/         schéma Dexie, migrations, accès aux données, lectures réactives
   domain/     logique métier pure et testée
-  features/   un dossier par espace (à venir)
-  services/   sauvegarde, stockage, services externes
+  features/   un dossier par espace ou fonction (accueil, poids, réglages…)
+  services/   sauvegarde, stockage, partage de fichiers
   lib/        dates, formats, identifiants
+apps/web/assets-src/  source des icônes (build-icons.sh régénère les PNG)
 docs/         journal des versions
 ```
 
