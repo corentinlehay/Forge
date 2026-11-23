@@ -1,0 +1,68 @@
+import type { NutritionPlan, PlanAnswers, TrainingPlan } from '../domain/plan';
+import { libraryExercise } from '../data/exerciseLibrary';
+import { toLocalTimeKey } from '../lib/dates';
+import { createExerciseRepo, createProgramRepo, createTemplateRepo } from './repositories/entities';
+import { createMetaRepo } from './repositories/meta';
+import { createProfileRepo } from './repositories/profile';
+import { createWeighInRepo } from './repositories/weighIns';
+import type { ForgeDB } from './schema';
+
+export const QUESTIONNAIRE_KEY = 'questionnaire';
+
+export interface QuestionnaireRecord {
+  answers: PlanAnswers;
+  completedAt: string;
+}
+
+/**
+ * Applique le plan du questionnaire. Rien n'est supprimé :
+ * le programme est ajouté et activé (les anciens restent dans « Programmes »), les objectifs nutritionnels remplacés.
+ */
+export async function adoptPlan(
+  db: ForgeDB,
+  input: { answers: PlanAnswers; nutrition: NutritionPlan | null; training: TrainingPlan | null; today: string },
+  now: Date = new Date(),
+): Promise<{ programId: string | null }> {
+  const { answers, nutrition, training, today } = input;
+  const profile = createProfileRepo(db);
+  await profile.update(
+    {
+      ...(answers.firstName ? { firstName: answers.firstName } : {}),
+      birthDate: answers.birthDate,
+      sex: answers.sex,
+      heightCm: answers.heightCm,
+      experience: answers.experience,
+      returningAfterBreak: answers.returning,
+      goal: nutrition?.goal ?? answers.goal,
+      ...(nutrition ? { nutritionTargets: nutrition.targets, gainRate: nutrition.gainRate } : {}),
+    },
+    now,
+  );
+
+  const weighIns = createWeighInRepo(db);
+  const todays = (await db.weighIns.where('date').equals(today).toArray()).filter((w) => !w.deletedAt);
+  if (!todays.length) await weighIns.add({ date: today, time: toLocalTimeKey(now), weightKg: Math.round(answers.weightKg * 10) / 10 }, now);
+
+  let programId: string | null = null;
+  if (training && training.sessions.length) {
+    const programs = createProgramRepo(db);
+    const templates = createTemplateRepo(db);
+    const exercises = createExerciseRepo(db);
+    const program = await programs.add({ name: training.programName, active: false }, now);
+    for (const [position, session] of training.sessions.entries()) {
+      const list = [];
+      for (const e of session.exercises) {
+        const lib = libraryExercise(e.libraryId);
+        if (!lib) continue;
+        const exercise = await exercises.fromLibrary(lib, now);
+        list.push({ exerciseId: exercise.id, sets: e.sets, reps: e.reps, restSec: e.restSec, rir: e.rir });
+      }
+      await templates.add({ name: session.name, weekdays: [session.weekday], exercises: list, position, programId: program.id }, now);
+    }
+    await programs.activate(program.id, now);
+    programId = program.id;
+  }
+
+  await createMetaRepo(db).set(QUESTIONNAIRE_KEY, { answers, completedAt: now.toISOString() } satisfies QuestionnaireRecord, now);
+  return { programId };
+}

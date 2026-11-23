@@ -19,7 +19,7 @@ const content: Record<UpcomingModule, { title: string; phase: string; intro: str
     phase: 'Phase 3',
     intro: 'Un aliment ajouté en trois gestes, des jauges qui se remplissent aussitôt.',
     items: [
-      'Cibles calories et macros calées sur ton rythme de prise',
+      'Cibles calories et macros calées sur ton rythme de poids',
       'Table Ciqual hors ligne, scanner de codes-barres et Open Food Facts',
       'Journal par repas, favoris, récents et repas types',
     ],

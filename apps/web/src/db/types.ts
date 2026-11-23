@@ -14,7 +14,7 @@ export interface SyncFields {
 export type Sex = 'male' | 'female';
 export type Experience = 'beginner' | 'intermediate' | 'advanced';
 
-/** Fourchette de prise de poids visée, en % du poids par semaine. */
+/** Fourchette de variation de poids visée, en % du poids par semaine (négatif : perte). */
 export interface GainRate {
   lowPctPerWeek: number;
   highPctPerWeek: number;
@@ -31,6 +31,8 @@ export interface Profile extends SyncFields {
   /** Reprise après une pause : le coach raisonne en « détraîné », pas en débutant. */
   returningAfterBreak?: boolean;
   gainRate: GainRate;
+  /** Objectif principal choisi au questionnaire de départ. */
+  goal?: 'muscle' | 'perte' | 'recompo' | 'force' | 'forme';
   /** Objectifs nutritionnels du jour, définis par l'utilisateur dans Nutrition. */
   nutritionTargets?: NutritionTargets;
 }

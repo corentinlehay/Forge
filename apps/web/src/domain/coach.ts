@@ -102,7 +102,7 @@ export function buildDailyBrief(input: BriefInput): DailyBrief {
         priority: 75,
       });
     } else if (weight.status === 'within') {
-      findings.push({ id: 'rate-within', tone: 'good', observation: `Rythme de prise dans ta fourchette : ${formatSignedKg(weight.weeklyRateKg)} par semaine.`, link: '/progression', priority: 20 });
+      findings.push({ id: 'rate-within', tone: 'good', observation: `Rythme de poids dans ta fourchette : ${formatSignedKg(weight.weeklyRateKg)} par semaine.`, link: '/progression', priority: 20 });
     }
   }
 

@@ -1,6 +1,7 @@
 import { Link } from 'react-router';
 import { countLabel, formatDayLong, formatLitres, formatDaysAgo, formatMeasuredKg, formatNumber, formatSignedKg } from '../../lib/format';
 import { MEAL_LABELS } from '../../domain/nutrition';
+import type { GainRate, Profile } from '../../db/types';
 import { recoveryLabel } from '../../domain/wellbeing';
 import { Icon } from '../../ui/Icon';
 import { LinkCard } from '../../ui/LinkCard';
@@ -156,7 +157,8 @@ function PhysiqueCard({ data }: { data: DashboardData }) {
       <TrendSparkline points={weight.points.slice(-84)} width={320} height={36} />
       <div className="flex flex-col gap-2 border-t border-graphite pt-3">
         <p className="text-[13px] leading-snug">
-          <span className="text-cendre">Objectif : </span>prise de masse contrôlée,{' '}
+          <span className="text-cendre">Objectif : </span>
+          {goalText(data.goal, gainRate)},{' '}
           {weight.band
             ? `de ${formatSignedKg(weight.band.lowKgPerWeek).replace(' kg', '')} à ${formatSignedKg(weight.band.highKgPerWeek)} par semaine`
             : `de ${formatNumber(gainRate.lowPctPerWeek, 2)} à ${formatNumber(gainRate.highPctPerWeek, 2)} % du poids par semaine`}
@@ -167,6 +169,22 @@ function PhysiqueCard({ data }: { data: DashboardData }) {
       </div>
     </LinkCard>
   );
+}
+
+const GOAL_TEXT: Record<NonNullable<Profile['goal']>, string> = {
+  muscle: 'prise de muscle',
+  perte: 'perte de gras',
+  recompo: 'recomposition, poids stable',
+  force: 'gain de force',
+  forme: 'forme, poids stable',
+};
+
+/** L'objectif choisi au questionnaire ; sans questionnaire, il se lit dans la fourchette de poids. */
+function goalText(goal: Profile['goal'] | null, rate: GainRate): string {
+  if (goal) return GOAL_TEXT[goal];
+  if (rate.highPctPerWeek <= 0) return 'perte de poids';
+  if (rate.lowPctPerWeek > 0) return 'prise de masse contrôlée';
+  return 'poids stable';
 }
 
 function Stat({ label, value, sub }: { label: string; value: string; sub: string }) {

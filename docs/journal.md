@@ -1,5 +1,19 @@
 # Journal des versions
 
+## Départ 1 : questionnaire et plan de départ (version de test, branche `depart-1`)
+
+FORGE s'ouvre à d'autres personnes : chacun a ses données sur son appareil et construit son plan. Le paiement viendra dans une livraison dédiée (modèle encore à décider).
+
+### Fait
+- Questionnaire de départ en 7 questions après l'accueil, facultatif (« Plus tard ») et relançable depuis Réglages, « Plan de départ » : objectif (prendre du muscle, perdre du gras, se recomposer, gagner en force, être en forme), sexe, date de naissance, taille, poids, activité hors sport, niveau et reprise après une pause, jours et durée des séances, salle ou maison avec le matériel, zones à ménager. Rien n'est enregistré avant « Adopter ce plan ».
+- Plan nutritionnel calculé sans IA : métabolisme de base de Mifflin-St Jeor, activité quotidienne et heures d'entraînement ; prise de muscle +10 % et 0,25 à 0,5 % du poids par semaine (+5 % et 0,1 à 0,25 % pour un confirmé, Iraki et al., 2019) ; perte de gras −20 % et −0,5 à −1 % par semaine (Helms et al., 2014) ; recomposition et forme à l'équilibre ; force +5 %. Protéines 1,6 à 2 g par kg (Morton et al., 2018), calculées sur un poids plafonné à un IMC de 27 ; lipides 25 % des calories ; glucides le reste ; fibres 30 g (ANSES) ; boissons d'après l'EFSA. Le détail du calcul est affiché.
+- Garde-fous : pas de plan pour les moins de 18 ans ; pas de déficit si le poids est déjà dans le bas de la norme ; calories jamais sous le métabolisme de base ; avertissement « pas un avis médical » (grossesse, maladie, traitement, trouble du comportement alimentaire).
+- Programme généré : corps entier (1 à 3 jours), haut et bas du corps (4), hybride haut, bas, poussée, tirage, jambes (5), poussée, tirage, jambes (6). Exercices choisis par schéma de mouvement selon le matériel disponible, variés entre les séances A et B ; 4 à 7 exercices selon la durée ; séries, fourchettes de répétitions, repos et RIR selon l'objectif et le niveau. Zones à ménager : mouvements les plus exigeants écartés et listés. Messages si le matériel ne permet pas de travailler le dos ou l'arrière des cuisses.
+- Bibliothèque : 15 exercices ajoutés pour la maison et le poids du corps (91 au total), avec matériel requis et schéma de mouvement pour chacun.
+- Adoption : profil, objectifs nutritionnels, rythme de poids, pesée du jour et nouveau programme actif. Les anciens programmes restent dans « Programmes » ; depuis Réglages, on choisit ce que l'on remplace.
+- Le rythme de poids visé accepte une perte (jusqu'à −2 % par semaine) ; l'Accueil affiche l'objectif choisi ; textes « prise de masse » rendus neutres.
+- 153 tests. Parcours vérifiés au format iPhone : plan en salle pour la prise de muscle, refus pour un mineur puis « Plus tard », plan maison avec haltères pour une perte de gras et des genoux à ménager, depuis les réglages.
+
 ## Training 1 : séance en direct, programmes, bibliothèque, progression (version de test, branche `training-1`)
 
 ### Fait

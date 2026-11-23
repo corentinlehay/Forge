@@ -10,6 +10,7 @@ import { WorkoutScreen } from '../features/training/WorkoutScreen';
 import { TemplateScreen } from '../features/training/TemplateScreen';
 import { ExerciseLibraryScreen } from '../features/training/ExerciseLibraryScreen';
 import { ExerciseDetailScreen } from '../features/training/ExerciseDetailScreen';
+import { PlanScreen } from '../features/plan/PlanScreen';
 import { AppShell } from './AppShell';
 import { RouteError } from './RouteError';
 
@@ -25,6 +26,7 @@ export const router = createBrowserRouter([
       { path: 'training/programme/:templateId', element: <TemplateScreen /> },
       { path: 'training/exercices', element: <ExerciseLibraryScreen /> },
       { path: 'training/exercices/:key', element: <ExerciseDetailScreen /> },
+      { path: 'reglages/plan', element: <PlanScreen /> },
       { path: 'nutrition', element: <NutritionScreen /> },
       { path: 'nutrition/ajouter', element: <AddFoodScreen /> },
       { path: 'progression', element: <ProgressionScreen /> },

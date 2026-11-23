@@ -18,9 +18,11 @@ describe('onboarding progressif', () => {
   });
 
   it('propose la première pesée, sauf si des pesées existent déjà ou si elle est reportée', () => {
-    expect(nextOnboardingStep({ welcomeDone: true }, installed)).toBe('firstWeighIn');
-    expect(nextOnboardingStep({ welcomeDone: true }, { ...installed, hasWeighIns: true })).toBe('done');
-    expect(nextOnboardingStep({ welcomeDone: true, firstWeighInSkipped: true }, installed)).toBe('done');
+    expect(nextOnboardingStep({ welcomeDone: true }, installed)).toBe('plan');
+    expect(nextOnboardingStep({ welcomeDone: true, planSkipped: true }, installed)).toBe('firstWeighIn');
+    expect(nextOnboardingStep({ welcomeDone: true, planDone: true }, { ...installed, hasWeighIns: true })).toBe('done');
+    expect(nextOnboardingStep({ welcomeDone: true, planSkipped: true }, { ...installed, hasWeighIns: true })).toBe('done');
+    expect(nextOnboardingStep({ welcomeDone: true, planSkipped: true, firstWeighInSkipped: true }, installed)).toBe('done');
   });
 
   it('ne revient jamais une fois terminé', () => {

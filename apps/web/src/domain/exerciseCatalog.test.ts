@@ -39,7 +39,7 @@ describe('catalogue', () => {
   it('cherche sans accents et filtre par muscle', () => {
     const items = buildCatalog([]);
     expect(searchCatalog(items, 'developpe incl', null).map((i) => i.name)).toEqual(['Développé incliné à la barre', 'Développé incliné aux haltères']);
-    expect(searchCatalog(items, '', 'mollets').map((i) => i.name)).toEqual(['Mollets assis', 'Mollets debout']);
+    expect(searchCatalog(items, '', 'mollets').map((i) => i.name)).toEqual(['Mollets assis', 'Mollets debout', 'Mollets debout aux haltères']);
   });
 });
 
@@ -104,5 +104,13 @@ describe('échelle', () => {
     expect(niceScale(81, 112).ticks).toEqual([80, 90, 100, 110, 120]);
     expect(niceScale(1200, 3900).ticks).toEqual([1000, 2000, 3000, 4000]);
     expect(niceScale(100, 100, 4, 4).ticks.length).toBeGreaterThan(1);
+  });
+});
+
+describe('caractéristiques des exercices', () => {
+  it('chaque exercice de la bibliothèque a un schéma de mouvement et son matériel', async () => {
+    const { TRAITS } = await import('../data/exerciseTraits');
+    expect(EXERCISE_LIBRARY.filter((e) => !TRAITS[e.id]).map((e) => e.id)).toEqual([]);
+    expect(Object.keys(TRAITS).filter((id) => !EXERCISE_LIBRARY.some((e) => e.id === id))).toEqual([]);
   });
 });

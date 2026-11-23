@@ -6,7 +6,7 @@ Source : Free Exercise DB (https://github.com/yuhonas/free-exercise-db), domaine
 Pour chaque exercice de apps/web/src/data/exerciseLibrary.ts, télécharge les deux photos (départ et fin du mouvement)
 et les convertit en WebP 480 px de large, qualité 70 : apps/web/public/exercices/<id>_0.webp et _1.webp.
 
-Usage : python3 scripts/build-exercise-images.py   (nécessite Pillow)
+Usage : python3 scripts/build-exercise-images.py   (nécessite Pillow ; les images déjà présentes sont gardées)
 """
 import io
 import json
@@ -28,12 +28,14 @@ def fetch(url: str) -> bytes:
 
 
 def main() -> None:
-    ids = re.findall(r"^\s+\['([^']+)', '", LIBRARY.read_text(encoding='utf-8'), re.M)
+    ids = re.findall(r"^  \['([^']+)', '", LIBRARY.read_text(encoding='utf-8'), re.M)
     catalog = {e['id'].lower(): e for e in json.loads(fetch(f'{BASE}/dist/exercises.json'))}
     OUT.mkdir(parents=True, exist_ok=True)
     for key in ids:
         entry = catalog[key]
         for i, path in enumerate(entry['images'][:2]):
+            if (OUT / f'{key}_{i}.webp').exists():
+                continue
             img = Image.open(io.BytesIO(fetch(f'{BASE}/exercises/{path}'))).convert('RGB')
             img.thumbnail((480, 480))
             img.save(OUT / f'{key}_{i}.webp', 'WEBP', quality=70, method=6)

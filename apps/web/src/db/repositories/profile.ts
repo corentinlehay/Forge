@@ -18,8 +18,8 @@ function validate(patch: ProfilePatch): void {
   }
   if (patch.gainRate) {
     const { lowPctPerWeek, highPctPerWeek } = patch.gainRate;
-    if (lowPctPerWeek < 0 || highPctPerWeek > 2 || lowPctPerWeek >= highPctPerWeek) {
-      throw new ProfileError('Fourchette de prise invalide : le bas doit être inférieur au haut, entre 0 et 2 % par semaine.');
+    if (lowPctPerWeek < -2 || highPctPerWeek > 2 || lowPctPerWeek >= highPctPerWeek) {
+      throw new ProfileError('Fourchette invalide : le bas doit être inférieur au haut, entre −2 et +2 % par semaine.');
     }
   }
   if (patch.nutritionTargets) {

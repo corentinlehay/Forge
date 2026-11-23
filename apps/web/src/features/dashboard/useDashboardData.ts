@@ -96,6 +96,7 @@ export function useDashboardData() {
       today,
       profile: profile!,
       gainRate,
+      goal: profile!.goal ?? null,
       weight,
       lastWeighIn,
       weighedToday,

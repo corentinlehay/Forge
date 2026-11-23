@@ -6,7 +6,7 @@ import { useDashboardData } from '../dashboard/useDashboardData';
 const LINK_LABELS = { '/nutrition': 'Nutrition', '/training': 'Training', '/progression': 'Progression', '/coach': 'Coach' } as const;
 
 const watched = [
-  'Ton rythme de prise par rapport à ta fourchette (après 14 jours de pesées)',
+  'Ton rythme de poids par rapport à ta fourchette (après 14 jours de pesées)',
   'Les nuits de moins de 6 h 30, surtout avant une séance',
   'Les protéines à partir de 17 h, les calories à partir de 20 h',
   'Les records battus ces deux derniers jours',

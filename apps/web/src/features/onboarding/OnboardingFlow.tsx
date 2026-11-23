@@ -9,12 +9,14 @@ import { Screen } from '../../ui/Screen';
 import { ImportBackup } from '../backup/ImportBackup';
 import { useWeighInSheet } from '../weight/WeighInSheet';
 import { InstallGuide, InstallWhy, isIos } from './InstallGuide';
+import { PlanQuestionnaire } from '../plan/PlanQuestionnaire';
 
 const merge = (patch: Partial<OnboardingState>) => repos.meta.merge<OnboardingState>(ONBOARDING_KEY, patch);
 
 export function OnboardingFlow({ step }: { step: Exclude<OnboardingStep, 'done'> }) {
   if (step === 'install') return <InstallStep />;
   if (step === 'welcome') return <WelcomeStep />;
+  if (step === 'plan') return <PlanQuestionnaire mode="onboarding" onFinished={() => void merge({ planDone: true })} onSkip={() => void merge({ planSkipped: true })} />;
   return <FirstWeighInStep />;
 }
 
@@ -72,7 +74,7 @@ function WelcomeStep() {
             Musculation, nutrition, poids et récupération, au même endroit. Tes données restent sur ton appareil.
           </p>
           <p className="text-[15px] leading-snug text-cendre">
-            Je ne te demande que l’essentiel. Le reste (taille, âge, séances) te sera demandé quand une fonction en aura besoin.
+            Quelques questions et FORGE construit ton plan de départ : programme d’entraînement et objectifs nutritionnels. Tout reste modifiable.
           </p>
         </div>
 
@@ -124,7 +126,7 @@ function FirstWeighInStep() {
       <div className="flex min-h-[calc(100dvh-env(safe-area-inset-top)-env(safe-area-inset-bottom)-48px)] flex-col gap-6">
         <div className="flex flex-col gap-3 pt-6">
           <Title>Première pesée</Title>
-          <p className="text-[17px] leading-snug">Ce qui pilote ta prise de masse, c’est le rythme, pas un poids cible.</p>
+          <p className="text-[17px] leading-snug">Ce qui compte, c’est le rythme de ton poids sur plusieurs semaines, pas une pesée isolée.</p>
           <p className="text-[15px] leading-snug text-cendre">
             Chaque matin, au réveil, à jeun, après être passé aux toilettes. FORGE lisse les variations d’un jour à l’autre (eau, sel, repas) pour
             calculer ton poids tendance et ton rythme par semaine.

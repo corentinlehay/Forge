@@ -9,6 +9,7 @@ import { gainBandKg, summarizeWeight } from '../../domain/weight';
 import { toLocalDateKey } from '../../lib/dates';
 import { capitalize, formatBytes, formatDaysAgo, formatFullDate, formatPct, formatSignedKg } from '../../lib/format';
 import { LAST_BACKUP_KEY } from '../../services/backup';
+import { QUESTIONNAIRE_KEY, type QuestionnaireRecord } from '../../db/adoptPlan';
 import { isStandalone, requestPersistentStorage, storageUsage, type StorageUsage } from '../../services/storage';
 import { Button } from '../../ui/Button';
 import { Icon } from '../../ui/Icon';
@@ -49,6 +50,7 @@ export function SettingsScreen() {
         <h1 className="font-metal text-[40px]">Réglages</h1>
       </div>
       <ProfileSection />
+      <PlanSection />
       <GainRateSection />
       <DemoSection />
       {!isDemoMode() && <BackupSection />}
@@ -130,6 +132,23 @@ function Stepper({ label, value, min, max, onChange }: { label: string; value: n
   );
 }
 
+function PlanSection() {
+  const record = useMeta<QuestionnaireRecord>(QUESTIONNAIRE_KEY);
+  if (record === undefined) return null;
+  return (
+    <Section title="Plan de départ">
+      <p className="text-[15px] leading-snug text-cendre">
+        {record
+          ? `Questionnaire rempli le ${formatFullDate(toLocalDateKey(new Date(record.completedAt))).toLocaleLowerCase('fr-FR')}. Refais-le si ton objectif, ton matériel ou tes disponibilités changent : tu choisis ce que tu remplaces.`
+          : 'Réponds à quelques questions : FORGE propose un programme d’entraînement et des objectifs nutritionnels de départ.'}
+      </p>
+      <Link to="/reglages/plan" viewTransition className="flex h-[52px] items-center justify-center rounded-[16px] bg-graphite text-[17px] font-semibold">
+        {record ? 'Refaire le questionnaire' : 'Construire mon plan'}
+      </Link>
+    </Section>
+  );
+}
+
 function GainRateSection() {
   const profile = useProfile();
   const weighIns = useWeighIns();
@@ -151,14 +170,14 @@ function GainRateSection() {
   const band = trend !== null ? gainBandKg(trend, rate) : null;
 
   return (
-    <Section title="Rythme de prise visé">
+    <Section title="Rythme de poids visé">
       <p className="text-[13px] leading-snug text-cendre">
-        En % de ton poids par semaine. Point de départ conseillé pour une prise de masse contrôlée : 0,25 à 0,5 % (Iraki et al., 2019).
+        En % de ton poids par semaine, négatif pour une perte. Repères : prise de muscle 0,25 à 0,5 % (Iraki et al., 2019) ; perte de gras −0,5 à −1 % (Helms et al., 2014).
       </p>
       <Stepper
         label="Au moins"
         value={rate.lowPctPerWeek}
-        min={0}
+        min={-2}
         max={rate.highPctPerWeek - STEP}
         onChange={(v) => void save({ ...rate, lowPctPerWeek: v })}
       />
@@ -181,7 +200,7 @@ function GainRateSection() {
       )}
       {!isDefault && (
         <Button variant="quiet" className="-ml-2 self-start" onClick={() => void save({ ...DEFAULT_GAIN_RATE })}>
-          Revenir à 0,25 à 0,5 %
+          Revenir au repère de prise : 0,25 à 0,5 %
         </Button>
       )}
     </Section>
