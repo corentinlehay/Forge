@@ -12,6 +12,7 @@ import { Sheet } from '../../ui/Sheet';
 import { useDashboardData } from '../dashboard/useDashboardData';
 import { SessionHero } from './SessionHero';
 import { ProgramsPanel } from './ProgramsSheet';
+import { MusclesCard } from '../muscles/MusclesCard';
 import { startWorkout } from './workoutActions';
 
 const DAY_LETTERS = ['L', 'M', 'M', 'J', 'V', 'S', 'D'];
@@ -133,6 +134,8 @@ export function TrainingScreen() {
           {templates?.length ? 'Ajouter une séance' : 'Créer une séance'}
         </Link>
       </section>
+
+      <MusclesCard />
 
       <Link to="/training/exercices" viewTransition className="flex min-h-[64px] items-center justify-between gap-3 rounded-[18px] bg-anthracite px-4 py-3 active:scale-[0.99]">
         <span className="min-w-0">

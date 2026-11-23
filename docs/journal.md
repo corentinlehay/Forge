@@ -1,5 +1,16 @@
 # Journal des versions
 
+## Training 2 : carte des muscles (version de test, branche `muscles-1`)
+
+### Fait
+- Carte anatomique dessinée pour FORGE, de face et de dos, avec les 15 groupes musculaires. Chaque muscle se touche ; sa couleur suit les séries de la période (0, moins de 5, 5 à 9, 10 à 20, plus de 20), avec légende. Liste des 15 muscles sous la carte, avec barre et repère à 10 séries.
+- Comptage fractionné : une série compte 1 pour le muscle principal de l'exercice et 0,5 pour chaque muscle secondaire (méthode retenue par la méta-régression de Pelland et al., 2024). Repère affiché : 10 à 20 séries par semaine et par muscle (Schoenfeld et al., 2017).
+- Périodes : semaine en cours, semaine précédente (choisie d'office quand la semaine en cours est vide), moyenne sur 4 semaines.
+- Page de chaque muscle : séries de la semaine (directes et indirectes), fréquence (jours avec des séries directes), moyenne sur 4 semaines et statut, historique sur 12 semaines en barres, exercices qui l'ont travaillé cette semaine, records (1RM estimé sur un an) et tendance de chaque exercice qui le cible, exercices de la bibliothèque qui le ciblent ou le sollicitent.
+- Exercices sans muscle principal : signalés avec un lien pour le préciser (ils ne sont pas comptés en attendant).
+- Aperçu « Muscles » sur l'écran Training, avec mini-carte.
+- 156 tests. Parcours vérifié au format iPhone sur les données de démo : carte, sélection d'un muscle, moyenne 4 semaines, page Dos.
+
 ## Départ 1 : questionnaire et plan de départ (version de test, branche `depart-1`)
 
 FORGE s'ouvre à d'autres personnes : chacun a ses données sur son appareil et construit son plan. Le paiement viendra dans une livraison dédiée (modèle encore à décider).
