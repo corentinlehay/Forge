@@ -6,7 +6,7 @@ import { searchLocal, type OffProduct } from '../../domain/food';
 import { MEAL_LABELS } from '../../domain/nutrition';
 import { isDateKey } from '../../lib/dates';
 import { formatDayShort, formatNumber } from '../../lib/format';
-import { loadCiqual, type CiqualFood } from '../../services/ciqual';
+import { CIQUAL_CREDIT, loadCiqual, type CiqualFood } from '../../services/ciqual';
 import { OffError, searchProducts } from '../../services/openFoodFacts';
 import { Button } from '../../ui/Button';
 import { Icon } from '../../ui/Icon';
@@ -253,13 +253,17 @@ export function AddFoodScreen() {
 
       <div className="grid grid-cols-2 gap-2 pt-1">
         <Button variant="secondary" onClick={() => setSheet({ kind: 'custom' })}>
-          Créer un aliment
+          Nouvel aliment
         </Button>
         <Button variant="secondary" onClick={() => setSheet({ kind: 'quick' })}>
           Saisie rapide
         </Button>
       </div>
-      {ciqual && !ciqual.version && <p className="text-[12px] leading-snug text-cendre">La table Ciqual (aliments de base, hors ligne) n’est pas encore intégrée à cette version.</p>}
+      {ciqual?.version ? (
+        <p className="text-[12px] leading-snug text-cendre">{CIQUAL_CREDIT}</p>
+      ) : ciqual ? (
+        <p className="text-[12px] leading-snug text-cendre">La table Ciqual (aliments de base, hors ligne) n’a pas pu être chargée.</p>
+      ) : null}
 
       <Sheet
         open={sheet.kind !== 'none'}

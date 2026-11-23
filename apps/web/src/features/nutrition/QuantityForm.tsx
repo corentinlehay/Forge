@@ -18,7 +18,7 @@ export const MEAL_OPTIONS = [
   { value: 'dinner', label: 'Dîner' },
 ] as const;
 
-const SOURCE_LABEL = { off: 'Open Food Facts', ciqual: 'Ciqual (ANSES)', custom: 'Aliment perso' } as const;
+const SOURCE_LABEL = { off: 'Open Food Facts', ciqual: 'Ciqual 2025, Anses', custom: 'Aliment perso' } as const;
 const g1 = (v: number) => formatNumber(v, v % 1 ? 1 : 0);
 
 interface QuantityFormProps {
