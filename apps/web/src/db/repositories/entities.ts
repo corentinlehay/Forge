@@ -1,6 +1,6 @@
 import type { EntityTable, Table } from 'dexie';
 import type { ForgeDB } from '../schema';
-import type { CheckIn, Exercise, Food, FoodEntry, MealPlan, MealTemplate, Per100, PriceRecord, Program, RecipePhoto, RecipeRecord, ShoppingList, SyncFields, WaterLog, Workout, WorkoutSet, WorkoutTemplate } from '../types';
+import type { TargetChange, CheckIn, Exercise, Food, FoodEntry, MealPlan, MealTemplate, Per100, PriceRecord, Program, RecipePhoto, RecipeRecord, ShoppingList, SyncFields, WaterLog, Workout, WorkoutSet, WorkoutTemplate } from '../types';
 import type { LibraryExercise } from '../../data/exerciseLibrary';
 import { isDateKey } from '../../lib/dates';
 import { newId, nowIso } from '../../lib/ids';
@@ -306,4 +306,8 @@ export function createPriceRepo(db: ForgeDB) {
       return existing ? base.update(existing.id, input, now) : base.add(input, now);
     },
   };
+}
+
+export function createTargetChangeRepo(db: ForgeDB) {
+  return entityRepo<TargetChange>(db.targetChanges, () => undefined);
 }

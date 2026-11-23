@@ -1,6 +1,6 @@
 import Dexie, { type EntityTable } from 'dexie';
 import { activeDbName } from './dataMode';
-import type { CheckIn, Exercise, Food, FoodEntry, MealPlan, MealTemplate, MetaEntry, PriceRecord, Profile, Program, RecipePhoto, RecipeRecord, ShoppingList, WaterLog, WeighIn, Workout, WorkoutSet, WorkoutTemplate } from './types';
+import type { TargetChange, CheckIn, Exercise, Food, FoodEntry, MealPlan, MealTemplate, MetaEntry, PriceRecord, Profile, Program, RecipePhoto, RecipeRecord, ShoppingList, WaterLog, WeighIn, Workout, WorkoutSet, WorkoutTemplate } from './types';
 import { newId, nowIso } from '../lib/ids';
 
 /**
@@ -13,8 +13,9 @@ import { newId, nowIso } from '../lib/ids';
  * v3 : + aliments (perso, Ciqual, Open Food Facts), repas habituels, hydratation (tables ajoutées, rien de modifié).
  * v4 : + programmes ; les séances existantes sont rattachées à un premier programme actif.
  * v5 : + recettes perso, photos de recettes, planning des repas, listes de courses, prix des ingrédients (tables ajoutées).
+ * v6 : + historique des objectifs nutritionnels (table ajoutée).
  */
-export const SCHEMA_VERSION = 5;
+export const SCHEMA_VERSION = 6;
 
 export class ForgeDB extends Dexie {
   profile!: EntityTable<Profile, 'id'>;
@@ -35,6 +36,7 @@ export class ForgeDB extends Dexie {
   mealPlans!: EntityTable<MealPlan, 'id'>;
   shoppingLists!: EntityTable<ShoppingList, 'id'>;
   prices!: EntityTable<PriceRecord, 'id'>;
+  targetChanges!: EntityTable<TargetChange, 'id'>;
 
   constructor(name = 'forge') {
     super(name);
@@ -76,6 +78,7 @@ export class ForgeDB extends Dexie {
       shoppingLists: 'id, updatedAt',
       prices: 'id, key, updatedAt',
     });
+    this.version(6).stores({ targetChanges: 'id, date, updatedAt' });
   }
 }
 

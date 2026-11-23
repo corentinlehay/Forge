@@ -1,4 +1,5 @@
-import type { NutritionPlan, PlanAnswers, TrainingPlan } from '../domain/plan';
+import { GOAL_LABELS, type NutritionPlan, type PlanAnswers, type TrainingPlan } from '../domain/plan';
+import { saveTargets } from './targets';
 import { libraryExercise } from '../data/exerciseLibrary';
 import { toLocalTimeKey } from '../lib/dates';
 import { createExerciseRepo, createProgramRepo, createTemplateRepo } from './repositories/entities';
@@ -34,10 +35,11 @@ export async function adoptPlan(
       experience: answers.experience,
       returningAfterBreak: answers.returning,
       goal: nutrition?.goal ?? answers.goal,
-      ...(nutrition ? { nutritionTargets: nutrition.targets, gainRate: nutrition.gainRate } : {}),
+      ...(nutrition ? { gainRate: nutrition.gainRate } : {}),
     },
     now,
   );
+  if (nutrition) await saveTargets(db, nutrition.targets, 'questionnaire', `Plan de départ : ${GOAL_LABELS[nutrition.goal].toLocaleLowerCase('fr-FR')}`, now);
 
   const weighIns = createWeighInRepo(db);
   const todays = (await db.weighIns.where('date').equals(today).toArray()).filter((w) => !w.deletedAt);

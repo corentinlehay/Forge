@@ -1,4 +1,6 @@
 import { useState } from 'react';
+import { getDb } from '../../db/schema';
+import { saveTargets } from '../../db/targets';
 import { repos, useFoodEntries } from '../../db/hooks';
 import { DataError } from '../../db/repositories/entities';
 import type { FoodEntry, MealSlot, NutritionTargets } from '../../db/types';
@@ -171,8 +173,9 @@ export function TargetsForm({ current, trendKg, onDone }: { current: NutritionTa
     const fiberG = num(fiber);
     const waterL = num(water);
     try {
-      await repos.profile.update({
-        nutritionTargets: {
+      await saveTargets(
+        getDb(),
+        {
           kcal: Math.round(k!),
           proteinG: p!,
           carbsG: c!,
@@ -180,7 +183,8 @@ export function TargetsForm({ current, trendKg, onDone }: { current: NutritionTa
           ...(fiberG !== null ? { fiberG } : {}),
           ...(waterL !== null ? { waterMl: Math.round(waterL * 1000) } : {}),
         },
-      });
+        'manuel',
+      );
       toast.show('Objectifs enregistrés');
       onDone();
     } catch (e) {
@@ -191,7 +195,7 @@ export function TargetsForm({ current, trendKg, onDone }: { current: NutritionTa
   return (
     <div className="flex flex-col gap-4 pb-1">
       <p className="text-[15px] leading-snug text-cendre">
-        Tes objectifs du jour. Le calcul adaptatif, qui propose des ajustements à partir de ta tendance de poids, arrivera avec la livraison « objectifs dynamiques ».
+        Tes objectifs du jour. Après 14 jours de données, FORGE peut te proposer un ajustement à partir de ta tendance de poids (Nutrition, « Objectifs »).
       </p>
       <Field label="Calories" value={kcal} onChange={(e) => setKcal(e.target.value)} inputMode="decimal" suffix="kcal" />
       <div className="grid grid-cols-3 gap-3">

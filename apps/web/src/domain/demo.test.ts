@@ -2,13 +2,14 @@ import { describe, expect, it } from 'vitest';
 import { BACKUP_FORMAT, BACKUP_VERSION, backupSchema } from '../services/backup';
 import { generateDemoData } from './demo';
 import { findRecords, templateForDay } from './training';
+import { analyzeTargets } from './adaptive';
 
 describe('données de démonstration', () => {
   const now = new Date(2026, 10, 23, 9, 0);
   const data = generateDemoData('2026-11-23', now);
 
   it('respectent le format de sauvegarde (donc les règles de validation)', () => {
-    const parsed = backupSchema.safeParse({ format: BACKUP_FORMAT, version: BACKUP_VERSION, exportedAt: now.toISOString(), schemaVersion: 5, tables: data });
+    const parsed = backupSchema.safeParse({ format: BACKUP_FORMAT, version: BACKUP_VERSION, exportedAt: now.toISOString(), schemaVersion: 6, tables: data });
     expect(parsed.success).toBe(true);
   });
 
@@ -32,5 +33,22 @@ describe('données de démonstration', () => {
   it('marque chaque identifiant comme fictif', () => {
     const ids = [...data.weighIns, ...data.foodEntries, ...data.workouts, ...data.workoutSets, ...data.checkIns, ...data.exercises].map((r) => r.id);
     expect(ids.every((i) => i.startsWith('demo-'))).toBe(true);
+  });
+
+  it('montrent une proposition d’ajustement des objectifs (plateau des 4 dernières semaines)', () => {
+    const profile = data.profile[0]!;
+    const a = analyzeTargets({
+      today: '2026-11-23',
+      weighIns: data.weighIns,
+      entries: data.foodEntries,
+      workouts: data.workouts,
+      targets: profile.nutritionTargets ?? null,
+      gainRate: profile.gainRate!,
+      lastChange: null,
+      floorKcal: 1900,
+    });
+    expect(a.status).toBe('ok');
+    expect(a.rateStatus).toBe('below');
+    expect(a.proposal?.deltaKcal).toBeGreaterThan(0);
   });
 });

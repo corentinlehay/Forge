@@ -2,6 +2,7 @@ import type {
   CheckIn,
   Exercise,
   Food,
+  PriceRecord,
   FoodEntry,
   MealSlot,
   MealTemplate,
@@ -18,6 +19,7 @@ import type {
 import { EXERCISE_LIBRARY } from '../data/exerciseLibrary';
 import { addDays } from '../lib/dates';
 import { ONBOARDING_KEY } from './onboarding';
+import { BUDGET_KEY } from './budget';
 import { isoWeekday } from './training';
 
 /**
@@ -216,6 +218,21 @@ const PROGRAM: { name: string; weekday: number; exercises: DemoExercise[] }[] = 
 ];
 
 type DemoFood = [name: string, quantity: string, kcal: number, p: number, c: number, f: number];
+
+/**
+ * Prix fictifs de la démo : grammes de la portion, prix payé, quantité achetée, unité.
+ * Les plats cuits (riz, pâtes) et les mélanges restent sans prix : la couverture du budget n'est pas totale, comme dans la vraie vie.
+ */
+const DEMO_PRICES: Record<string, [grams: number, amountEur: number, quantity: number, unit: 'g' | 'ml']> = {
+  Banane: [120, 1.99, 1000, 'g'],
+  'Blanc de poulet': [200, 11.9, 1000, 'g'],
+  'Huile d’olive': [15, 8.5, 1000, 'ml'],
+  'Haricots verts': [200, 2.4, 1000, 'g'],
+  'Skyr nature': [300, 2.05, 500, 'g'],
+  Amandes: [30, 3.49, 200, 'g'],
+  'Bœuf haché 5 %': [200, 4.6, 400, 'g'],
+  'Sauce tomate': [150, 1.1, 500, 'g'],
+};
 const MEALS: Record<MealSlot, { hour: number; foods: DemoFood[] }> = {
   breakfast: {
     hour: 7,
@@ -270,7 +287,8 @@ export interface DemoTables {
   recipePhotos: [];
   mealPlans: [];
   shoppingLists: [];
-  prices: [];
+  prices: PriceRecord[];
+  targetChanges: [];
 }
 
 function localIso(dateKey: string, hour: number, minute = 0): string {
@@ -300,7 +318,9 @@ export function generateDemoData(today: string, now: Date): DemoTables {
     if (i === 0 && hour < 7) continue;
     if (i % 9 === 4) continue;
     const k = 83 - i;
-    const w = 86.4 + 0.0428 * k + 0.32 * Math.sin(1.7 * k) + 0.18 * Math.sin(0.37 * k + 1) + 0.12 * Math.sin(3.1 * k + 2);
+    // Prise régulière pendant 8 semaines, puis plateau sur les 4 dernières : l'analyse des objectifs propose un ajustement.
+    const base = k <= 55 ? 0.0428 * k : 0.0428 * 55 + 0.006 * (k - 55);
+    const w = 86.4 + base + 0.32 * Math.sin(1.7 * k) + 0.18 * Math.sin(0.37 * k + 1) + 0.12 * Math.sin(3.1 * k + 2);
     weighIns.push({
       ...sync('pesee'),
       date: addDays(today, -i),
@@ -390,9 +410,33 @@ export function generateDemoData(today: string, now: Date): DemoTables {
     }
   }
 
-  // Journal alimentaire : 14 jours ; aujourd'hui, seulement les repas déjà passés.
+  // Aliments et prix de la démo (pour l'écran Budget).
+  const foods = new Map<string, Food>();
+  const prices: PriceRecord[] = [];
+  for (const def of Object.values(MEALS)) {
+    for (const [name, , kcal, proteinG, carbsG, fatG] of def.foods) {
+      const price = DEMO_PRICES[name];
+      if (!price) continue;
+      const [grams, amountEur, quantity, unit] = price;
+      const per = (v: number) => Math.round((v * 1000) / grams) / 10;
+      const food: Food = {
+        ...sync('aliment-base'),
+        source: 'custom',
+        name,
+        unit,
+        per100: { kcal: per(kcal), proteinG: per(proteinG), carbsG: per(carbsG), fatG: per(fatG), fiberG: null },
+        favorite: false,
+        useCount: 24,
+        lastUsedAt: stamp,
+      };
+      foods.set(name, food);
+      prices.push({ ...sync('prix'), key: `perso:${food.id}`, name, amountEur, quantity, unit });
+    }
+  }
+
+  // Journal alimentaire : 4 semaines ; aujourd'hui, seulement les repas déjà passés.
   const foodEntries: FoodEntry[] = [];
-  for (let i = 13; i >= 0; i--) {
+  for (let i = 27; i >= 0; i--) {
     const date = addDays(today, -i);
     for (const [meal, def] of Object.entries(MEALS) as [MealSlot, (typeof MEALS)[MealSlot]][]) {
       if (i === 0 && hour < def.hour) continue;
@@ -408,6 +452,7 @@ export function generateDemoData(today: string, now: Date): DemoTables {
           proteinG,
           carbsG,
           fatG,
+          ...(foods.has(name) ? { foodId: foods.get(name)!.id, grams: DEMO_PRICES[name]![0] } : {}),
         });
       });
     }
@@ -437,7 +482,7 @@ export function generateDemoData(today: string, now: Date): DemoTables {
     deletedAt: null,
     firstName: DEMO_FIRST_NAME,
     gainRate: { lowPctPerWeek: 0.25, highPctPerWeek: 0.5 },
-    nutritionTargets: { kcal: 3200, proteinG: 180, carbsG: 415, fatG: 90 },
+    nutritionTargets: { kcal: 3000, proteinG: 180, carbsG: 368, fatG: 90 },
   };
 
   const meta: MetaEntry[] = [
@@ -447,6 +492,7 @@ export function generateDemoData(today: string, now: Date): DemoTables {
       updatedAt: stamp,
     },
     { key: 'lastBackupAt', value: stamp, updatedAt: stamp },
+    { key: BUDGET_KEY, value: { dailyEur: 12, weeklyEur: 80 }, updatedAt: stamp },
   ];
 
   // Boissons : 14 jours, aujourd'hui seulement ce qui est déjà passé.
@@ -476,7 +522,7 @@ export function generateDemoData(today: string, now: Date): DemoTables {
     workouts,
     workoutSets,
     checkIns,
-    foods: [],
+    foods: [...foods.values()],
     mealTemplates: [],
     waterLogs,
     programs: [program],
@@ -484,6 +530,7 @@ export function generateDemoData(today: string, now: Date): DemoTables {
     recipePhotos: [],
     mealPlans: [],
     shoppingLists: [],
-    prices: [],
+    prices,
+    targetChanges: [],
   };
 }

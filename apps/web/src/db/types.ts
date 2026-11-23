@@ -305,3 +305,12 @@ export interface PriceRecord extends SyncFields {
   quantity: number;
   unit: 'g' | 'ml' | 'piece';
 }
+
+/** Historique des objectifs nutritionnels : chaque changement, sa source et sa raison. */
+export interface TargetChange extends SyncFields {
+  date: string;
+  before: NutritionTargets | null;
+  after: NutritionTargets;
+  source: 'proposition' | 'manuel' | 'questionnaire';
+  reason?: string;
+}

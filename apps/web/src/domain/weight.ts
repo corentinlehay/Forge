@@ -26,7 +26,7 @@ export interface TrendPoint extends DailyWeight {
   trendKg: number;
 }
 
-type WeighInLike = Pick<WeighIn, 'date' | 'time' | 'weightKg'> & { deletedAt?: string | null };
+export type WeighInLike = Pick<WeighIn, 'date' | 'time' | 'weightKg'> & { deletedAt?: string | null };
 
 /** Une valeur par jour : la première pesée de la journée (protocole conseillé : au réveil, à jeun). */
 export function toDailyWeights(weighIns: readonly WeighInLike[]): DailyWeight[] {

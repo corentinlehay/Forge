@@ -477,7 +477,7 @@ export function PricesPanel({ recipe, kitchen }: { recipe: Recipe; kitchen: Kitc
   );
 }
 
-function PriceForm({ ingredient, onDone }: { ingredient: Recipe['ingredients'][number]; onDone: () => void }) {
+export function PriceForm({ ingredient, onDone }: { ingredient: Pick<Recipe['ingredients'][number], 'key' | 'name' | 'ml' | 'unit'>; onDone: () => void }) {
   const [amount, setAmount] = useState('');
   const [quantity, setQuantity] = useState('');
   const [unit, setUnit] = useState(ingredient.ml ? 'L' : 'kg');

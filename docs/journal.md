@@ -1,5 +1,23 @@
 # Journal des versions
 
+## Budget 1 : objectifs dynamiques et budget alimentaire (version de test, branche `budget-1`)
+
+### Fait
+- Base locale v6 : historique des objectifs (date, avant, après, origine, raison). Table ajoutée, rien de modifié ; migration v5 vers v6 testée. Chaque changement d'objectif est enregistré : questionnaire de départ, saisie à la main, proposition acceptée.
+- Objectifs (Nutrition, « Objectifs ») : analyse sur 14 à 28 jours depuis le dernier changement, à partir du poids tendance (pesées lissées, jamais une pesée seule), des apports des jours notés en entier (jours incomplets écartés), de la dépense estimée et des séances. Il faut au moins 8 jours pesés et 10 jours notés sur 14 ; sinon l'écran dit ce qui manque.
+- Proposition expliquée quand le poids sort de la fourchette visée : écart, calories correspondantes (environ 7 700 kcal par kilo, approximation de Wishnofsky, 1958, discutée par Hall, 2008), pas plafonné à 200 kcal, ajouté ou retiré sur les glucides (protéines inchangées, lipides au moins 20 % des calories). Jamais sous le métabolisme de base. « Accepter » enregistre les nouveaux objectifs ; « Refuser » écarte la proposition 7 jours. Rien ne change sans validation.
+- Si l'objectif actuel n'est pas suivi (écart de plus de 150 kcal par jour dans le sens du problème), FORGE conseille d'abord de l'atteindre au lieu de le changer.
+- Budget (Nutrition, « Budget ») : coût de ce qui a été mangé, jamais le prix des paquets achetés. Coût du jour et par repas, de la semaine, estimation mensuelle, coût de 100 g de protéines, part des calories dont le coût est connu, 14 derniers jours en barres avec le budget du jour. Budgets journalier et hebdomadaire facultatifs.
+- Un aliment pesé garde son coût au moment de l'ajout ; changer un prix plus tard ne réécrit pas le passé.
+- Mes prix : prix payé, quantité, prix au kilo ou au litre, quantité consommée et son coût sur 30 jours ; ajout depuis tes aliments ou la table Ciqual, modification, suppression.
+- Pour dépenser moins : sources de protéines les moins chères parmi tes produits (au moins 20 % des calories venant des protéines), alternative moins chère au produit le plus coûteux consommé, recettes les moins chères par portion.
+- Nutrition : raccourcis « Objectifs » (mis en avant quand un ajustement est proposé) et « Budget » (coût du jour).
+- Démo : 4 semaines de repas, un plateau de poids sur les 4 dernières semaines (une proposition s'affiche) et quelques prix fictifs.
+- 182 tests. Parcours vérifié au format iPhone : proposition acceptée puis historique, proposition refusée, objectifs modifiés à la main, prix ajoutés et supprimés, budgets, coût enregistré pour un aliment pesé.
+
+### Pas encore
+- Menus économiques générés : livraison 6 (IA).
+
 ## Kitchen 1 : recettes, Compose mon repas, planning et courses (version de test, branche `kitchen-1`)
 
 ### Fait
@@ -18,7 +36,7 @@
 
 ### Pas encore
 - Génération de recettes et de menus par l’IA : livraison 6 (avec ta clé API).
-- Budget journalier et hebdomadaire, suivi des dépenses : livraison 5.
+- Budget journalier et hebdomadaire, suivi des dépenses : fait dans Budget 1.
 
 ## Training 2 : carte des muscles (version de test, branche `muscles-1`)
 

@@ -11,6 +11,8 @@ import { TemplateScreen } from '../features/training/TemplateScreen';
 import { ExerciseLibraryScreen } from '../features/training/ExerciseLibraryScreen';
 import { ExerciseDetailScreen } from '../features/training/ExerciseDetailScreen';
 import { PlanScreen } from '../features/plan/PlanScreen';
+import { ObjectivesScreen } from '../features/objectives/ObjectivesScreen';
+import { BudgetScreen } from '../features/budget/BudgetScreen';
 import { KitchenScreen } from '../features/kitchen/KitchenScreen';
 import { RecipeScreen } from '../features/kitchen/RecipeScreen';
 import { RecipeEditor } from '../features/kitchen/RecipeEditor';
@@ -40,6 +42,8 @@ export const router = createBrowserRouter([
       { path: 'nutrition/recettes/:key', element: <RecipeScreen /> },
       { path: 'nutrition/recettes/:key/modifier', element: <RecipeEditor /> },
       { path: 'nutrition/compose', element: <ComposeScreen /> },
+      { path: 'nutrition/objectifs', element: <ObjectivesScreen /> },
+      { path: 'nutrition/budget', element: <BudgetScreen /> },
       { path: 'nutrition/planning', element: <PlanningScreen /> },
       { path: 'nutrition/courses', element: <ShoppingListsScreen /> },
       { path: 'nutrition/courses/:id', element: <ShoppingListScreen /> },

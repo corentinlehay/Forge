@@ -124,6 +124,14 @@ const shoppingListSchema = z.object({
   items: z.array(z.object({ key: z.string().max(160), name: z.string().max(160), grams: z.number().min(0).max(200000), ml: z.boolean(), aisle, unit: unitTuple, recipes: z.array(z.string().max(80)), checked: z.boolean() })).max(300),
   selections: z.array(z.object({ recipeKey: z.string().max(100), servings: z.number().min(0.25).max(50) })),
 });
+const targetChangeSchema = z.object({
+  ...syncFields,
+  date: dateKey,
+  before: nutritionTargetsSchema.nullable(),
+  after: nutritionTargetsSchema,
+  source: z.enum(['proposition', 'manuel', 'questionnaire']),
+  reason: z.string().max(400).optional(),
+});
 const priceSchema = z.object({ ...syncFields, key: z.string().min(1).max(160), name: z.string().min(1).max(160), amountEur: z.number().min(0.01).max(1000), quantity: z.number().min(0.1).max(100000), unit: z.enum(['g', 'ml', 'piece']) });
 
 const foodSchema = z.object({
@@ -254,6 +262,7 @@ export const backupSchema = z.object({
     mealPlans: z.array(mealPlanSchema).default([]),
     shoppingLists: z.array(shoppingListSchema).default([]),
     prices: z.array(priceSchema).default([]),
+    targetChanges: z.array(targetChangeSchema).default([]),
   }),
 });
 
@@ -286,6 +295,7 @@ const TABLES = [
   ['mealPlans', 'id'],
   ['shoppingLists', 'id'],
   ['prices', 'id'],
+  ['targetChanges', 'id'],
 ] as const;
 
 type TableName = (typeof TABLES)[number][0];

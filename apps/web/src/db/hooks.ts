@@ -5,8 +5,8 @@ import { getDb } from './schema';
 import { createMetaRepo } from './repositories/meta';
 import { createProfileRepo } from './repositories/profile';
 import { createWeighInRepo } from './repositories/weighIns';
-import { createCheckInRepo, createExerciseRepo, createFoodCatalogRepo, createFoodRepo, createMealPlanRepo, createMealTemplateRepo, createPriceRepo, createProgramRepo, createRecipePhotoRepo, createRecipeRepo, createSetRepo, createShoppingListRepo, createTemplateRepo, createWaterRepo, createWorkoutRepo } from './repositories/entities';
-import type { CheckIn, Exercise, Food, FoodEntry, MealPlan, MealTemplate, PriceRecord, Profile, Program, RecipePhoto, RecipeRecord, ShoppingList, WaterLog, WeighIn, Workout, WorkoutSet, WorkoutTemplate } from './types';
+import { createCheckInRepo, createExerciseRepo, createFoodCatalogRepo, createFoodRepo, createMealPlanRepo, createMealTemplateRepo, createPriceRepo, createProgramRepo, createRecipePhotoRepo, createRecipeRepo, createSetRepo, createShoppingListRepo, createTemplateRepo, createWaterRepo, createWorkoutRepo, createTargetChangeRepo } from './repositories/entities';
+import type { TargetChange, CheckIn, Exercise, Food, FoodEntry, MealPlan, MealTemplate, PriceRecord, Profile, Program, RecipePhoto, RecipeRecord, ShoppingList, WaterLog, WeighIn, Workout, WorkoutSet, WorkoutTemplate } from './types';
 import { programTemplates } from '../domain/training';
 
 /**
@@ -69,7 +69,14 @@ export const repos = {
   get prices() {
     return createPriceRepo(getDb());
   },
+  get targetChanges() {
+    return createTargetChangeRepo(getDb());
+  },
 };
+
+export function useTargetChanges(): TargetChange[] | undefined {
+  return useLiveQuery(async () => (await repos.targetChanges.listActive()).sort((a, b) => b.createdAt.localeCompare(a.createdAt)), []);
+}
 
 export function useRecipeRecords(): RecipeRecord[] | undefined {
   return useLiveQuery(() => repos.recipes.listActive(), []);

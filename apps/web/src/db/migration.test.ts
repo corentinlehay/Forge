@@ -146,12 +146,33 @@ describe('migration v4 → v5', () => {
 
     const db = new ForgeDB(name);
     await db.open();
-    expect(db.verno).toBe(5);
+    expect(db.verno).toBe(SCHEMA_VERSION);
     expect(await db.foodEntries.get('e1')).toMatchObject({ name: 'Skyr', kcal: 100 });
     expect(await db.programs.count()).toBe(1);
     expect(await db.recipes.count()).toBe(0);
     await db.prices.add({ id: 'x', createdAt: 'a', updatedAt: 'a', deletedAt: null, key: 'ciqual:9119', name: 'Riz', amountEur: 2, quantity: 1000, unit: 'g' });
     expect(await db.prices.where('key').equals('ciqual:9119').count()).toBe(1);
+    db.close();
+  });
+});
+
+describe('migration v5 → v6', () => {
+  it('ajoute l’historique des objectifs sans toucher au profil', async () => {
+    const name = `migration6-${crypto.randomUUID()}`;
+    names.push(name);
+    const v5 = new Dexie(name);
+    v5.version(1).stores({ profile: 'id, updatedAt', weighIns: 'id, date, [date+time], updatedAt', meta: 'key' });
+    v5.version(2).stores({ foodEntries: 'id, date, updatedAt', exercises: 'id, name, updatedAt', workoutTemplates: 'id, updatedAt', workouts: 'id, date, updatedAt', workoutSets: 'id, workoutId, exerciseId, updatedAt', checkIns: 'id, date, updatedAt' });
+    v5.version(3).stores({ foods: 'id, [source+sourceId], name, updatedAt', mealTemplates: 'id, updatedAt', waterLogs: 'id, date, updatedAt' });
+    v5.version(4).stores({ programs: 'id, updatedAt' });
+    v5.version(5).stores({ recipes: 'id, updatedAt', recipePhotos: 'id, recipeKey, updatedAt', mealPlans: 'id, date, updatedAt', shoppingLists: 'id, updatedAt', prices: 'id, key, updatedAt' });
+    await v5.table('profile').put({ id: 'me', createdAt: 'a', updatedAt: 'a', deletedAt: null, gainRate: { lowPctPerWeek: 0.25, highPctPerWeek: 0.5 }, nutritionTargets: { kcal: 2800, proteinG: 145, carbsG: 375, fatG: 80 } });
+    v5.close();
+    const db = new ForgeDB(name);
+    await db.open();
+    expect(db.verno).toBe(6);
+    expect((await db.profile.get('me'))?.nutritionTargets?.kcal).toBe(2800);
+    expect(await db.targetChanges.count()).toBe(0);
     db.close();
   });
 });

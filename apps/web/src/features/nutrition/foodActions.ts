@@ -1,6 +1,8 @@
 import { repos } from '../../db/hooks';
 import type { Food, FoodEntry, FoodSource, FoodState, MealSlot, MealTemplate, MealTemplateItem, Per100 } from '../../db/types';
 import { nutrientsFor, type OffProduct } from '../../domain/food';
+import { foodPriceKey } from '../../domain/budget';
+import { costPerGram } from '../../domain/kitchen';
 import type { CiqualFood } from '../../services/ciqual';
 
 /** Un aliment choisi pour être ajouté, quelle que soit sa provenance. */
@@ -74,9 +76,17 @@ export async function ensureFood(choice: FoodChoice): Promise<string> {
 const formatQty = (grams: number, unit: 'g' | 'ml') => `${String(Math.round(grams * 10) / 10).replace('.', ',')} ${unit}`;
 
 /** Ajoute un aliment pesé au journal : les valeurs sont calculées et figées avec une copie des valeurs pour 100 g. */
+/** Coût d'une quantité d'aliment, si son prix a été saisi (au moment de l'ajout). */
+async function costFor(key: string, grams: number): Promise<number | null> {
+  const price = (await repos.prices.listActive()).find((p) => p.key === key);
+  const perGram = price ? costPerGram(price) : null;
+  return perGram === null ? null : Math.round(perGram * grams * 100) / 100;
+}
+
 export async function addWeighedEntry(choice: FoodChoice, grams: number, date: string, meal: MealSlot): Promise<FoodEntry> {
   const foodId = await ensureFood(choice);
   const n = nutrientsFor(choice.per100, grams);
+  const costEur = await costFor(foodPriceKey({ id: foodId, source: choice.source, sourceId: choice.sourceId }), grams);
   const entry = await repos.food.add({
     date,
     meal,
@@ -91,6 +101,7 @@ export async function addWeighedEntry(choice: FoodChoice, grams: number, date: s
     grams,
     unit: choice.unit,
     per100: choice.per100,
+    ...(costEur !== null ? { costEur } : {}),
   });
   await repos.foods.markUsed(foodId);
   return entry;
@@ -100,7 +111,8 @@ export async function addWeighedEntry(choice: FoodChoice, grams: number, date: s
 export async function updateWeighedEntry(entry: FoodEntry, grams: number, meal: MealSlot): Promise<void> {
   if (!entry.per100) throw new Error('Cette ligne n’a pas de valeurs pour 100 g.');
   const n = nutrientsFor(entry.per100, grams);
-  await repos.food.update(entry.id, { meal, grams, quantity: formatQty(grams, entry.unit ?? 'g'), kcal: n.kcal, proteinG: n.proteinG, carbsG: n.carbsG, fatG: n.fatG, fiberG: n.fiberG });
+  const costEur = entry.costEur !== undefined && entry.costEur !== null && entry.grams ? Math.round(((entry.costEur * grams) / entry.grams) * 100) / 100 : entry.costEur;
+  await repos.food.update(entry.id, { meal, grams, quantity: formatQty(grams, entry.unit ?? 'g'), kcal: n.kcal, proteinG: n.proteinG, carbsG: n.carbsG, fatG: n.fatG, fiberG: n.fiberG, ...(costEur !== undefined ? { costEur } : {}) });
 }
 
 const toItem = (e: FoodEntry): MealTemplateItem => ({
