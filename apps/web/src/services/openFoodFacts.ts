@@ -1,7 +1,8 @@
 import { parseOffProduct, type OffProduct } from '../domain/food';
 
 /**
- * Open Food Facts, interrogé directement depuis l'appareil (lecture seule, sans compte).
+ * Open Food Facts, en lecture seule et sans compte : fiches produit interrogées directement depuis l'appareil,
+ * recherche par nom via le relais FORGE.
  * Limites demandées par Open Food Facts : 10 recherches et 100 fiches produit par minute.
  * FORGE reste en dessous : 10 recherches et 15 fiches par minute, et ne cherche jamais à chaque frappe.
  */
@@ -78,26 +79,27 @@ export async function fetchProduct(code: string, fetcher: Fetcher = fetch): Prom
 }
 
 /**
- * Recherche par nom ou marque. Essaie le moteur Search-a-licious, puis l'ancienne API de recherche.
+ * Recherche par nom ou marque, via le relais FORGE (/api/off/search) :
+ * le moteur Search-a-licious d'Open Food Facts n'autorise pas la lecture directe depuis une app web.
  */
 export async function searchProducts(query: string, fetcher: Fetcher = fetch): Promise<OffProduct[]> {
   ensureOnline();
   ensureAllowed(searchLimiter);
-  const q = encodeURIComponent(query.trim());
-  const parse = (list: unknown): OffProduct[] =>
-    Array.isArray(list) ? list.map(parseOffProduct).filter((p): p is OffProduct => p !== null) : [];
-
+  let response: Response;
   try {
-    const data = (await getJson(`https://search.openfoodfacts.org/search?q=${q}&langs=fr&page_size=24&fields=${FIELDS}`, fetcher)) as { hits?: unknown } | null;
-    const hits = parse(data?.hits);
-    if (hits.length) return hits;
-  } catch (error) {
-    if (error instanceof OffError && error.kind === 'rate') throw error;
-    // Moteur indisponible : on passe à l'ancienne API.
+    response = await fetcher(`/api/off/search?q=${encodeURIComponent(query.trim())}`, { headers: { Accept: 'application/json' } });
+  } catch {
+    throw new OffError('network', 'Open Food Facts ne répond pas. Vérifie ta connexion et réessaie.');
   }
-  const data = (await getJson(
-    `https://world.openfoodfacts.org/cgi/search.pl?search_terms=${q}&search_simple=1&action=process&json=1&page_size=24&lc=fr&fields=${FIELDS}`,
-    fetcher,
-  )) as { products?: unknown } | null;
-  return parse(data?.products);
+  const data = (await response.json().catch(() => null)) as { hits?: unknown; erreur?: string } | null;
+  if (response.status === 429) throw new OffError('rate', data?.erreur ?? 'Trop de demandes : réessaie dans une minute.');
+  if (!response.ok) throw new OffError('network', data?.erreur ?? `La recherche a échoué (${response.status}).`);
+  const hits = Array.isArray(data?.hits) ? data.hits : [];
+  return usableResults(hits.map(parseOffProduct).filter((p): p is OffProduct => p !== null));
+}
+
+/** Écarte les fiches sans aucune valeur nutritionnelle, et place les fiches complètes en tête. */
+export function usableResults(products: OffProduct[]): OffProduct[] {
+  const usable = products.filter((p) => p.complete || p.per100.kcal > 0);
+  return [...usable.filter((p) => p.complete), ...usable.filter((p) => !p.complete)];
 }

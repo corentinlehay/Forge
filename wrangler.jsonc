@@ -1,8 +1,9 @@
 {
-  // Hébergement Cloudflare : l'app (fichiers statiques) aujourd'hui, l'API du coach en Phase 5.
+  // Hébergement Cloudflare : l'app (fichiers statiques) et le petit serveur /api/* (apps/worker).
   // Build : npm ci && npm run build ; déploiement : npx wrangler deploy
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "forge",
+  "main": "./apps/worker/src/index.ts",
   "compatibility_date": "2026-11-01",
   // Adresse publique forge.<compte>.workers.dev, et une adresse de test par branche (versions de test).
   "workers_dev": true,
@@ -10,6 +11,9 @@
   "previews": {},
   "assets": {
     "directory": "./apps/web/dist",
-    "not_found_handling": "single-page-application"
+    "binding": "ASSETS",
+    "not_found_handling": "single-page-application",
+    // Seules les requêtes /api/* passent par le serveur ; tout le reste est servi directement.
+    "run_worker_first": ["/api/*"]
   }
 }
