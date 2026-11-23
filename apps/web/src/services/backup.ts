@@ -13,6 +13,7 @@ export const BACKUP_VERSION = 1;
 export const LAST_BACKUP_KEY = 'lastBackupAt';
 
 const dateKey = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
+const timeKey = z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/);
 const syncFields = {
   id: z.string().min(1),
   createdAt: z.string().min(1),
@@ -235,6 +236,34 @@ const checkInSchema = z.object({
   fatigue: scale,
   soreness: scale,
   note: z.string().max(500).optional(),
+  bedTime: timeKey.nullable().optional(),
+  wakeTime: timeKey.nullable().optional(),
+  awakenings: z.number().int().min(0).max(20).nullable().optional(),
+  sleepQuality: scale.nullable().optional(),
+});
+const moodLogSchema = z.object({
+  ...syncFields,
+  date: dateKey,
+  mood: scale.nullable().optional(),
+  stress: scale.nullable().optional(),
+  mentalEnergy: scale.nullable().optional(),
+  motivation: scale.nullable().optional(),
+  mentalLoad: scale.nullable().optional(),
+  recovery: scale.nullable().optional(),
+  emotions: z.array(z.string().max(40)).max(12).optional(),
+  note: z.string().max(1000).optional(),
+});
+const mindSessionSchema = z.object({
+  ...syncFields,
+  date: dateKey,
+  time: timeKey,
+  kind: z.enum(['exercise', 'routine', 'audio']),
+  ref: z.string().min(1).max(120),
+  title: z.string().min(1).max(120),
+  durationSec: z.number().min(0).max(6 * 3600),
+  completed: z.boolean(),
+  tensionBefore: scale.nullable().optional(),
+  tensionAfter: scale.nullable().optional(),
 });
 
 /** Les sauvegardes plus anciennes restent importables : les tables absentes valent []. */
@@ -263,6 +292,8 @@ export const backupSchema = z.object({
     shoppingLists: z.array(shoppingListSchema).default([]),
     prices: z.array(priceSchema).default([]),
     targetChanges: z.array(targetChangeSchema).default([]),
+    moodLogs: z.array(moodLogSchema).default([]),
+    mindSessions: z.array(mindSessionSchema).default([]),
   }),
 });
 
@@ -296,6 +327,8 @@ const TABLES = [
   ['shoppingLists', 'id'],
   ['prices', 'id'],
   ['targetChanges', 'id'],
+  ['moodLogs', 'id'],
+  ['mindSessions', 'id'],
 ] as const;
 
 type TableName = (typeof TABLES)[number][0];

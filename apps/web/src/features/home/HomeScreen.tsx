@@ -15,6 +15,7 @@ import { TrendSparkline } from '../weight/WeightChart';
 import { useWeighInSheet } from '../weight/WeighInSheet';
 import { statusView } from '../weight/weightStatus';
 import { SessionHero } from '../training/SessionHero';
+import { CoachButton } from '../../ui/CoachButton';
 import { BackupReminder } from './BackupReminder';
 
 const kcal = (v: number) => `${formatNumber(v, 0)} kcal`;
@@ -31,14 +32,17 @@ export function HomeScreen() {
           <p className="text-[15px] text-cendre">{data ? formatDayLong(data.today) : ' '}</p>
           <h1 className="font-metal text-[40px]">{greeting}</h1>
         </div>
-        <Link
-          to="/reglages"
-          viewTransition
-          aria-label="Profil et réglages"
-          className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-graphite text-base font-semibold"
-        >
-          {data?.profile.firstName?.charAt(0).toLocaleUpperCase('fr-FR') ?? <Icon name="user" size={20} />}
-        </Link>
+        <div className="flex gap-2">
+          <CoachButton />
+          <Link
+            to="/reglages"
+            viewTransition
+            aria-label="Profil et réglages"
+            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-graphite text-base font-semibold"
+          >
+            {data?.profile.firstName?.charAt(0).toLocaleUpperCase('fr-FR') ?? <Icon name="user" size={20} />}
+          </Link>
+        </div>
       </header>
 
       {data ? <Dashboard data={data} /> : <DashboardSkeleton />}

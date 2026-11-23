@@ -20,6 +20,7 @@ import { Sheet } from '../../ui/Sheet';
 import { useToast } from '../../ui/Toast';
 import { FoodForm, TargetsForm } from './FoodSheet';
 import { choiceFromFood, copyEntries, saveAsTemplate, type FoodChoice } from './foodActions';
+import { CoachButton } from '../../ui/CoachButton';
 import { QuantityForm } from './QuantityForm';
 
 type SheetState =
@@ -73,10 +74,13 @@ export function NutritionScreen() {
     <Screen>
       <div className="flex items-center justify-between gap-3">
         <h1 className="font-metal text-[40px]">Nutrition</h1>
-        <Button size="small" onClick={() => navigate(addPath(), { viewTransition: true })}>
-          <Icon name="plus" size={18} strokeWidth={2.5} />
-          Ajouter
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button size="small" onClick={() => navigate(addPath(), { viewTransition: true })}>
+            <Icon name="plus" size={18} strokeWidth={2.5} />
+            Ajouter
+          </Button>
+          <CoachButton />
+        </div>
       </div>
 
       <div className="flex items-center justify-between rounded-[14px] bg-anthracite p-1">

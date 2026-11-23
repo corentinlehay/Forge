@@ -1,3 +1,4 @@
+import { SCHEMA_VERSION } from '../db/schema';
 import { describe, expect, it } from 'vitest';
 import { BACKUP_FORMAT, BACKUP_VERSION, backupSchema } from '../services/backup';
 import { generateDemoData } from './demo';
@@ -9,7 +10,7 @@ describe('données de démonstration', () => {
   const data = generateDemoData('2026-11-23', now);
 
   it('respectent le format de sauvegarde (donc les règles de validation)', () => {
-    const parsed = backupSchema.safeParse({ format: BACKUP_FORMAT, version: BACKUP_VERSION, exportedAt: now.toISOString(), schemaVersion: 6, tables: data });
+    const parsed = backupSchema.safeParse({ format: BACKUP_FORMAT, version: BACKUP_VERSION, exportedAt: now.toISOString(), schemaVersion: SCHEMA_VERSION, tables: data });
     expect(parsed.success).toBe(true);
   });
 

@@ -170,9 +170,32 @@ describe('migration v5 → v6', () => {
     v5.close();
     const db = new ForgeDB(name);
     await db.open();
-    expect(db.verno).toBe(6);
+    expect(db.verno).toBe(SCHEMA_VERSION);
     expect((await db.profile.get('me'))?.nutritionTargets?.kcal).toBe(2800);
     expect(await db.targetChanges.count()).toBe(0);
+    db.close();
+  });
+});
+
+describe('migration v6 → v7', () => {
+  it('ajoute le journal et les pratiques Mind sans toucher aux check-ins', async () => {
+    const name = `migration7-${crypto.randomUUID()}`;
+    names.push(name);
+    const v6 = new Dexie(name);
+    v6.version(1).stores({ profile: 'id, updatedAt', weighIns: 'id, date, [date+time], updatedAt', meta: 'key' });
+    v6.version(2).stores({ foodEntries: 'id, date, updatedAt', exercises: 'id, name, updatedAt', workoutTemplates: 'id, updatedAt', workouts: 'id, date, updatedAt', workoutSets: 'id, workoutId, exerciseId, updatedAt', checkIns: 'id, date, updatedAt' });
+    v6.version(3).stores({ foods: 'id, [source+sourceId], name, updatedAt', mealTemplates: 'id, updatedAt', waterLogs: 'id, date, updatedAt' });
+    v6.version(4).stores({ programs: 'id, updatedAt' });
+    v6.version(5).stores({ recipes: 'id, updatedAt', recipePhotos: 'id, recipeKey, updatedAt', mealPlans: 'id, date, updatedAt', shoppingLists: 'id, updatedAt', prices: 'id, key, updatedAt' });
+    v6.version(6).stores({ targetChanges: 'id, date, updatedAt' });
+    await v6.table('checkIns').put({ id: 'c1', createdAt: 'a', updatedAt: 'a', deletedAt: null, date: '2026-11-20', sleepHours: 7.5, energy: 4, fatigue: 2, soreness: 2 });
+    v6.close();
+    const db = new ForgeDB(name);
+    await db.open();
+    expect(db.verno).toBe(SCHEMA_VERSION);
+    expect((await db.checkIns.get('c1'))?.sleepHours).toBe(7.5);
+    expect(await db.moodLogs.count()).toBe(0);
+    expect(await db.mindSessions.count()).toBe(0);
     db.close();
   });
 });

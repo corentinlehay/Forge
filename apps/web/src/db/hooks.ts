@@ -5,8 +5,8 @@ import { getDb } from './schema';
 import { createMetaRepo } from './repositories/meta';
 import { createProfileRepo } from './repositories/profile';
 import { createWeighInRepo } from './repositories/weighIns';
-import { createCheckInRepo, createExerciseRepo, createFoodCatalogRepo, createFoodRepo, createMealPlanRepo, createMealTemplateRepo, createPriceRepo, createProgramRepo, createRecipePhotoRepo, createRecipeRepo, createSetRepo, createShoppingListRepo, createTemplateRepo, createWaterRepo, createWorkoutRepo, createTargetChangeRepo } from './repositories/entities';
-import type { TargetChange, CheckIn, Exercise, Food, FoodEntry, MealPlan, MealTemplate, PriceRecord, Profile, Program, RecipePhoto, RecipeRecord, ShoppingList, WaterLog, WeighIn, Workout, WorkoutSet, WorkoutTemplate } from './types';
+import { createMindSessionRepo, createMoodLogRepo, createCheckInRepo, createExerciseRepo, createFoodCatalogRepo, createFoodRepo, createMealPlanRepo, createMealTemplateRepo, createPriceRepo, createProgramRepo, createRecipePhotoRepo, createRecipeRepo, createSetRepo, createShoppingListRepo, createTemplateRepo, createWaterRepo, createWorkoutRepo, createTargetChangeRepo } from './repositories/entities';
+import type { MindSession, MoodLog, TargetChange, CheckIn, Exercise, Food, FoodEntry, MealPlan, MealTemplate, PriceRecord, Profile, Program, RecipePhoto, RecipeRecord, ShoppingList, WaterLog, WeighIn, Workout, WorkoutSet, WorkoutTemplate } from './types';
 import { programTemplates } from '../domain/training';
 
 /**
@@ -72,7 +72,23 @@ export const repos = {
   get targetChanges() {
     return createTargetChangeRepo(getDb());
   },
+  get moodLogs() {
+    return createMoodLogRepo(getDb());
+  },
+  get mindSessions() {
+    return createMindSessionRepo(getDb());
+  },
 };
+
+/** Journal émotionnel, du plus ancien au plus récent. */
+export function useMoodLogs(): MoodLog[] | undefined {
+  return useLiveQuery(async () => (await repos.moodLogs.listActive()).sort((a, b) => a.date.localeCompare(b.date)), []);
+}
+
+/** Pratiques Mind, de la plus récente à la plus ancienne. */
+export function useMindSessions(): MindSession[] | undefined {
+  return useLiveQuery(async () => (await repos.mindSessions.listActive()).sort((a, b) => `${b.date}${b.time}`.localeCompare(`${a.date}${a.time}`)), []);
+}
 
 export function useTargetChanges(): TargetChange[] | undefined {
   return useLiveQuery(async () => (await repos.targetChanges.listActive()).sort((a, b) => b.createdAt.localeCompare(a.createdAt)), []);

@@ -7,6 +7,7 @@ Coz travaille uniquement depuis son iPhone : il ne lance aucune commande, il val
 - Dossier d'architecture : https://claude.ai/artifact/1Vtt7rULxvYFWAD1jFpXoD
 - Planche visuelle : https://claude.ai/artifact/8pjbTLLq589DoYguuvgNE8
 - Journal des versions : docs/journal.md
+- État du projet (fait, à faire, problèmes) : PROJECT_STATUS.md, mis à jour à chaque livraison
 
 ## Règles de travail
 

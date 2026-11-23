@@ -37,3 +37,43 @@ export function beep(): void {
     /* pas de son : le minuteur reste visible à l'écran */
   }
 }
+
+/**
+ * Repère doux pour les exercices FORGE MIND : une note longue et feutrée.
+ * in : montée (inspiration), out : descente (expiration), step : changement d'étape, end : fin.
+ */
+export function chime(kind: 'in' | 'out' | 'hold' | 'step' | 'end'): void {
+  try {
+    if (!ctx) return;
+    const start = ctx.currentTime + 0.02;
+    const notes: [number, number][] =
+      kind === 'in'
+        ? [[392, 523.25]]
+        : kind === 'out'
+          ? [[523.25, 392]]
+          : kind === 'hold'
+            ? [[440, 440]]
+            : kind === 'step'
+              ? [[659.25, 659.25]]
+              : [
+                  [523.25, 523.25],
+                  [784, 784],
+                ];
+    notes.forEach(([from, to], i) => {
+      const t = start + i * 0.35;
+      const osc = ctx!.createOscillator();
+      const gain = ctx!.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(from, t);
+      osc.frequency.linearRampToValueAtTime(to, t + 0.6);
+      gain.gain.setValueAtTime(0.0001, t);
+      gain.gain.exponentialRampToValueAtTime(0.12, t + 0.08);
+      gain.gain.exponentialRampToValueAtTime(0.0001, t + 0.9);
+      osc.connect(gain).connect(ctx!.destination);
+      osc.start(t);
+      osc.stop(t + 0.95);
+    });
+  } catch {
+    /* pas de son : l'exercice reste guidé à l'écran */
+  }
+}

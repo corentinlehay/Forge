@@ -13,6 +13,12 @@ import { ExerciseDetailScreen } from '../features/training/ExerciseDetailScreen'
 import { PlanScreen } from '../features/plan/PlanScreen';
 import { ObjectivesScreen } from '../features/objectives/ObjectivesScreen';
 import { BudgetScreen } from '../features/budget/BudgetScreen';
+import { MindScreen } from '../features/mind/MindScreen';
+import { JournalScreen } from '../features/mind/JournalScreen';
+import { SleepScreen } from '../features/mind/SleepScreen';
+import { LibraryScreen, PreparationScreen } from '../features/mind/LibraryScreens';
+import { ExerciseScreen, RoutineScreen } from '../features/mind/PracticeScreens';
+import { RoutineEditor } from '../features/mind/RoutineEditor';
 import { KitchenScreen } from '../features/kitchen/KitchenScreen';
 import { RecipeScreen } from '../features/kitchen/RecipeScreen';
 import { RecipeEditor } from '../features/kitchen/RecipeEditor';
@@ -52,6 +58,14 @@ export const router = createBrowserRouter([
       { path: 'nutrition', element: <NutritionScreen /> },
       { path: 'nutrition/ajouter', element: <AddFoodScreen /> },
       { path: 'progression', element: <ProgressionScreen /> },
+      { path: 'mind', element: <MindScreen /> },
+      { path: 'mind/journal', element: <JournalScreen /> },
+      { path: 'mind/sommeil', element: <SleepScreen /> },
+      { path: 'mind/exercices', element: <LibraryScreen /> },
+      { path: 'mind/preparation', element: <PreparationScreen /> },
+      { path: 'mind/exercice/:id', element: <ExerciseScreen /> },
+      { path: 'mind/routine/:id', element: <RoutineScreen /> },
+      { path: 'mind/routine/:id/modifier', element: <RoutineEditor /> },
       { path: 'coach', element: <CoachScreen /> },
       { path: 'reglages', element: <SettingsScreen /> },
       { path: '*', element: <Navigate to="/" replace /> },

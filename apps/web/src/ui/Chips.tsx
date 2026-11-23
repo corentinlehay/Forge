@@ -11,11 +11,13 @@ interface ChipsProps<T extends string | number> {
   onToggle: (value: T) => void;
   /** Une ligne qui défile (filtres) ou des puces qui passent à la ligne (formulaires). */
   layout?: 'scroll' | 'wrap';
+  /** Couleur des choix actifs : brume dans FORGE MIND. */
+  tone?: 'citron' | 'brume';
   hideLabel?: boolean;
 }
 
 /** Puces à choisir : un toucher sélectionne, un second désélectionne. */
-export function Chips<T extends string | number>({ label, options, selected, onToggle, layout = 'wrap', hideLabel = false }: ChipsProps<T>) {
+export function Chips<T extends string | number>({ label, options, selected, onToggle, layout = 'wrap', hideLabel = false, tone = 'citron' }: ChipsProps<T>) {
   return (
     <fieldset className="m-0 min-w-0 border-0 p-0">
       <legend className={hideLabel ? 'sr-only' : 'mb-2 text-[13px] text-cendre'}>{label}</legend>
@@ -28,7 +30,7 @@ export function Chips<T extends string | number>({ label, options, selected, onT
               type="button"
               aria-pressed={on}
               onClick={() => onToggle(o.value)}
-              className={`h-10 shrink-0 rounded-full px-4 text-[15px] whitespace-nowrap transition-colors ${on ? 'bg-citron font-semibold text-noir' : 'bg-graphite text-craie'}`}
+              className={`h-10 shrink-0 rounded-full px-4 text-[15px] whitespace-nowrap transition-colors ${on ? (tone === 'brume' ? 'bg-brume' : 'bg-citron') + ' font-semibold text-noir' : 'bg-graphite text-craie'}`}
             >
               {o.label}
             </button>

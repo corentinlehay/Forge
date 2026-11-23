@@ -2,6 +2,7 @@ import { Link } from 'react-router';
 import { Icon } from '../../ui/Icon';
 import { Card, Screen } from '../../ui/Screen';
 import { useDashboardData } from '../dashboard/useDashboardData';
+import { useHistoryBack } from '../mind/mindShared';
 
 const LINK_LABELS = { '/nutrition': 'Nutrition', '/training': 'Training', '/progression': 'Progression', '/coach': 'Coach' } as const;
 
@@ -17,10 +18,15 @@ const watched = [
 /** Coach : l'analyse du jour en entier. Règles locales, signalées comme telles ; l'IA arrive en Phase 5. */
 export function CoachScreen() {
   const data = useDashboardData();
+  const back = useHistoryBack('/');
   const brief = data?.brief;
 
   return (
-    <Screen>
+    <Screen withTabBar={false}>
+      <button type="button" onClick={back} className="-ml-2 flex min-h-11 items-center gap-1 self-start px-2 text-[15px] text-cendre">
+        <Icon name="back" size={20} />
+        Retour
+      </button>
       <div className="flex flex-col gap-2">
         <h1 className="font-metal text-[40px]">Coach IA</h1>
         <p className="text-[15px] leading-snug text-cendre">L’analyse du jour, à partir de tes données enregistrées.</p>
@@ -28,7 +34,8 @@ export function CoachScreen() {
 
       <p className="flex items-start gap-2.5 rounded-[18px] border border-graphite p-3.5 text-[13px] leading-snug text-cendre">
         <Icon name="info" size={18} className="mt-0.5 shrink-0" />
-        Pour l’instant, cette analyse vient de règles simples calculées sur ton appareil, sans IA. Le coach conversationnel (Claude) arrivera en Phase 5, avec une connexion sécurisée.
+        Pour l’instant, cette analyse vient de règles simples calculées sur ton appareil, sans IA. Le coach conversationnel (Claude) arrivera en Phase 5, avec une connexion
+        sécurisée.
       </p>
 
       {brief && (

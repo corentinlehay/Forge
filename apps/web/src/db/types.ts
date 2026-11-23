@@ -229,6 +229,42 @@ export interface CheckIn extends SyncFields {
   fatigue: Scale5;
   soreness: Scale5;
   note?: string;
+  /** Détails de la nuit, tous facultatifs : heures locales HH:mm, réveils nocturnes, qualité ressentie. */
+  bedTime?: string | null;
+  wakeTime?: string | null;
+  awakenings?: number | null;
+  sleepQuality?: Scale5 | null;
+}
+
+/** Journal émotionnel : une entrée par jour, chaque mesure facultative (échelles de 1 à 5). */
+export interface MoodLog extends SyncFields {
+  date: string;
+  mood?: Scale5 | null;
+  stress?: Scale5 | null;
+  mentalEnergy?: Scale5 | null;
+  motivation?: Scale5 | null;
+  mentalLoad?: Scale5 | null;
+  recovery?: Scale5 | null;
+  /** Clés de MIND_EMOTIONS. */
+  emotions?: string[];
+  note?: string;
+}
+
+/** Pratique FORGE MIND réalisée : exercice guidé, routine ou (plus tard) séance audio. */
+export interface MindSession extends SyncFields {
+  date: string;
+  /** Heure locale de début, HH:mm. */
+  time: string;
+  kind: 'exercise' | 'routine' | 'audio';
+  /** Identifiant de l'exercice, de la routine ou de l'audio. */
+  ref: string;
+  title: string;
+  durationSec: number;
+  /** false : arrêté avant la fin (compté seulement après une minute). */
+  completed: boolean;
+  /** Tension ressentie avant et après, de 1 (détendu) à 5 (très tendu), facultative. */
+  tensionBefore?: Scale5 | null;
+  tensionAfter?: Scale5 | null;
 }
 
 /** Ingrédient d'une recette, avec une copie de ses valeurs pour 100 g. */

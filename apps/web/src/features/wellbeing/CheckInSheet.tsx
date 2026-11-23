@@ -2,9 +2,11 @@ import { createContext, useCallback, useContext, useMemo, useState, type ReactNo
 import { repos, useCheckIns, useToday } from '../../db/hooks';
 import { DataError } from '../../db/repositories/entities';
 import type { CheckIn, Scale5 } from '../../db/types';
+import { sleepFromTimes } from '../../domain/mind';
 import { recoveryLabel, recoveryScore } from '../../domain/wellbeing';
 import { formatDayShort, formatNumber } from '../../lib/format';
 import { Button } from '../../ui/Button';
+import { Field } from '../../ui/Field';
 import { ScaleChips } from '../../ui/ScaleChips';
 import { Sheet } from '../../ui/Sheet';
 import { Stepper } from '../../ui/Stepper';
@@ -48,8 +50,22 @@ function CheckInForm({ date, onDone }: { date: string; onDone: () => void }) {
   const [energy, setEnergy] = useState<Scale5 | null>(existing?.energy ?? null);
   const [fatigue, setFatigue] = useState<Scale5 | null>(existing?.fatigue ?? null);
   const [soreness, setSoreness] = useState<Scale5 | null>(existing?.soreness ?? null);
+  const [bedTime, setBedTime] = useState(existing?.bedTime ?? '');
+  const [wakeTime, setWakeTime] = useState(existing?.wakeTime ?? '');
+  const [awakenings, setAwakenings] = useState<number | null>(existing?.awakenings ?? null);
+  const [quality, setQuality] = useState<Scale5 | null>(existing?.sleepQuality ?? null);
+  const [details, setDetails] = useState(Boolean(existing?.bedTime || existing?.wakeTime || existing?.sleepQuality || (existing?.awakenings ?? null) !== null));
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+
+  /** Les deux heures renseignées : la durée de la nuit se calcule (elle reste modifiable). */
+  const setTime = (which: 'bed' | 'wake', value: string) => {
+    const bed = which === 'bed' ? value : bedTime;
+    const wake = which === 'wake' ? value : wakeTime;
+    if (which === 'bed') setBedTime(value);
+    else setWakeTime(value);
+    if (/^\d{2}:\d{2}$/.test(bed) && /^\d{2}:\d{2}$/.test(wake)) setSleep(sleepFromTimes(bed, wake));
+  };
 
   const complete = sleepHours !== null && energy && fatigue && soreness;
   const score = complete ? recoveryScore({ sleepHours, energy, fatigue, soreness }) : null;
@@ -58,7 +74,8 @@ function CheckInForm({ date, onDone }: { date: string; onDone: () => void }) {
     if (!complete) return;
     setBusy(true);
     try {
-      const input = { date, sleepHours, energy, fatigue, soreness };
+      const time = (v: string) => (/^\d{2}:\d{2}$/.test(v) ? v : null);
+      const input = { date, sleepHours, energy, fatigue, soreness, bedTime: time(bedTime), wakeTime: time(wakeTime), awakenings, sleepQuality: quality };
       if (existing) await repos.checkIns.update(existing.id, input);
       else await repos.checkIns.add(input);
       toast.show('Check-in enregistré');
@@ -75,6 +92,20 @@ function CheckInForm({ date, onDone }: { date: string; onDone: () => void }) {
       <div className="flex flex-col gap-2">
         <Stepper label="Sommeil" value={sleepHours} step={0.25} min={0} max={16} start={7.5} format={formatHours} onChange={setSleep} />
       </div>
+      {details ? (
+        <section aria-label="Détails de la nuit" className="flex flex-col gap-4 rounded-[18px] border border-graphite p-3.5">
+          <div className="grid grid-cols-2 gap-3">
+            <Field label="Coucher" type="time" value={bedTime} onChange={(e) => setTime('bed', e.target.value)} />
+            <Field label="Réveil" type="time" value={wakeTime} onChange={(e) => setTime('wake', e.target.value)} />
+          </div>
+          <Stepper label="Réveils dans la nuit" value={awakenings} step={1} min={0} max={20} start={0} format={(v) => (v === 0 ? 'Aucun' : String(v))} onChange={setAwakenings} />
+          <ScaleChips label="Qualité ressentie" value={quality} onChange={setQuality} low="Très mauvaise" high="Excellente" />
+        </section>
+      ) : (
+        <button type="button" onClick={() => setDetails(true)} className="-mt-2 self-start py-1 text-[15px] text-citron">
+          Ajouter les détails de la nuit
+        </button>
+      )}
       <ScaleChips label="Énergie" value={energy} onChange={setEnergy} low="Vide" high="Au top" />
       <ScaleChips label="Fatigue" value={fatigue} onChange={setFatigue} low="Aucune" high="Épuisé" />
       <ScaleChips label="Courbatures" value={soreness} onChange={setSoreness} low="Aucune" high="Fortes" />

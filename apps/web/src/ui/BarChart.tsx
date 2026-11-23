@@ -16,13 +16,15 @@ interface BarChartProps {
   targetLabel?: string;
   height?: number;
   title: string;
+  /** Couleur de la barre choisie : brume dans FORGE MIND. */
+  tone?: 'citron' | 'brume';
 }
 
 /**
  * Barres tactiles : toucher une barre affiche son détail au-dessus du graphique.
  * Construit en HTML (boutons) pour rester lisible au lecteur d'écran.
  */
-export function BarChart({ bars, target, targetLabel = 'Objectif', height = 132, title }: BarChartProps) {
+export function BarChart({ bars, target, targetLabel = 'Objectif', height = 132, title, tone = 'citron' }: BarChartProps) {
   const [selected, setSelected] = useState(bars.length - 1);
   const max = Math.max(1, target ?? 0, ...bars.map((b) => b.value)) * 1.08;
   const current = bars[Math.min(selected, bars.length - 1)];
@@ -49,7 +51,7 @@ export function BarChart({ bars, target, targetLabel = 'Objectif', height = 132,
               className="flex h-full min-w-0 flex-1 items-end"
             >
               <span
-                className={`block w-full rounded-t-[4px] transition-[height,background-color] duration-500 ease-out ${i === selected ? 'bg-citron' : 'bg-cendre/35'}`}
+                className={`block w-full rounded-t-[4px] transition-[height,background-color] duration-500 ease-out ${i === selected ? (tone === 'brume' ? 'bg-brume' : 'bg-citron') : 'bg-cendre/35'}`}
                 style={{ height: `${Math.max(bar.value > 0 ? 3 : 0, (bar.value / max) * 100)}%` }}
               />
             </button>
@@ -58,7 +60,7 @@ export function BarChart({ bars, target, targetLabel = 'Objectif', height = 132,
       </div>
       <div className="flex gap-1.5 text-[11px] text-cendre" aria-hidden="true">
         {bars.map((bar, i) => (
-          <span key={bar.key} className={`min-w-0 flex-1 truncate text-center ${i === selected ? 'text-craie' : ''}`}>
+          <span key={bar.key} className={`min-w-0 flex-1 overflow-visible text-center whitespace-nowrap ${i === selected ? 'text-craie' : ''}`}>
             {bar.label}
           </span>
         ))}

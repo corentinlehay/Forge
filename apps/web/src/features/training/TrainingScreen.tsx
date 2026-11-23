@@ -13,6 +13,8 @@ import { useDashboardData } from '../dashboard/useDashboardData';
 import { SessionHero } from './SessionHero';
 import { ProgramsPanel } from './ProgramsSheet';
 import { MusclesCard } from '../muscles/MusclesCard';
+import { CoachButton } from '../../ui/CoachButton';
+import { TrainingMindLinks } from '../mind/LibraryScreens';
 import { startWorkout } from './workoutActions';
 
 const DAY_LETTERS = ['L', 'M', 'M', 'J', 'V', 'S', 'D'];
@@ -59,11 +61,14 @@ export function TrainingScreen() {
     <Screen>
       <div className="flex items-center justify-between gap-3">
         <h1 className="font-metal text-[40px]">Training</h1>
-        {!data?.training.inProgress && (
-          <Button size="small" variant="secondary" onClick={() => void freeSession()}>
-            Séance libre
-          </Button>
-        )}
+        <div className="flex items-center gap-2">
+          {!data?.training.inProgress && (
+            <Button size="small" variant="secondary" onClick={() => void freeSession()}>
+              Séance libre
+            </Button>
+          )}
+          <CoachButton />
+        </div>
       </div>
 
       <ol className="grid grid-cols-7 gap-1.5" aria-label="Cette semaine">
@@ -86,6 +91,7 @@ export function TrainingScreen() {
       </ol>
 
       {data && <SessionHero data={data} linkToTraining={false} />}
+      <TrainingMindLinks />
 
       <section aria-label="Programme" className="flex flex-col gap-2">
         <div className="flex items-center justify-between gap-3">

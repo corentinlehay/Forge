@@ -21,6 +21,7 @@ import { ExerciseDemo, ExerciseThumb } from './ExerciseVisual';
 import { SetForm } from './SetForm';
 import { IconButton } from './TemplateScreen';
 import { useRestTimer } from './useRestTimer';
+import { TrainingMindLinks } from '../mind/LibraryScreens';
 import { useWakeLock } from './useWakeLock';
 
 const kgText = (v: number) => formatNumber(v, v % 1 ? (Math.round(v * 100) % 10 ? 2 : 1) : 0);
@@ -297,6 +298,7 @@ function LiveWorkout({ workout, workouts, sets, targets }: { workout: Workout; w
         </Button>
       )}
       {ended && <p className="text-center text-[13px] text-cendre">Séance terminée : tu peux encore corriger une série en la touchant.</p>}
+      {ended && <TrainingMindLinks only="apres" />}
 
       {confirmDelete ? (
         <div className="flex flex-col gap-2">

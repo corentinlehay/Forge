@@ -1,5 +1,24 @@
 # Journal des versions
 
+## Mind 1 : espace FORGE MIND, exercices guidés, journal, sommeil (version de test, branche `mind-1`)
+
+### Fait
+- Onglet Mind à la place de l'onglet Coach ; le coach reste accessible partout par le bouton rond en haut d'Accueil, Training, Nutrition, Mind et Progression. Teinte « brume » plus apaisante pour Mind, dans le même univers sombre.
+- Base locale v7 : journal émotionnel et pratiques Mind. Tables ajoutées ; le check-in du matin gagne des champs facultatifs. Migration v6 vers v7 testée, rien de modifié.
+- Accueil Mind : salutation, état du jour en un geste (humeur, stress, énergie mentale, enregistrés dans le journal), recommandation selon l'heure, le journal, la nuit et l'entraînement (routine d'avant séance si une séance est prévue, retour au calme dans les 3 h après, cohérence cardiaque si stress noté à 4 ou 5, rituel le soir), trois autres exercices dans le même esprit, sept catégories, routines, pratique de la semaine, minutes sur 8 semaines, moyennes du journal, dernières pratiques.
+- 26 exercices guidés sans matériel, en cinq familles (respiration, ancrage, relaxation, visualisation, concentration), chacun avec présentation, objectif, position, durée, consignes étape par étape, précautions et repère scientifique. Quatre déroulés interactifs : cercle qui suit la respiration, étapes minutées (relaxation progressive avec contracte et relâche), cinq sens à cocher, attention (compter ses expirations, noter ses distractions). Pause, étape suivante, repères sonores doux facultatifs, écran gardé allumé.
+- Suivi : chaque pratique est enregistrée (durée réelle, terminée ou arrêtée après au moins une minute), avec la tension ressentie avant et après si tu la notes. Favoris.
+- Routines avant l'entraînement (3 min), après (5 min) et du soir (6 min 30), personnalisables : exercices, ordre, durées, retour à l'origine. Raccourcis depuis Training et en fin de séance.
+- Mental du sportif : avant l'effort, motivation, pression et concentration, confiance, frustration, stagnation.
+- Journal émotionnel libre : humeur, stress, énergie mentale, motivation, charge mentale, récupération, émotions, commentaire ; n'importe quel jour ; évolution sur 30 jours et historique. Rien n'est obligatoire.
+- Sommeil : check-in du matin enrichi (coucher, réveil avec calcul de la durée, réveils, qualité ressentie) ; moyennes sur 7 ou 30 jours, régularité des horaires, nuits sous 7 h (Watson et al., 2015), récupération au réveil, nuits avant une séance comparées aux autres (une observation, pas une cause), rituel du soir et repères de l'INSV.
+- Précautions : repères de bien-être, pas un soin ; médecin si le mal-être dure ; 3114, 15 et 112.
+- 200 tests. Parcours vérifié au format iPhone : respiration, relaxation menée au bout, cinq sens, attention, routine enchaînée, arrêt avant la fin, journal, check-in détaillé, favoris, routine personnalisée, coach depuis Training.
+
+### Pas encore
+- Séances audio, lecteur et catégorie Hypnose : Mind 2.
+- Recommandations du coach IA à partir de Mind : livraison IA.
+
 ## Budget 1 : objectifs dynamiques et budget alimentaire (version de test, branche `budget-1`)
 
 ### Fait

@@ -1,10 +1,12 @@
 import type { ButtonHTMLAttributes } from 'react';
 
-type Variant = 'primary' | 'secondary' | 'quiet' | 'danger';
+type Variant = 'primary' | 'calm' | 'secondary' | 'quiet' | 'danger';
 type Size = 'large' | 'small';
 
 const variants: Record<Variant, string> = {
   primary: 'bg-citron text-noir disabled:bg-citron-voile disabled:text-cendre',
+  /** Action principale dans FORGE MIND : même poids que primary, teinte apaisée. */
+  calm: 'bg-brume text-noir disabled:bg-brume-voile disabled:text-cendre',
   secondary: 'bg-graphite text-craie disabled:text-cendre',
   quiet: 'bg-transparent text-cendre hover:text-craie disabled:opacity-50',
   danger: 'bg-graphite text-braise disabled:opacity-50',

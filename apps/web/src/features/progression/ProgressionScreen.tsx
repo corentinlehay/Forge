@@ -12,6 +12,7 @@ import { Card, Screen } from '../../ui/Screen';
 import { Segmented } from '../../ui/Segmented';
 import { useCheckInSheet } from '../wellbeing/CheckInSheet';
 import { useWeighInSheet } from '../weight/WeighInSheet';
+import { CoachButton } from '../../ui/CoachButton';
 import { WeightPanel } from '../weight/WeightScreen';
 
 type View = 'poids' | 'entrainement' | 'bien-etre';
@@ -35,16 +36,19 @@ export function ProgressionScreen() {
     <Screen>
       <div className="flex items-center justify-between gap-3">
         <h1 className="font-metal text-[40px]">Progression</h1>
-        {view === 'poids' && (
-          <Button size="small" onClick={openNew}>
-            Se peser
-          </Button>
-        )}
-        {view === 'bien-etre' && (
-          <Button size="small" onClick={() => openCheckIn()}>
-            Check-in
-          </Button>
-        )}
+        <div className="flex items-center gap-2">
+          {view === 'poids' && (
+            <Button size="small" onClick={openNew}>
+              Se peser
+            </Button>
+          )}
+          {view === 'bien-etre' && (
+            <Button size="small" onClick={() => openCheckIn()}>
+              Check-in
+            </Button>
+          )}
+          <CoachButton />
+        </div>
       </div>
       <Segmented label="Vue" options={views} value={view} onChange={(v) => setParams(v === 'poids' ? {} : { vue: v }, { replace: true })} />
       {view === 'poids' && <WeightPanel />}

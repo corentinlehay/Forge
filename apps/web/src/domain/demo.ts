@@ -1,5 +1,7 @@
 import type {
   CheckIn,
+  MindSession,
+  MoodLog,
   Exercise,
   Food,
   PriceRecord,
@@ -20,6 +22,7 @@ import { EXERCISE_LIBRARY } from '../data/exerciseLibrary';
 import { addDays } from '../lib/dates';
 import { ONBOARDING_KEY } from './onboarding';
 import { BUDGET_KEY } from './budget';
+import { DEFAULT_ROUTINES, routineSeconds } from './mind';
 import { isoWeekday } from './training';
 
 /**
@@ -289,6 +292,8 @@ export interface DemoTables {
   shoppingLists: [];
   prices: PriceRecord[];
   targetChanges: [];
+  moodLogs: MoodLog[];
+  mindSessions: MindSession[];
 }
 
 function localIso(dateKey: string, hour: number, minute = 0): string {
@@ -301,6 +306,14 @@ const roundTo = (v: number, step: number) => Math.round(v / step) * step;
 
 export function generateDemoData(today: string, now: Date): DemoTables {
   const rand = mulberry32(20261123);
+  const mrand = mulberry32(20261124);
+  /** Détails de la nuit cohérents avec la durée : réveil vers 7 h, endormissement de 15 à 30 min. */
+  const nightDetails = (sleepHours: number, rested: number) => {
+    const wake = 6 * 60 + 45 + Math.round(mrand() * 3) * 15;
+    const bed = wake - Math.round(sleepHours * 60) - 15 - Math.round(mrand()) * 15;
+    const hhmm = (m: number) => `${String(Math.floor(((m + 1440) % 1440) / 60)).padStart(2, '0')}:${String(((m % 60) + 60) % 60).padStart(2, '0')}`;
+    return { bedTime: hhmm(bed), wakeTime: hhmm(wake), awakenings: Math.round(mrand() * 2.2 * (1 - rested)), sleepQuality: clamp5(2 + rested * 2.5 + mrand() * 0.8) };
+  };
   const stamp = now.toISOString();
   const hour = now.getHours();
   let seq = 0;
@@ -472,7 +485,53 @@ export function generateDemoData(today: string, now: Date): DemoTables {
       energy: clamp5(2.5 + rested * 2 + rand()),
       fatigue: clamp5(3.5 - rested * 2 + rand()),
       soreness: clamp5(1.5 + rand() * 2.5),
+      ...nightDetails(sleepHours, rested),
     });
+  }
+
+  // FORGE MIND : journal émotionnel et pratiques sur 3 semaines (générateur séparé : le reste de la démo ne bouge pas).
+  const trainingDays = new Set(workouts.map((w) => w.date));
+  const moodLogs: MoodLog[] = [];
+  const mindSessions: MindSession[] = [];
+  for (let i = 20; i >= 0; i--) {
+    const date = addDays(today, -i);
+    const night = checkIns.find((c) => c.date === date);
+    const rested = night ? (night.sleepHours - 6) / 2.5 : 0.5;
+    const weekday = isoWeekday(date);
+    if (!(i === 0 && hour < 8) && mrand() < 0.75) {
+      const stress = clamp5(2.2 + (weekday <= 5 ? 0.8 : -0.4) + mrand() * 1.6 - rested);
+      const mood = clamp5(2.6 + rested * 1.6 + mrand() * 1.2 - (stress - 3) * 0.3);
+      const emotions = mood >= 4 ? ['calme', mrand() < 0.5 ? 'fierte' : 'enthousiasme'] : stress >= 4 ? ['anxiete', ...(mrand() < 0.5 ? ['irritabilite'] : [])] : ['calme'];
+      moodLogs.push({
+        ...sync('humeur', localIso(date, 21, 30)),
+        date,
+        mood,
+        stress,
+        mentalEnergy: clamp5(2.4 + rested * 1.8 + mrand()),
+        motivation: clamp5(trainingDays.has(date) ? 3.6 + mrand() : 2.8 + mrand() * 1.4),
+        mentalLoad: clamp5(stress - 0.5 + mrand()),
+        recovery: night ? clamp5(1.5 + rested * 2.5 + mrand()) : null,
+        emotions,
+        ...(i === 3 ? { note: 'Grosse journée au travail, la séance m’a fait du bien.' } : i === 9 ? { note: 'Nuit courte, j’ai décalé ma séance.' } : {}),
+      });
+    }
+    const practice = (time: string, kind: MindSession['kind'], ref: string, title: string, durationSec: number, tension?: [Scale5, Scale5]) =>
+      mindSessions.push({
+        ...sync('mind', localIso(date, Number(time.slice(0, 2)), Number(time.slice(3)))),
+        date,
+        time,
+        kind,
+        ref,
+        title,
+        durationSec,
+        completed: true,
+        ...(tension ? { tensionBefore: tension[0], tensionAfter: tension[1] } : {}),
+      });
+    if (i === 0) continue;
+    if (trainingDays.has(date) && mrand() < 0.6) practice('17:50', 'routine', 'avant', DEFAULT_ROUTINES.avant.title, routineSeconds(DEFAULT_ROUTINES.avant));
+    if (trainingDays.has(date) && mrand() < 0.4) practice('19:15', 'routine', 'apres', DEFAULT_ROUTINES.apres.title, routineSeconds(DEFAULT_ROUTINES.apres), [3, 2]);
+    if (weekday <= 5 && mrand() < 0.35) practice('12:40', 'exercise', 'coherence', 'Cohérence cardiaque', 300, [clamp5(3 + mrand() * 2), 2]);
+    if (mrand() < 0.3) practice('22:40', 'routine', 'soir', DEFAULT_ROUTINES.soir.title, routineSeconds(DEFAULT_ROUTINES.soir));
   }
 
   const profile: Profile = {
@@ -532,5 +591,7 @@ export function generateDemoData(today: string, now: Date): DemoTables {
     shoppingLists: [],
     prices,
     targetChanges: [],
+    moodLogs,
+    mindSessions,
   };
 }

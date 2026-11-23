@@ -58,7 +58,7 @@ function ShellContent() {
   return (
     <div className="lg:pl-24">
       <Outlet />
-      {!['/reglages', '/training/', '/nutrition/'].some((p) => pathname.startsWith(p)) && <TabBar />}
+      {!['/reglages', '/training/', '/nutrition/', '/mind/', '/coach'].some((p) => pathname.startsWith(p)) && <TabBar />}
     </div>
   );
 }

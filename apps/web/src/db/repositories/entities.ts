@@ -1,8 +1,8 @@
 import type { EntityTable, Table } from 'dexie';
 import type { ForgeDB } from '../schema';
-import type { TargetChange, CheckIn, Exercise, Food, FoodEntry, MealPlan, MealTemplate, Per100, PriceRecord, Program, RecipePhoto, RecipeRecord, ShoppingList, SyncFields, WaterLog, Workout, WorkoutSet, WorkoutTemplate } from '../types';
+import type { MindSession, MoodLog, TargetChange, CheckIn, Exercise, Food, FoodEntry, MealPlan, MealTemplate, Per100, PriceRecord, Program, RecipePhoto, RecipeRecord, ShoppingList, SyncFields, WaterLog, Workout, WorkoutSet, WorkoutTemplate } from '../types';
 import type { LibraryExercise } from '../../data/exerciseLibrary';
-import { isDateKey } from '../../lib/dates';
+import { isDateKey, isTimeKey } from '../../lib/dates';
 import { newId, nowIso } from '../../lib/ids';
 
 /** Erreur de saisie, au message affichable tel quel. */
@@ -197,6 +197,31 @@ export function createCheckInRepo(db: ForgeDB) {
     if (i.fatigue !== undefined) check(scale(i.fatigue), 'Fatigue : de 1 à 5.');
     if (i.soreness !== undefined) check(scale(i.soreness), 'Courbatures : de 1 à 5.');
     if (i.note !== undefined) check(i.note.length <= 500, 'Note trop longue (500 caractères maximum).');
+    if (i.bedTime !== undefined && i.bedTime !== null) check(isTimeKey(i.bedTime), 'Heure de coucher invalide.');
+    if (i.wakeTime !== undefined && i.wakeTime !== null) check(isTimeKey(i.wakeTime), 'Heure de réveil invalide.');
+    if (i.awakenings !== undefined && i.awakenings !== null) check(Number.isInteger(i.awakenings) && between(i.awakenings, 0, 20), 'Réveils : de 0 à 20.');
+    if (i.sleepQuality !== undefined && i.sleepQuality !== null) check(scale(i.sleepQuality), 'Qualité du sommeil : de 1 à 5.');
+  });
+}
+
+export function createMoodLogRepo(db: ForgeDB) {
+  const scale = (v: unknown) => v === null || v === undefined || (Number.isInteger(v) && between(v, 1, 5));
+  return entityRepo<MoodLog>(db.moodLogs, (i) => {
+    if (i.date !== undefined) check(isDateKey(i.date), 'Date invalide.');
+    for (const k of ['mood', 'stress', 'mentalEnergy', 'motivation', 'mentalLoad', 'recovery'] as const) check(scale(i[k]), 'Les échelles vont de 1 à 5.');
+    if (i.emotions !== undefined) check(i.emotions.length <= 12 && i.emotions.every((e) => e.length <= 40), 'Trop d’émotions sélectionnées.');
+    if (i.note !== undefined) check(i.note.length <= 1000, 'Commentaire trop long (1 000 caractères maximum).');
+  });
+}
+
+export function createMindSessionRepo(db: ForgeDB) {
+  const scale = (v: unknown) => v === null || v === undefined || (Number.isInteger(v) && between(v, 1, 5));
+  return entityRepo<MindSession>(db.mindSessions, (i) => {
+    if (i.date !== undefined) check(isDateKey(i.date), 'Date invalide.');
+    if (i.time !== undefined) check(isTimeKey(i.time), 'Heure invalide.');
+    if (i.durationSec !== undefined) check(Number.isFinite(i.durationSec) && between(i.durationSec, 0, 6 * 3600), 'Durée invalide.');
+    if (i.title !== undefined) check(i.title.length > 0 && i.title.length <= 120, 'Titre invalide.');
+    check(scale(i.tensionBefore) && scale(i.tensionAfter), 'Tension : de 1 à 5.');
   });
 }
 
