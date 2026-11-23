@@ -1,144 +1,312 @@
-import { useMemo } from 'react';
 import { Link } from 'react-router';
-import { useMeta, useProfile, useToday, useWeighIns } from '../../db/hooks';
-import { DEFAULT_GAIN_RATE } from '../../db/repositories/profile';
-import { summarizeWeight } from '../../domain/weight';
-import { toLocalDateKey } from '../../lib/dates';
-import { formatDayLong, formatDaysAgo, formatMeasured, formatNumber, formatSignedKg, formatTime } from '../../lib/format';
-import { isBackupOverdue, LAST_BACKUP_KEY } from '../../services/backup';
-import { Button } from '../../ui/Button';
+import { countLabel, formatDayLong, formatDaysAgo, formatMeasuredKg, formatNumber, formatSignedKg } from '../../lib/format';
+import { MEAL_LABELS } from '../../domain/nutrition';
+import { recoveryLabel } from '../../domain/wellbeing';
 import { Icon } from '../../ui/Icon';
-import { Card, Screen } from '../../ui/Screen';
-import { exportMessage, useBackupExport } from '../backup/useBackupExport';
-import { useWeighInSheet } from '../weight/WeighInSheet';
+import { LinkCard } from '../../ui/LinkCard';
+import { Meter } from '../../ui/Meter';
+import { Ring } from '../../ui/Ring';
+import { Screen } from '../../ui/Screen';
+import { StatusChip } from '../../ui/StatusChip';
+import { useDashboardData, type DashboardData } from '../dashboard/useDashboardData';
+import { useCheckInSheet } from '../wellbeing/CheckInSheet';
 import { TrendSparkline } from '../weight/WeightChart';
-import { calibrationLabel } from '../weight/weightStatus';
+import { useWeighInSheet } from '../weight/WeighInSheet';
+import { statusView } from '../weight/weightStatus';
+import { SessionHero } from '../training/SessionHero';
+import { BackupReminder } from './BackupReminder';
 
-const SPARKLINE_DAYS = 84;
+const kcal = (v: number) => `${formatNumber(v, 0)} kcal`;
 
-const upcoming = [
-  { label: 'La séance du jour, avec la performance à battre', phase: 'Phase 2' },
-  { label: 'Calories et macros de la journée', phase: 'Phase 3' },
-  { label: 'Le check-in bien-être et la disponibilité du jour', phase: 'Phase 4' },
-];
-
+/** Le centre de commande : chaque carte vient des données enregistrées et mène à son espace. */
 export function HomeScreen() {
-  const today = useToday();
-  const weighIns = useWeighIns();
-  const profile = useProfile();
-  const lastBackupAt = useMeta<string>(LAST_BACKUP_KEY);
-  const { openNew, openEdit } = useWeighInSheet();
-  const backup = useBackupExport();
-
-  const gainRate = profile?.gainRate ?? DEFAULT_GAIN_RATE;
-  const summary = useMemo(() => summarizeWeight(weighIns ?? [], gainRate), [weighIns, gainRate]);
-  const todays = weighIns?.find((w) => w.date === today);
-  const initial = profile?.firstName?.trim().charAt(0).toLocaleUpperCase('fr-FR');
-  const hasData = (weighIns?.length ?? 0) > 0;
-  const backupDue = hasData && lastBackupAt !== undefined && isBackupOverdue(lastBackupAt);
-  const message = exportMessage(backup.state);
+  const data = useDashboardData();
+  const greeting = data?.profile.firstName ? `Bonjour, ${data.profile.firstName}` : 'Bonjour';
 
   return (
     <Screen>
-      <div className="flex items-center justify-between">
-        <p className="text-[15px] text-cendre">{formatDayLong(today)}</p>
+      <header className="flex items-start justify-between gap-3">
+        <div className="flex flex-col gap-1">
+          <p className="text-[15px] text-cendre">{data ? formatDayLong(data.today) : ' '}</p>
+          <h1 className="font-metal text-[40px]">{greeting}</h1>
+        </div>
         <Link
           to="/reglages"
+          viewTransition
           aria-label="Profil et réglages"
-          className="flex h-11 w-11 items-center justify-center rounded-full bg-graphite text-base font-semibold"
+          className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-graphite text-base font-semibold"
         >
-          {initial ?? <Icon name="user" size={20} />}
+          {data?.profile.firstName?.charAt(0).toLocaleUpperCase('fr-FR') ?? <Icon name="user" size={20} />}
         </Link>
+      </header>
+
+      {data ? <Dashboard data={data} /> : <DashboardSkeleton />}
+    </Screen>
+  );
+}
+
+function DashboardSkeleton() {
+  return (
+    <div className="flex flex-col gap-[18px]" aria-busy="true" aria-label="Chargement">
+      {[220, 180, 160].map((h) => (
+        <div key={h} className="animate-pulse rounded-[22px] bg-anthracite" style={{ height: h }} />
+      ))}
+    </div>
+  );
+}
+
+function Dashboard({ data }: { data: DashboardData }) {
+  const { openNew } = useWeighInSheet();
+  const { openCheckIn } = useCheckInSheet();
+  const todo = [
+    !data.weighedToday && { label: 'Se peser', icon: 'progression' as const, run: openNew },
+    !data.wellbeing.today && { label: 'Check-in', icon: 'moon' as const, run: () => openCheckIn() },
+  ].filter(Boolean) as { label: string; icon: 'progression' | 'moon'; run: () => void }[];
+
+  return (
+    <>
+      {todo.length > 0 && (
+        <div className="flex gap-2" role="group" aria-label="À faire aujourd’hui">
+          {todo.map((t) => (
+            <button key={t.label} type="button" onClick={t.run} className="flex h-11 items-center gap-2 rounded-full bg-graphite px-4 text-[15px] font-semibold active:opacity-80">
+              <Icon name={t.icon} size={18} className="text-citron" />
+              {t.label}
+            </button>
+          ))}
+        </div>
+      )}
+      <SessionHero data={data} />
+      <NutritionCard data={data} />
+      <PhysiqueCard data={data} />
+      <div className="grid grid-cols-2 gap-3">
+        <RecoveryTile data={data} />
+        <WeekTile data={data} />
       </div>
+      <TrainingCard data={data} />
+      <CoachCard data={data} />
+      <BackupReminder />
+    </>
+  );
+}
 
-      {weighIns !== undefined &&
-        (todays ? (
-          <Card label="Pesée du jour">
-            <p className="text-[15px] text-cendre">Pesée du jour</p>
-            <p className="flex items-baseline gap-1.5">
-              <span className="font-metal text-[48px]">{formatMeasured(todays.weightKg)}</span>
-              <span className="text-[17px] text-cendre">kg</span>
-            </p>
-            <div className="flex items-center justify-between gap-3">
-              <p className="text-[15px] text-cendre">
-                {todays.context === 'morning_fasted' ? 'Au réveil, à jeun' : `À ${formatTime(todays.time)}`}
+function NutritionCard({ data }: { data: DashboardData }) {
+  const { totals, targets, remainingKcal, progress, entries } = data.nutrition;
+  const lastMeal = entries.at(-1);
+  return (
+    <LinkCard to="/nutrition" title="Nutrition" label={`Nutrition : ${kcal(totals.kcal)} consommées. Ouvrir Nutrition`}>
+      <div className="flex items-center gap-5">
+        <Ring value={progress?.kcal ?? 0} size={112} label={targets ? `${kcal(totals.kcal)} sur ${kcal(targets.kcal)}` : `${kcal(totals.kcal)}`} overTone="alert">
+          <span className="font-metal text-[28px]">{formatNumber(totals.kcal, 0)}</span>
+          <span className="text-[11px] text-cendre">{targets ? `sur ${formatNumber(targets.kcal, 0)}` : 'kcal'}</span>
+        </Ring>
+        <div className="flex min-w-0 flex-1 flex-col gap-1">
+          {remainingKcal !== null ? (
+            <>
+              <p className="text-[13px] text-cendre">{remainingKcal >= 0 ? 'Restant' : 'Dépassement'}</p>
+              <p className="font-metal text-[32px]">
+                {formatNumber(Math.abs(remainingKcal), 0)} <span className="font-sans text-[15px] font-normal text-cendre">kcal</span>
               </p>
-              <Button variant="quiet" onClick={() => openEdit(todays)}>
-                Corriger
-              </Button>
-            </div>
-          </Card>
-        ) : (
-          <Card label="Pesée du jour" className="gap-[14px]">
-            <div className="flex flex-col gap-1">
-              <h1 className="font-metal text-[48px]">Pesée du jour</h1>
-              <p className="text-[15px] leading-snug text-cendre">Au réveil, à jeun, après être passé aux toilettes : la mesure la plus stable.</p>
-            </div>
-            <Button onClick={openNew}>Se peser</Button>
-          </Card>
-        ))}
+            </>
+          ) : (
+            <p className="text-[15px] leading-snug">Objectif calorique à définir dans Nutrition.</p>
+          )}
+          <p className="truncate text-[13px] text-cendre">{lastMeal ? `Dernier ajout : ${MEAL_LABELS[lastMeal.meal].toLocaleLowerCase('fr-FR')}` : 'Rien d’enregistré aujourd’hui'}</p>
+        </div>
+      </div>
+      <div className="flex flex-col gap-2.5">
+        <Meter label="Protéines" value={totals.proteinG} target={targets?.proteinG} />
+        <Meter label="Glucides" value={totals.carbsG} target={targets?.carbsG} />
+        <Meter label="Lipides" value={totals.fatG} target={targets?.fatG} />
+      </div>
+    </LinkCard>
+  );
+}
 
-      {summary.latestTrendKg !== null && (
-        <Link to="/progression" className="flex items-end justify-between gap-4 rounded-[18px] bg-anthracite p-3.5" aria-label="Voir le détail du poids">
-          <div className="flex flex-col gap-1.5">
-            <p className="text-[13px] text-cendre">Poids tendance</p>
-            <p className="flex items-baseline gap-1">
-              <span className="font-metal text-[36px]">{formatNumber(summary.latestTrendKg, 1)}</span>
-              <span className="text-[15px] text-cendre">kg</span>
-            </p>
-            <p className="flex items-center gap-1.5 text-[13px]">
-              {summary.weeklyRateKg !== null ? (
-                <>
-                  <svg width="10" height="10" viewBox="0 0 10 10" aria-hidden="true" className={summary.weeklyRateKg < 0 ? 'rotate-180' : ''}>
-                    <path d="M5 1L9.5 8.5H0.5z" fill="var(--color-citron)" />
-                  </svg>
-                  {formatSignedKg(summary.weeklyRateKg)}/sem.
-                </>
-              ) : (
-                <span className="text-cendre">{calibrationLabel(summary)?.split('.')[0]}</span>
-              )}
-            </p>
-          </div>
-          <TrendSparkline points={summary.points.slice(-SPARKLINE_DAYS)} />
-        </Link>
-      )}
-
-      {backupDue && (
-        <Card label="Sauvegarde">
-          <div className="flex items-start gap-3">
-            <Icon name="shield" size={22} className="mt-0.5 shrink-0 text-cendre" />
-            <div className="flex flex-col gap-1">
-              <p className="text-[15px] font-semibold">
-                {lastBackupAt ? `Dernière sauvegarde ${formatDaysAgo(toLocalDateKey(new Date(lastBackupAt)), today)}` : 'Aucune sauvegarde pour l’instant'}
-              </p>
-              <p className="text-[13px] leading-snug text-cendre">
-                Tes données ne vivent que sur cet appareil. Exporte-les dans Fichiers ou iCloud Drive, une fois par semaine.
-              </p>
-            </div>
-          </div>
-          <Button variant="secondary" onClick={() => void backup.run()} disabled={!backup.ready || backup.state === 'working'}>
-            <Icon name="share" size={20} />
-            Exporter mes données
-          </Button>
-        </Card>
-      )}
-      {message && !backupDue && (
-        <p className="text-[15px] text-cendre" role="status">
-          {message}
+function PhysiqueCard({ data }: { data: DashboardData }) {
+  const { weight, lastWeighIn, weekAverage, gainRate } = data;
+  if (!lastWeighIn) {
+    return (
+      <LinkCard to="/progression" title="Physique" label="Physique : aucune pesée. Ouvrir Progression">
+        <p className="text-[15px] leading-snug">Aucune pesée pour l’instant. Pèse-toi au réveil, à jeun : la tendance démarre dès la première.</p>
+      </LinkCard>
+    );
+  }
+  const status = statusView(weight);
+  return (
+    <LinkCard to="/progression" title="Physique" label={`Dernier poids ${formatMeasuredKg(lastWeighIn.weightKg)}. Ouvrir Progression`}>
+      <div className="grid grid-cols-3 gap-3">
+        <Stat label="Dernier" value={formatNumber(lastWeighIn.weightKg, 1)} sub={`kg, ${formatDaysAgo(lastWeighIn.date, data.today)}`} />
+        <Stat label="Moy. 7 jours" value={weekAverage ? formatNumber(weekAverage.averageKg, 1) : '—'} sub={weekAverage ? `kg, ${weekAverage.days} pesée${weekAverage.days > 1 ? 's' : ''}` : 'aucune pesée'} />
+        <Stat
+          label="Évolution"
+          value={weight.weeklyRateKg !== null ? formatSignedKg(weight.weeklyRateKg).replace(' kg', '') : '—'}
+          sub={weight.weeklyRateKg !== null ? 'kg par semaine' : 'après 7 jours'}
+        />
+      </div>
+      <TrendSparkline points={weight.points.slice(-84)} width={320} height={36} />
+      <div className="flex flex-col gap-2 border-t border-graphite pt-3">
+        <p className="text-[13px] leading-snug">
+          <span className="text-cendre">Objectif : </span>prise de masse contrôlée,{' '}
+          {weight.band
+            ? `de ${formatSignedKg(weight.band.lowKgPerWeek).replace(' kg', '')} à ${formatSignedKg(weight.band.highKgPerWeek)} par semaine`
+            : `de ${formatNumber(gainRate.lowPctPerWeek, 2)} à ${formatNumber(gainRate.highPctPerWeek, 2)} % du poids par semaine`}
         </p>
-      )}
+        <div className="self-start">
+          <StatusChip {...status} />
+        </div>
+      </div>
+    </LinkCard>
+  );
+}
 
-      <section aria-label="À venir" className="flex flex-col pt-2">
-        <h2 className="mb-1 text-[15px] font-semibold">Bientôt sur l’Accueil</h2>
-        <ul>
-          {upcoming.map((item) => (
-            <li key={item.label} className="flex items-baseline justify-between gap-3 border-b border-anthracite py-2.5 text-[15px] text-cendre last:border-b-0">
-              <span>{item.label}</span>
-              <span className="shrink-0 text-[13px]">{item.phase}</span>
+function Stat({ label, value, sub }: { label: string; value: string; sub: string }) {
+  return (
+    <div className="flex min-w-0 flex-col gap-1">
+      <p className="truncate text-[12px] text-cendre">{label}</p>
+      <p className="font-metal text-[28px]">{value}</p>
+      <p className="truncate text-[12px] text-cendre">{sub}</p>
+    </div>
+  );
+}
+
+function RecoveryTile({ data }: { data: DashboardData }) {
+  const { openCheckIn } = useCheckInSheet();
+  const today = data.wellbeing.today;
+  if (!today) {
+    return (
+      <button type="button" onClick={() => openCheckIn()} className="flex flex-col gap-3 rounded-[18px] bg-anthracite p-3.5 text-left active:scale-[0.985]">
+        <p className="text-[13px] text-cendre">Récupération</p>
+        <p className="text-[15px] leading-snug">Check-in du jour à faire</p>
+        <span className="mt-auto flex items-center gap-1.5 text-[13px] font-semibold text-citron">
+          <Icon name="plus" size={16} strokeWidth={2.5} />
+          Faire le check-in
+        </span>
+      </button>
+    );
+  }
+  const { checkIn, score } = today;
+  return (
+    <Link
+      to="/progression?vue=bien-etre"
+      viewTransition
+      aria-label={`Récupération estimée ${score} sur 100. Voir le bien-être`}
+      className="flex flex-col gap-3 rounded-[18px] bg-anthracite p-3.5 active:scale-[0.985]"
+    >
+      <p className="text-[13px] text-cendre">Récupération estimée</p>
+      <div className="flex items-center gap-3">
+        <Ring value={score / 100} size={56} stroke={6} label={`${score} sur 100`}>
+          <span className="font-metal text-[20px]">{score}</span>
+        </Ring>
+        <span className="text-[13px] font-semibold">{recoveryLabel(score)}</span>
+      </div>
+      <dl className="flex flex-col gap-1 text-[13px]">
+        {[
+          ['Sommeil', `${formatNumber(checkIn.sleepHours, checkIn.sleepHours % 1 ? 1 : 0)} h`],
+          ['Énergie', `${checkIn.energy}/5`],
+          ['Fatigue', `${checkIn.fatigue}/5`],
+        ].map(([label, value]) => (
+          <div key={label} className="flex justify-between gap-2">
+            <dt className="text-cendre">{label}</dt>
+            <dd className="font-semibold">{value}</dd>
+          </div>
+        ))}
+      </dl>
+    </Link>
+  );
+}
+
+function WeekTile({ data }: { data: DashboardData }) {
+  const { weekSessions, perWeek, volumes } = data.training;
+  const current = volumes.at(-1)?.volumeKg ?? 0;
+  const previous = volumes.at(-2)?.volumeKg ?? 0;
+  return (
+    <Link to="/training" viewTransition aria-label={`${weekSessions} séances cette semaine. Ouvrir Training`} className="flex flex-col gap-3 rounded-[18px] bg-anthracite p-3.5 active:scale-[0.985]">
+      <p className="text-[13px] text-cendre">Cette semaine</p>
+      <p>
+        <span className="font-metal text-[36px]">{weekSessions}</span>
+        <span className="text-[15px] text-cendre">{perWeek ? ` / ${perWeek} séance${perWeek > 1 ? 's' : ''}` : ` séance${weekSessions > 1 ? 's' : ''}`}</span>
+      </p>
+      {perWeek > 0 && (
+        <div className="flex gap-1" aria-hidden="true">
+          {Array.from({ length: perWeek }, (_, i) => (
+            <span key={i} className={`h-1.5 flex-1 rounded-full ${i < weekSessions ? 'bg-citron' : 'bg-graphite'}`} />
+          ))}
+        </div>
+      )}
+      <dl className="flex flex-col gap-1 text-[13px]">
+        <div className="flex justify-between gap-2">
+          <dt className="text-cendre">Volume</dt>
+          <dd className="font-semibold">{formatNumber(current, 0)} kg</dd>
+        </div>
+        {previous > 0 && (
+          <div className="flex justify-between gap-2">
+            <dt className="text-cendre">Sem. passée</dt>
+            <dd>{formatNumber(previous, 0)} kg</dd>
+          </div>
+        )}
+      </dl>
+    </Link>
+  );
+}
+
+function TrainingCard({ data }: { data: DashboardData }) {
+  const { lastWorkout, records } = data.training;
+  return (
+    <LinkCard to="/training" title="Entraînement" label="Entraînement : dernière séance et records. Ouvrir Training">
+      {lastWorkout ? (
+        <div className="flex items-baseline justify-between gap-3">
+          <div className="min-w-0">
+            <p className="text-[13px] text-cendre">Dernière séance, {formatDaysAgo(lastWorkout.workout.date, data.today)}</p>
+            <p className="truncate text-[17px] font-semibold">{lastWorkout.workout.name}</p>
+          </div>
+          <p className="shrink-0 text-right text-[13px] text-cendre">
+            {countLabel(lastWorkout.setCount, 'série')}
+            <br />
+            {formatNumber(lastWorkout.volumeKg, 0)} kg
+          </p>
+        </div>
+      ) : (
+        <p className="text-[15px] text-cendre">Aucune séance enregistrée.</p>
+      )}
+      {records.length > 0 && (
+        <ul className="flex flex-col gap-2 border-t border-graphite pt-3">
+          <li className="text-[13px] text-cendre">Records récents</li>
+          {records.slice(0, 2).map((r) => (
+            <li key={`${r.workoutId}-${r.exerciseId}`} className="flex items-center justify-between gap-3 text-[15px]">
+              <span className="flex min-w-0 items-center gap-2">
+                <Icon name="trophy" size={16} className="shrink-0 text-citron" />
+                <span className="truncate">{r.exerciseName}</span>
+              </span>
+              <span className="shrink-0 font-semibold tabular-nums">
+                {formatNumber(r.weightKg, r.weightKg % 1 ? 1 : 0)} kg × {r.reps}
+              </span>
             </li>
           ))}
         </ul>
-      </section>
-    </Screen>
+      )}
+    </LinkCard>
+  );
+}
+
+function CoachCard({ data }: { data: DashboardData }) {
+  const { brief } = data;
+  return (
+    <LinkCard to="/coach" title="Analyse du jour" label="Analyse du jour. Ouvrir Coach" aside={<Icon name="sparkle" size={16} className="text-citron" />}>
+      {brief.enoughData ? (
+        <>
+          <p className="text-[15px] leading-snug">{brief.summary.slice(0, 2).join(' ')}</p>
+          {brief.top && (
+            <p className="flex items-start gap-2 text-[15px] leading-snug">
+              <Icon name={brief.top.tone === 'good' ? 'check' : 'warning'} size={18} className={`mt-0.5 shrink-0 ${brief.top.tone === 'good' ? 'text-citron' : brief.top.tone === 'alert' ? 'text-braise' : 'text-cendre'}`} />
+              {brief.top.observation}
+            </p>
+          )}
+          {brief.recommendation?.recommendation && <p className="border-l-2 border-citron pl-3 text-[15px] leading-snug">{brief.recommendation.recommendation}</p>}
+        </>
+      ) : (
+        <p className="text-[15px] leading-snug text-cendre">Pas encore assez de données pour une analyse. Commence par une pesée, un check-in ou un repas.</p>
+      )}
+      <p className="text-[12px] text-cendre">Calculée sur ton appareil à partir de tes données. Sans IA pour l’instant.</p>
+    </LinkCard>
   );
 }

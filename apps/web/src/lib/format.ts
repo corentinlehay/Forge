@@ -124,3 +124,8 @@ export function formatTime(time: string): string {
   const [h = '0', m = '00'] = time.split(':');
   return `${Number(h)} h ${m}`;
 }
+
+/** « 1 série », « 3 séries » (pluriel régulier en s). */
+export function countLabel(n: number, word: string): string {
+  return `${formatNumber(n, 0)} ${word}${Math.abs(n) >= 2 ? 's' : ''}`;
+}

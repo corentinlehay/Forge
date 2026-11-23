@@ -9,6 +9,7 @@ import { Button } from '../../ui/Button';
 import { Keypad } from '../../ui/Keypad';
 import { Segmented } from '../../ui/Segmented';
 import { Sheet } from '../../ui/Sheet';
+import { useToast } from '../../ui/Toast';
 
 interface WeighInSheetApi {
   openNew: () => void;
@@ -79,6 +80,7 @@ function WeighInForm({ editing, onDone }: { editing: WeighIn | null; onDone: (sa
   const [error, setError] = useState<string | null>(null);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [busy, setBusy] = useState(false);
+  const toast = useToast();
 
   const last = weighIns?.at(-1);
   const sameDay = !editing && weighIns?.some((w) => w.date === date);
@@ -102,6 +104,7 @@ function WeighInForm({ editing, onDone }: { editing: WeighIn | null; onDone: (sa
     try {
       const input = { date, time, weightKg, context };
       const saved = editing ? await repos.weighIns.update(editing.id, input) : await repos.weighIns.add(input);
+      toast.show(editing ? 'Pesée corrigée' : 'Pesée enregistrée');
       onDone(saved.id);
     } catch (e) {
       setError(e instanceof WeighInError ? e.message : "L'enregistrement a échoué. Réessaie.");
@@ -114,6 +117,7 @@ function WeighInForm({ editing, onDone }: { editing: WeighIn | null; onDone: (sa
     setBusy(true);
     try {
       await repos.weighIns.remove(editing.id);
+      toast.show('Pesée supprimée');
       onDone(null);
     } catch {
       setError('La suppression a échoué. Réessaie.');

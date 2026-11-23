@@ -7,7 +7,7 @@ import { buildWeightChart, type ChartPeriod } from '../../domain/weightChart';
 import { formatDayMonthLong, formatDayShort, formatMeasuredKg, formatNumber, formatTime } from '../../lib/format';
 import { Button } from '../../ui/Button';
 import { Icon } from '../../ui/Icon';
-import { Card, Screen } from '../../ui/Screen';
+import { Card } from '../../ui/Screen';
 import { Segmented } from '../../ui/Segmented';
 import { StatusChip } from '../../ui/StatusChip';
 import { useWeighInSheet } from './WeighInSheet';
@@ -23,11 +23,12 @@ const periods = [
 
 const LIST_PREVIEW = 7;
 
-export function WeightScreen() {
+/** Contenu « Poids » de Progression : tendance, rythme, fourchette, graphique, historique. */
+export function WeightPanel() {
   const weighIns = useWeighIns();
   const profile = useProfile();
   const today = useToday();
-  const { openNew, openEdit, lastSaved } = useWeighInSheet();
+  const { openEdit, lastSaved } = useWeighInSheet();
   const [period, setPeriod] = useState<ChartPeriod>('3m');
   const [showAll, setShowAll] = useState(false);
 
@@ -36,28 +37,18 @@ export function WeightScreen() {
   const model = useMemo(() => buildWeightChart(summary.points, period, gainRate, today), [summary, period, gainRate, today]);
   const pulseKey = lastSaved && Date.now() - lastSaved.at < 4000 ? lastSaved.id : null;
 
-  const header = (
-    <div className="flex items-center justify-between gap-3">
-      <h1 className="font-metal text-[40px]">Poids</h1>
-      <Button size="small" onClick={openNew}>
-        Se peser
-      </Button>
-    </div>
-  );
-
-  if (weighIns === undefined) return <Screen>{header}</Screen>;
+  if (weighIns === undefined) return null;
 
   if (weighIns.length === 0) {
     return (
-      <Screen>
-        {header}
+      <>
         <Card>
           <p className="text-[17px] font-semibold">Aucune pesée pour l'instant.</p>
           <p className="text-[15px] leading-snug text-cendre">
-            Pèse-toi au réveil, à jeun, après être passé aux toilettes. La tendance se dessine dès les premiers jours et se stabilise après deux semaines.
+            Pèse-toi au réveil, à jeun, après être passé aux toilettes, avec le bouton « Se peser ». La tendance se dessine dès les premiers jours et se stabilise après deux semaines.
           </p>
         </Card>
-      </Screen>
+      </>
     );
   }
 
@@ -67,8 +58,7 @@ export function WeightScreen() {
   const lastPoint = summary.points.at(-1)!;
 
   return (
-    <Screen>
-      {header}
+    <>
       <Segmented label="Période du graphique" options={periods} value={period} onChange={setPeriod} />
 
       <div className="flex flex-col gap-1.5">
@@ -97,7 +87,7 @@ export function WeightScreen() {
       )}
 
       <WeighInList weighIns={weighIns} showAll={showAll} onShowAll={() => setShowAll(true)} onEdit={openEdit} today={today} />
-    </Screen>
+    </>
   );
 }
 

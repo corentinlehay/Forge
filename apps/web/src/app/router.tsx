@@ -1,8 +1,11 @@
 import { createBrowserRouter, Navigate } from 'react-router';
+import { CoachScreen } from '../features/coach/CoachScreen';
 import { HomeScreen } from '../features/home/HomeScreen';
+import { NutritionScreen } from '../features/nutrition/NutritionScreen';
+import { ProgressionScreen } from '../features/progression/ProgressionScreen';
 import { SettingsScreen } from '../features/settings/SettingsScreen';
-import { UpcomingScreen } from '../features/upcoming/UpcomingScreen';
-import { WeightScreen } from '../features/weight/WeightScreen';
+import { TrainingScreen } from '../features/training/TrainingScreen';
+import { WorkoutScreen } from '../features/training/WorkoutScreen';
 import { AppShell } from './AppShell';
 import { RouteError } from './RouteError';
 
@@ -13,10 +16,11 @@ export const router = createBrowserRouter([
     errorElement: <RouteError />,
     children: [
       { index: true, element: <HomeScreen /> },
-      { path: 'training', element: <UpcomingScreen module="training" /> },
-      { path: 'nutrition', element: <UpcomingScreen module="nutrition" /> },
-      { path: 'progression', element: <WeightScreen /> },
-      { path: 'coach', element: <UpcomingScreen module="coach" /> },
+      { path: 'training', element: <TrainingScreen /> },
+      { path: 'training/seance/:id', element: <WorkoutScreen /> },
+      { path: 'nutrition', element: <NutritionScreen /> },
+      { path: 'progression', element: <ProgressionScreen /> },
+      { path: 'coach', element: <CoachScreen /> },
       { path: 'reglages', element: <SettingsScreen /> },
       { path: '*', element: <Navigate to="/" replace /> },
     ],

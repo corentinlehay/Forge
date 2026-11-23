@@ -22,6 +22,12 @@ function validate(patch: ProfilePatch): void {
       throw new ProfileError('Fourchette de prise invalide : le bas doit être inférieur au haut, entre 0 et 2 % par semaine.');
     }
   }
+  if (patch.nutritionTargets) {
+    const { kcal, proteinG, carbsG, fatG } = patch.nutritionTargets;
+    const ok = (v: number, max: number) => Number.isFinite(v) && v >= 0 && v <= max;
+    if (!ok(kcal, 10000) || kcal < 800) throw new ProfileError('Objectif calorique entre 800 et 10 000 kcal.');
+    if (!ok(proteinG, 1000) || !ok(carbsG, 1500) || !ok(fatG, 1000)) throw new ProfileError('Objectifs de macros invalides.');
+  }
 }
 
 export function createProfileRepo(db: ForgeDB) {

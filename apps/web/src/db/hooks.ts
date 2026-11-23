@@ -5,7 +5,8 @@ import { getDb } from './schema';
 import { createMetaRepo } from './repositories/meta';
 import { createProfileRepo } from './repositories/profile';
 import { createWeighInRepo } from './repositories/weighIns';
-import type { Profile, WeighIn } from './types';
+import { createCheckInRepo, createExerciseRepo, createFoodRepo, createSetRepo, createTemplateRepo, createWorkoutRepo } from './repositories/entities';
+import type { CheckIn, Exercise, FoodEntry, Profile, WeighIn, Workout, WorkoutSet, WorkoutTemplate } from './types';
 
 /**
  * Lectures réactives : chaque écran se met à jour dès qu'une donnée change en base.
@@ -22,7 +23,49 @@ export const repos = {
   get meta() {
     return createMetaRepo(getDb());
   },
+  get food() {
+    return createFoodRepo(getDb());
+  },
+  get exercises() {
+    return createExerciseRepo(getDb());
+  },
+  get templates() {
+    return createTemplateRepo(getDb());
+  },
+  get workouts() {
+    return createWorkoutRepo(getDb());
+  },
+  get sets() {
+    return createSetRepo(getDb());
+  },
+  get checkIns() {
+    return createCheckInRepo(getDb());
+  },
 };
+
+export function useFoodEntries(): FoodEntry[] | undefined {
+  return useLiveQuery(() => repos.food.listActive(), []);
+}
+
+export function useExercises(): Exercise[] | undefined {
+  return useLiveQuery(() => repos.exercises.listActive(), []);
+}
+
+export function useTemplates(): WorkoutTemplate[] | undefined {
+  return useLiveQuery(async () => (await repos.templates.listActive()).sort((a, b) => a.position - b.position), []);
+}
+
+export function useWorkouts(): Workout[] | undefined {
+  return useLiveQuery(() => repos.workouts.listActive(), []);
+}
+
+export function useWorkoutSets(): WorkoutSet[] | undefined {
+  return useLiveQuery(() => repos.sets.listActive(), []);
+}
+
+export function useCheckIns(): CheckIn[] | undefined {
+  return useLiveQuery(async () => (await repos.checkIns.listActive()).sort((a, b) => a.date.localeCompare(b.date)), []);
+}
 
 export function useWeighIns(): WeighIn[] | undefined {
   return useLiveQuery(() => repos.weighIns.listActive(), []);

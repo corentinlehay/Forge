@@ -3,6 +3,7 @@ import { repos } from '../../db/hooks';
 import { ONBOARDING_KEY, type OnboardingState, type OnboardingStep } from '../../domain/onboarding';
 import { nowIso } from '../../lib/ids';
 import { requestPersistentStorage } from '../../services/storage';
+import { enterDemo } from '../../services/demo';
 import { Button } from '../../ui/Button';
 import { Screen } from '../../ui/Screen';
 import { ImportBackup } from '../backup/ImportBackup';
@@ -104,6 +105,9 @@ function WelcomeStep() {
               </Button>
               <Button variant="quiet" onClick={() => setRestoring(true)}>
                 J’ai déjà une sauvegarde
+              </Button>
+              <Button variant="quiet" onClick={() => void enterDemo()}>
+                Explorer avec des données de démonstration
               </Button>
             </div>
           </>

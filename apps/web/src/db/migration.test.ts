@@ -1,0 +1,58 @@
+import Dexie from 'dexie';
+import { afterEach, describe, expect, it } from 'vitest';
+import { ForgeDB, SCHEMA_VERSION } from './schema';
+import { createCheckInRepo, createExerciseRepo, createFoodRepo, createSetRepo, DataError } from './repositories/entities';
+
+const names: string[] = [];
+afterEach(async () => {
+  await Promise.all(names.splice(0).map((n) => Dexie.delete(n)));
+});
+
+describe('migration v1 → v2', () => {
+  it('garde profil, pesées et réglages, et ajoute les nouvelles tables vides', async () => {
+    const name = `migration-${crypto.randomUUID()}`;
+    names.push(name);
+    const v1 = new Dexie(name);
+    v1.version(1).stores({ profile: 'id, updatedAt', weighIns: 'id, date, [date+time], updatedAt', meta: 'key' });
+    await v1.table('profile').put({ id: 'me', createdAt: 'a', updatedAt: 'a', deletedAt: null, firstName: 'Coz', gainRate: { lowPctPerWeek: 0.25, highPctPerWeek: 0.5 } });
+    await v1.table('weighIns').bulkPut([
+      { id: 'w1', createdAt: 'a', updatedAt: 'a', deletedAt: null, date: '2026-11-22', time: '07:00', weightKg: 90.1 },
+      { id: 'w2', createdAt: 'a', updatedAt: 'a', deletedAt: null, date: '2026-11-23', time: '07:00', weightKg: 90.2 },
+    ]);
+    await v1.table('meta').put({ key: 'onboarding', value: { completedAt: 'a' }, updatedAt: 'a' });
+    v1.close();
+
+    const db = new ForgeDB(name);
+    await db.open();
+    expect(db.verno).toBe(SCHEMA_VERSION);
+    expect((await db.profile.get('me'))?.firstName).toBe('Coz');
+    expect(await db.weighIns.count()).toBe(2);
+    expect(await db.meta.get('onboarding')).toBeTruthy();
+    expect(await db.foodEntries.count()).toBe(0);
+    expect(await db.workouts.count()).toBe(0);
+    db.close();
+  });
+});
+
+describe('saisies v2', () => {
+  it('valident, enregistrent et suppriment logiquement', async () => {
+    const name = `entities-${crypto.randomUUID()}`;
+    names.push(name);
+    const db = new ForgeDB(name);
+    const food = createFoodRepo(db);
+    const added = await food.add({ date: '2026-11-23', meal: 'lunch', name: 'Riz', kcal: 390, proteinG: 8, carbsG: 85, fatG: 1 });
+    await expect(food.add({ date: '2026-11-23', meal: 'lunch', name: '', kcal: 1, proteinG: 0, carbsG: 0, fatG: 0 })).rejects.toBeInstanceOf(DataError);
+    await food.remove(added.id);
+    expect(await food.listActive()).toEqual([]);
+
+    const exercises = createExerciseRepo(db);
+    const a = await exercises.findOrCreate('Développé  couché');
+    const b = await exercises.findOrCreate('développé couché');
+    expect(b.id).toBe(a.id);
+    expect(a.name).toBe('Développé couché');
+
+    await expect(createSetRepo(db).add({ workoutId: 'w', exerciseId: a.id, position: 0, weightKg: 80, reps: 0 })).rejects.toThrow('Entre 1 et 100 répétitions.');
+    await expect(createCheckInRepo(db).add({ date: '2026-11-23', sleepHours: 7, energy: 6 as 5, fatigue: 2, soreness: 2 })).rejects.toThrow('Énergie : de 1 à 5.');
+    db.close();
+  });
+});

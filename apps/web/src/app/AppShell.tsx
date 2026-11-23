@@ -2,7 +2,11 @@ import { useEffect, useMemo } from 'react';
 import { Outlet, ScrollRestoration, useLocation } from 'react-router';
 import { repos, useMeta, useWeighIns } from '../db/hooks';
 import { nextOnboardingStep, ONBOARDING_KEY, type OnboardingState } from '../domain/onboarding';
+import { isDemoMode } from '../db/dataMode';
 import { OnboardingFlow } from '../features/onboarding/OnboardingFlow';
+import { CheckInSheetProvider } from '../features/wellbeing/CheckInSheet';
+import { ToastProvider } from '../ui/Toast';
+import { DemoBanner } from './DemoBanner';
 import { WeighInSheetProvider } from '../features/weight/WeighInSheet';
 import { nowIso } from '../lib/ids';
 import { isStandalone, requestPersistentStorage } from '../services/storage';
@@ -11,12 +15,22 @@ import { UpdateBanner } from './UpdateBanner';
 
 /** Coquille de l'app : onboarding tant qu'il n'est pas terminé, puis les 5 espaces. */
 export function AppShell() {
+  const demo = useMemo(isDemoMode, []);
+  // En démo, le bandeau occupe le haut de l'écran : les écrans descendent d'autant.
+  useEffect(() => {
+    document.documentElement.style.setProperty('--demo-offset', demo ? '40px' : '0px');
+  }, [demo]);
   return (
-    <WeighInSheetProvider>
-      <ShellContent />
-      <UpdateBanner />
-      <ScrollRestoration />
-    </WeighInSheetProvider>
+    <ToastProvider>
+      <WeighInSheetProvider>
+        <CheckInSheetProvider>
+          {demo && <DemoBanner />}
+          <ShellContent />
+          <UpdateBanner />
+          <ScrollRestoration />
+        </CheckInSheetProvider>
+      </WeighInSheetProvider>
+    </ToastProvider>
   );
 }
 
@@ -44,7 +58,7 @@ function ShellContent() {
   return (
     <div className="lg:pl-24">
       <Outlet />
-      {!pathname.startsWith('/reglages') && <TabBar />}
+      {!pathname.startsWith('/reglages') && !pathname.startsWith('/training/seance') && <TabBar />}
     </div>
   );
 }

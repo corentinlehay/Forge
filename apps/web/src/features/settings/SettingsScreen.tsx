@@ -17,6 +17,8 @@ import { Sheet } from '../../ui/Sheet';
 import { ImportBackup } from '../backup/ImportBackup';
 import { exportMessage, useBackupExport } from '../backup/useBackupExport';
 import { InstallGuide } from '../onboarding/InstallGuide';
+import { isDemoMode } from '../../db/dataMode';
+import { enterDemo, exitDemo, reloadDemo } from '../../services/demo';
 
 function Section({ title, children }: { title: string; children: ReactNode }) {
   return (
@@ -48,9 +50,10 @@ export function SettingsScreen() {
       </div>
       <ProfileSection />
       <GainRateSection />
-      <BackupSection />
+      <DemoSection />
+      {!isDemoMode() && <BackupSection />}
       <DeviceSection />
-      <ResetSection />
+      {!isDemoMode() && <ResetSection />}
       <p className="px-1 text-[13px] text-cendre">
         FORGE, version {__FORGE_VERSION__} du {formatFullDate(__FORGE_BUILT_AT__)}
       </p>
@@ -309,5 +312,43 @@ function ResetSection() {
         </>
       )}
     </Section>
+  );
+}
+
+function DemoSection() {
+  const demo = isDemoMode();
+  const [busy, setBusy] = useState(false);
+  const run = (action: () => Promise<void>) => {
+    setBusy(true);
+    void action();
+  };
+  return (
+    <section id="demo" aria-label="Données de démonstration" className="flex flex-col gap-3 rounded-[22px] bg-anthracite p-[18px]">
+      <h2 className="text-[17px] font-semibold">Données de démonstration</h2>
+      {demo ? (
+        <>
+          <p className="text-[13px] leading-snug text-cendre">
+            Tu explores FORGE avec des données fictives, dans un espace séparé. Tes vraies données sont intactes et réapparaissent dès que tu quittes la
+            démo. La sauvegarde et l’effacement sont désactivés ici.
+          </p>
+          <Button variant="secondary" disabled={busy} onClick={() => run(reloadDemo)}>
+            Régénérer la démo
+          </Button>
+          <Button disabled={busy} onClick={() => run(exitDemo)}>
+            Quitter la démo et supprimer les données fictives
+          </Button>
+        </>
+      ) : (
+        <>
+          <p className="text-[13px] leading-snug text-cendre">
+            Explore FORGE avec 12 semaines de données fictives : pesées, séances, repas, check-ins. Elles vivent dans un espace séparé : tes données ne
+            sont ni modifiées ni mélangées, et un bandeau reste affiché tant que tu es dans la démo.
+          </p>
+          <Button variant="secondary" disabled={busy} onClick={() => run(enterDemo)}>
+            Explorer la démo
+          </Button>
+        </>
+      )}
+    </section>
   );
 }

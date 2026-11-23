@@ -6,7 +6,7 @@ export const TABS: { to: string; label: string; icon: IconName }[] = [
   { to: '/training', label: 'Training', icon: 'training' },
   { to: '/nutrition', label: 'Nutrition', icon: 'nutrition' },
   { to: '/progression', label: 'Progression', icon: 'progression' },
-  { to: '/coach', label: 'Coach', icon: 'coach' },
+  { to: '/coach', label: 'Coach IA', icon: 'coach' },
 ];
 
 /** Barre d'onglets en bas sur iPhone ; barre latérale sur grand écran. */
@@ -21,6 +21,7 @@ export function TabBar() {
           key={tab.to}
           to={tab.to}
           end={tab.to === '/'}
+          viewTransition
           className={({ isActive }) =>
             `flex min-h-11 flex-col items-center gap-[3px] text-[11px] lg:py-2 ${isActive ? 'font-semibold text-craie' : 'text-cendre'}`
           }

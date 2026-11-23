@@ -1,17 +1,27 @@
 import Dexie, { type EntityTable } from 'dexie';
-import type { MetaEntry, Profile, WeighIn } from './types';
+import { activeDbName } from './dataMode';
+import type { CheckIn, Exercise, FoodEntry, MetaEntry, Profile, WeighIn, Workout, WorkoutSet, WorkoutTemplate } from './types';
 
 /**
  * Base locale unique de FORGE (IndexedDB via Dexie).
  * Règle : une montée de version ajoute ou transforme, elle ne détruit jamais de données.
  * Chaque nouvelle version est accompagnée d'un test de migration.
+ *
+ * v1 : profil, pesées, réglages.
+ * v2 : + journal alimentaire, exercices, programme, séances, séries, check-ins (tables ajoutées, rien de modifié).
  */
-export const SCHEMA_VERSION = 1;
+export const SCHEMA_VERSION = 2;
 
 export class ForgeDB extends Dexie {
   profile!: EntityTable<Profile, 'id'>;
   weighIns!: EntityTable<WeighIn, 'id'>;
   meta!: EntityTable<MetaEntry, 'key'>;
+  foodEntries!: EntityTable<FoodEntry, 'id'>;
+  exercises!: EntityTable<Exercise, 'id'>;
+  workoutTemplates!: EntityTable<WorkoutTemplate, 'id'>;
+  workouts!: EntityTable<Workout, 'id'>;
+  workoutSets!: EntityTable<WorkoutSet, 'id'>;
+  checkIns!: EntityTable<CheckIn, 'id'>;
 
   constructor(name = 'forge') {
     super(name);
@@ -20,13 +30,27 @@ export class ForgeDB extends Dexie {
       weighIns: 'id, date, [date+time], updatedAt',
       meta: 'key',
     });
+    this.version(2).stores({
+      foodEntries: 'id, date, updatedAt',
+      exercises: 'id, name, updatedAt',
+      workoutTemplates: 'id, updatedAt',
+      workouts: 'id, date, updatedAt',
+      workoutSets: 'id, workoutId, exerciseId, updatedAt',
+      checkIns: 'id, date, updatedAt',
+    });
   }
 }
 
 let shared: ForgeDB | null = null;
 
-/** Instance partagée par toute l'app (les tests créent leurs propres bases). */
+/** Instance partagée par toute l'app, sur la base active (réelle ou démo). Les tests créent leurs propres bases. */
 export function getDb(): ForgeDB {
-  shared ??= new ForgeDB();
+  shared ??= new ForgeDB(activeDbName());
   return shared;
+}
+
+/** Ferme la base partagée (avant de la supprimer ou de changer de mode). */
+export function closeDb(): void {
+  shared?.close();
+  shared = null;
 }

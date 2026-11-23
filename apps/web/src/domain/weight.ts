@@ -141,3 +141,14 @@ export function summarizeWeight(weighIns: readonly WeighInLike[], gainRate: Gain
     calibrating: daily.length < CALIBRATION_DAYS,
   };
 }
+
+/**
+ * Moyenne des pesées des 7 derniers jours (aujourd'hui compris), une valeur par jour.
+ * Null s'il n'y a aucune pesée sur la période.
+ */
+export function average7Days(weighIns: readonly WeighInLike[], today: string): { averageKg: number; days: number } | null {
+  const start = addDays(today, -6);
+  const days = toDailyWeights(weighIns).filter((d) => d.date >= start && d.date <= today);
+  if (!days.length) return null;
+  return { averageKg: days.reduce((s, d) => s + d.weightKg, 0) / days.length, days: days.length };
+}

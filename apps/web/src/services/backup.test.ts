@@ -88,3 +88,19 @@ describe('sauvegarde et restauration', () => {
     expect(await isBackupDue(source, 7, new Date('2026-12-01T09:00:00Z'))).toBe(true);
   });
 });
+
+describe('compatibilité des sauvegardes', () => {
+  it('importe une sauvegarde v1 (sans nutrition ni entraînement)', async () => {
+    const { parseBackup } = await import('./backup');
+    const v1 = {
+      format: 'forge-backup',
+      version: 1,
+      exportedAt: '2026-11-23T07:00:00.000Z',
+      schemaVersion: 1,
+      tables: { profile: [], weighIns: [{ id: 'w', createdAt: 'a', updatedAt: 'a', deletedAt: null, date: '2026-11-23', time: '07:00', weightKg: 90.2 }], meta: [] },
+    };
+    const parsed = parseBackup(JSON.stringify(v1));
+    expect(parsed.ok).toBe(true);
+    if (parsed.ok) expect(parsed.backup.tables.workouts).toEqual([]);
+  });
+});

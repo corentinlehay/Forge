@@ -1,6 +1,5 @@
 import { z } from 'zod';
 import { SCHEMA_VERSION, type ForgeDB } from '../db/schema';
-import type { MetaEntry, Profile, WeighIn } from '../db/types';
 import { toLocalDateKey } from '../lib/dates';
 import { nowIso } from '../lib/ids';
 
@@ -44,15 +43,81 @@ const weighInSchema = z.object({
 
 const metaSchema = z.object({ key: z.string().min(1), value: z.unknown(), updatedAt: z.string().min(1) });
 
+const nutritionTargetsSchema = z.object({
+  kcal: z.number().min(0).max(10000),
+  proteinG: z.number().min(0).max(1000),
+  carbsG: z.number().min(0).max(1500),
+  fatG: z.number().min(0).max(1000),
+});
+
+const foodEntrySchema = z.object({
+  ...syncFields,
+  date: dateKey,
+  meal: z.enum(['breakfast', 'lunch', 'dinner', 'snack']),
+  name: z.string().min(1).max(120),
+  quantity: z.string().max(40).optional(),
+  kcal: z.number().min(0).max(5000),
+  proteinG: z.number().min(0).max(1000),
+  carbsG: z.number().min(0).max(1000),
+  fatG: z.number().min(0).max(1000),
+});
+
+const exerciseSchema = z.object({ ...syncFields, name: z.string().min(1).max(80) });
+
+const templateSchema = z.object({
+  ...syncFields,
+  name: z.string().min(1).max(60),
+  weekdays: z.array(z.number().int().min(1).max(7)),
+  exercises: z.array(z.object({ exerciseId: z.string().min(1), sets: z.number().int().min(1).max(20), reps: z.string().max(20) })),
+  position: z.number(),
+});
+
+const workoutSchema = z.object({
+  ...syncFields,
+  date: dateKey,
+  name: z.string().min(1).max(60),
+  templateId: z.string().nullable().optional(),
+  exerciseIds: z.array(z.string()),
+  startedAt: z.string().min(1),
+  endedAt: z.string().nullable().optional(),
+});
+
+const setSchema = z.object({
+  ...syncFields,
+  workoutId: z.string().min(1),
+  exerciseId: z.string().min(1),
+  position: z.number(),
+  weightKg: z.number().min(0).max(500),
+  reps: z.number().int().min(1).max(100),
+});
+
+const scale = z.union([z.literal(1), z.literal(2), z.literal(3), z.literal(4), z.literal(5)]);
+const checkInSchema = z.object({
+  ...syncFields,
+  date: dateKey,
+  sleepHours: z.number().min(0).max(16),
+  energy: scale,
+  fatigue: scale,
+  soreness: scale,
+  note: z.string().max(500).optional(),
+});
+
+/** Les sauvegardes v1 (avant nutrition et entraînement) restent importables : les tables absentes valent []. */
 export const backupSchema = z.object({
   format: z.literal(BACKUP_FORMAT),
   version: z.literal(BACKUP_VERSION),
   exportedAt: z.string(),
   schemaVersion: z.number().int().min(1),
   tables: z.object({
-    profile: z.array(profileSchema),
+    profile: z.array(profileSchema.extend({ nutritionTargets: nutritionTargetsSchema.optional() })),
     weighIns: z.array(weighInSchema),
     meta: z.array(metaSchema),
+    foodEntries: z.array(foodEntrySchema).default([]),
+    exercises: z.array(exerciseSchema).default([]),
+    workoutTemplates: z.array(templateSchema).default([]),
+    workouts: z.array(workoutSchema).default([]),
+    workoutSets: z.array(setSchema).default([]),
+    checkIns: z.array(checkInSchema).default([]),
   }),
 });
 
@@ -65,14 +130,30 @@ export interface ImportReport {
   unchanged: number;
 }
 
+/** Tables sauvegardées, avec leur clé. */
+const TABLES = [
+  ['profile', 'id'],
+  ['weighIns', 'id'],
+  ['meta', 'key'],
+  ['foodEntries', 'id'],
+  ['exercises', 'id'],
+  ['workoutTemplates', 'id'],
+  ['workouts', 'id'],
+  ['workoutSets', 'id'],
+  ['checkIns', 'id'],
+] as const;
+
+type TableName = (typeof TABLES)[number][0];
+
 export async function exportBackup(db: ForgeDB, now: Date = new Date()): Promise<Backup> {
-  const [profile, weighIns, meta] = await Promise.all([db.profile.toArray(), db.weighIns.toArray(), db.meta.toArray()]);
+  const rows = await Promise.all(TABLES.map(([name]) => db.table(name).toArray()));
+  const tables = Object.fromEntries(TABLES.map(([name], i) => [name, rows[i]])) as Backup['tables'];
   return {
     format: BACKUP_FORMAT,
     version: BACKUP_VERSION,
     exportedAt: nowIso(now),
     schemaVersion: SCHEMA_VERSION,
-    tables: { profile, weighIns, meta },
+    tables,
   };
 }
 
@@ -117,38 +198,26 @@ function isNewer(incoming: { updatedAt: string }, existing: { updatedAt: string 
  */
 export async function importBackup(db: ForgeDB, backup: Backup, mode: ImportMode): Promise<ImportReport> {
   const report: ImportReport = { added: 0, updated: 0, unchanged: 0 };
-  const { profile, weighIns, meta } = backup.tables;
+  const tables = TABLES.map(([name]) => db.table(name));
 
-  await db.transaction('rw', [db.profile, db.weighIns, db.meta], async () => {
-    if (mode === 'replace') {
-      await Promise.all([db.profile.clear(), db.weighIns.clear(), db.meta.clear()]);
-      await db.profile.bulkPut(profile as Profile[]);
-      await db.weighIns.bulkPut(weighIns as WeighIn[]);
-      await db.meta.bulkPut(meta as MetaEntry[]);
-      report.added = profile.length + weighIns.length + meta.length;
-      return;
-    }
-
-    for (const record of profile as Profile[]) {
-      const existing = await db.profile.get(record.id);
-      if (isNewer(record, existing)) {
-        await db.profile.put(record);
-        existing ? report.updated++ : report.added++;
-      } else report.unchanged++;
-    }
-    for (const record of weighIns as WeighIn[]) {
-      const existing = await db.weighIns.get(record.id);
-      if (isNewer(record, existing)) {
-        await db.weighIns.put(record);
-        existing ? report.updated++ : report.added++;
-      } else report.unchanged++;
-    }
-    for (const record of meta as MetaEntry[]) {
-      const existing = await db.meta.get(record.key);
-      if (isNewer(record, existing)) {
-        await db.meta.put(record);
-        existing ? report.updated++ : report.added++;
-      } else report.unchanged++;
+  await db.transaction('rw', tables, async () => {
+    for (const [name, key] of TABLES) {
+      const table = db.table(name);
+      const records = backup.tables[name as TableName] as { updatedAt: string; [k: string]: unknown }[];
+      if (mode === 'replace') {
+        await table.clear();
+        await table.bulkPut(records);
+        report.added += records.length;
+        continue;
+      }
+      for (const record of records) {
+        const existing = (await table.get(record[key] as string)) as { updatedAt: string } | undefined;
+        if (isNewer(record, existing)) {
+          await table.put(record);
+          if (existing) report.updated++;
+          else report.added++;
+        } else report.unchanged++;
+      }
     }
   });
 
