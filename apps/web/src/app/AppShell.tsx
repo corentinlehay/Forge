@@ -5,6 +5,7 @@ import { nextOnboardingStep, ONBOARDING_KEY, type OnboardingState } from '../dom
 import { isDemoMode } from '../db/dataMode';
 import { OnboardingFlow } from '../features/onboarding/OnboardingFlow';
 import { CheckInSheetProvider } from '../features/wellbeing/CheckInSheet';
+import { AudioPlayerProvider, MiniPlayer } from '../features/audio/AudioPlayer';
 import { ToastProvider } from '../ui/Toast';
 import { DemoBanner } from './DemoBanner';
 import { WeighInSheetProvider } from '../features/weight/WeighInSheet';
@@ -24,10 +25,12 @@ export function AppShell() {
     <ToastProvider>
       <WeighInSheetProvider>
         <CheckInSheetProvider>
-          {demo && <DemoBanner />}
-          <ShellContent />
-          <UpdateBanner />
-          <ScrollRestoration />
+          <AudioPlayerProvider>
+            {demo && <DemoBanner />}
+            <ShellContent />
+            <UpdateBanner />
+            <ScrollRestoration />
+          </AudioPlayerProvider>
         </CheckInSheetProvider>
       </WeighInSheetProvider>
     </ToastProvider>
@@ -55,10 +58,12 @@ function ShellContent() {
   if (step === null) return <div className="min-h-dvh bg-noir" aria-busy="true" />;
   if (step !== 'done') return <OnboardingFlow step={step} />;
 
+  const withTabBar = !['/reglages', '/training/', '/nutrition/', '/mind/', '/coach'].some((p) => pathname.startsWith(p));
   return (
     <div className="lg:pl-24">
       <Outlet />
-      {!['/reglages', '/training/', '/nutrition/', '/mind/', '/coach'].some((p) => pathname.startsWith(p)) && <TabBar />}
+      {withTabBar && <TabBar />}
+      {!pathname.startsWith('/training/seance') && <MiniPlayer withTabBar={withTabBar} />}
     </div>
   );
 }

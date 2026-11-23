@@ -12,6 +12,8 @@ import { Screen } from '../../ui/Screen';
 import { Segmented } from '../../ui/Segmented';
 import { useCheckInSheet } from '../wellbeing/CheckInSheet';
 import { ExerciseRow, MindBack, useFavorites, useRoutines } from './mindShared';
+import { useAudioCatalog } from '../../services/audioApi';
+import { AudioShelf } from '../audio/AudioScreens';
 
 const hoursText = (h: number) => `${Math.floor(h)} h ${String(Math.round((h % 1) * 60)).padStart(2, '0')}`;
 const clockText = (t: string) => t.replace(':', ' h ');
@@ -25,6 +27,8 @@ export function SleepScreen() {
   const { routines } = useRoutines();
   const { favorites } = useFavorites();
   const [days, setDays] = useState<'7' | '30'>('30');
+  const { items: audio } = useAudioCatalog();
+  const nightAudio = audio.filter((a) => a.format === 'sommeil' || a.categories.includes('dormir'));
 
   const model = useMemo(() => {
     if (!checkIns || !workouts) return null;
@@ -154,6 +158,8 @@ export function SleepScreen() {
           ni écrans avant de dormir.
         </p>
       </section>
+
+      <AudioShelf title="Séances audio pour la nuit" items={nightAudio} />
 
       <section aria-label="Pour s’endormir" className="flex flex-col">
         <h2 className="mb-1 text-[17px] font-semibold">Pour préparer la nuit</h2>

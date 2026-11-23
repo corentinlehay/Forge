@@ -19,6 +19,8 @@ import { SleepScreen } from '../features/mind/SleepScreen';
 import { LibraryScreen, PreparationScreen } from '../features/mind/LibraryScreens';
 import { ExerciseScreen, RoutineScreen } from '../features/mind/PracticeScreens';
 import { RoutineEditor } from '../features/mind/RoutineEditor';
+import { AudioDetailScreen, AudioLibraryScreen, HypnosisScreen } from '../features/audio/AudioScreens';
+import { CreatorEditor, CreatorScreen } from '../features/audio/CreatorScreen';
 import { KitchenScreen } from '../features/kitchen/KitchenScreen';
 import { RecipeScreen } from '../features/kitchen/RecipeScreen';
 import { RecipeEditor } from '../features/kitchen/RecipeEditor';
@@ -66,6 +68,11 @@ export const router = createBrowserRouter([
       { path: 'mind/exercice/:id', element: <ExerciseScreen /> },
       { path: 'mind/routine/:id', element: <RoutineScreen /> },
       { path: 'mind/routine/:id/modifier', element: <RoutineEditor /> },
+      { path: 'mind/audio', element: <AudioLibraryScreen /> },
+      { path: 'mind/audio/:id', element: <AudioDetailScreen /> },
+      { path: 'mind/hypnose', element: <HypnosisScreen /> },
+      { path: 'mind/createur', element: <CreatorScreen /> },
+      { path: 'mind/createur/:id', element: <CreatorEditor /> },
       { path: 'coach', element: <CoachScreen /> },
       { path: 'reglages', element: <SettingsScreen /> },
       { path: '*', element: <Navigate to="/" replace /> },

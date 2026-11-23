@@ -294,6 +294,7 @@ export interface DemoTables {
   targetChanges: [];
   moodLogs: MoodLog[];
   mindSessions: MindSession[];
+  audioStates: [];
 }
 
 function localIso(dateKey: string, hour: number, minute = 0): string {
@@ -593,5 +594,6 @@ export function generateDemoData(today: string, now: Date): DemoTables {
     targetChanges: [],
     moodLogs,
     mindSessions,
+    audioStates: [],
   };
 }

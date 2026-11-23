@@ -6,7 +6,7 @@ import { createMetaRepo } from './repositories/meta';
 import { createProfileRepo } from './repositories/profile';
 import { createWeighInRepo } from './repositories/weighIns';
 import { createMindSessionRepo, createMoodLogRepo, createCheckInRepo, createExerciseRepo, createFoodCatalogRepo, createFoodRepo, createMealPlanRepo, createMealTemplateRepo, createPriceRepo, createProgramRepo, createRecipePhotoRepo, createRecipeRepo, createSetRepo, createShoppingListRepo, createTemplateRepo, createWaterRepo, createWorkoutRepo, createTargetChangeRepo } from './repositories/entities';
-import type { MindSession, MoodLog, TargetChange, CheckIn, Exercise, Food, FoodEntry, MealPlan, MealTemplate, PriceRecord, Profile, Program, RecipePhoto, RecipeRecord, ShoppingList, WaterLog, WeighIn, Workout, WorkoutSet, WorkoutTemplate } from './types';
+import type { AudioState, MindSession, MoodLog, TargetChange, CheckIn, Exercise, Food, FoodEntry, MealPlan, MealTemplate, PriceRecord, Profile, Program, RecipePhoto, RecipeRecord, ShoppingList, WaterLog, WeighIn, Workout, WorkoutSet, WorkoutTemplate } from './types';
 import { programTemplates } from '../domain/training';
 
 /**
@@ -186,4 +186,18 @@ export function useToday(): string {
     };
   }, []);
   return today;
+}
+
+/** État local des séances audio (reprise, favoris), par identifiant. */
+export function useAudioStates(): Map<string, AudioState> | undefined {
+  return useLiveQuery(async () => new Map((await getDb().audioStates.toArray()).map((s) => [s.id, s])), []);
+}
+
+/** Séances téléchargées sur l'appareil : identifiant, version et taille. */
+export function useAudioDownloads(): Map<string, { version: string; size: number }> | undefined {
+  return useLiveQuery(async () => {
+    const out = new Map<string, { version: string; size: number }>();
+    await getDb().audioDownloads.each((d) => void out.set(d.id, { version: d.version, size: d.size }));
+    return out;
+  }, []);
 }

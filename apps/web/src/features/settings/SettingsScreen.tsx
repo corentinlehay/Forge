@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type ReactNode } from 'react';
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { Link, useNavigate } from 'react-router';
 import { repos, useMeta, useProfile, useToday, useWeighIns } from '../../db/hooks';
 import { clearAllData } from '../../db/maintenance';
@@ -20,6 +20,7 @@ import { exportMessage, useBackupExport } from '../backup/useBackupExport';
 import { InstallGuide } from '../onboarding/InstallGuide';
 import { isDemoMode } from '../../db/dataMode';
 import { enterDemo, exitDemo, reloadDemo } from '../../services/demo';
+import { getAdminCode } from '../../services/audioApi';
 
 function Section({ title, children }: { title: string; children: ReactNode }) {
   return (
@@ -56,10 +57,35 @@ export function SettingsScreen() {
       {!isDemoMode() && <BackupSection />}
       <DeviceSection />
       {!isDemoMode() && <ResetSection />}
-      <p className="px-1 text-[13px] text-cendre">
-        FORGE, version {__FORGE_VERSION__} du {formatFullDate(__FORGE_BUILT_AT__)}
-      </p>
+      {getAdminCode() && (
+        <Link to="/mind/createur" viewTransition className="flex min-h-14 items-center justify-between rounded-[22px] bg-anthracite px-[18px] text-[17px] font-semibold">
+          Espace créateur
+          <Icon name="chevron" size={18} className="text-cendre" />
+        </Link>
+      )}
+      <VersionLine />
     </Screen>
+  );
+}
+
+/** Ligne de version. Cinq touchers rapides ouvrent l'espace créateur (réservé au créateur, protégé par son code). */
+function VersionLine() {
+  const navigate = useNavigate();
+  const taps = useRef<number[]>([]);
+  return (
+    <p
+      className="px-1 text-[13px] text-cendre select-none"
+      onClick={() => {
+        const now = Date.now();
+        taps.current = [...taps.current.filter((t) => now - t < 3000), now];
+        if (taps.current.length >= 5) {
+          taps.current = [];
+          void navigate('/mind/createur', { viewTransition: true });
+        }
+      }}
+    >
+      FORGE, version {__FORGE_VERSION__} du {formatFullDate(__FORGE_BUILT_AT__)}
+    </p>
   );
 }
 

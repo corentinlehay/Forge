@@ -350,3 +350,26 @@ export interface TargetChange extends SyncFields {
   source: 'proposition' | 'manuel' | 'questionnaire';
   reason?: string;
 }
+
+/**
+ * État d'une séance audio sur cet appareil : position de reprise, favori, dernière écoute.
+ * La clé est l'identifiant de la séance (catalogue du serveur).
+ */
+export interface AudioState {
+  id: string;
+  position: number;
+  durationSec: number;
+  favorite: boolean;
+  lastPlayedAt: string | null;
+  updatedAt: string;
+}
+
+/** Séance audio téléchargée pour l'écoute hors connexion (non incluse dans les sauvegardes). */
+export interface AudioDownload {
+  id: string;
+  version: string;
+  mime: string;
+  size: number;
+  blob: Blob;
+  savedAt: string;
+}

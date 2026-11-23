@@ -15,5 +15,7 @@
     "not_found_handling": "single-page-application",
     // Seules les requêtes /api/* passent par le serveur ; tout le reste est servi directement.
     "run_worker_first": ["/api/*"]
-  }
+  },
+  // Séances audio de FORGE MIND (catalogue, fichiers découpés, couvertures). Le code d'administration est le secret ADMIN_CODE.
+  "kv_namespaces": [{ "binding": "AUDIO", "id": "4892a4db27b247dd90839865db5db989" }]
 }

@@ -4,6 +4,9 @@ import { CATEGORY_INFO, CATEGORY_ORDER, FAMILY_LABELS, FAMILY_ORDER, formatDurat
 import { Icon } from '../../ui/Icon';
 import { Screen } from '../../ui/Screen';
 import { ExerciseRow, MindBack, useFavorites, useRoutines } from './mindShared';
+import { useAudioCatalog } from '../../services/audioApi';
+import { audioInCategory } from '../../domain/audio';
+import { AudioShelf } from '../audio/AudioScreens';
 
 type Filter = MindCategory | 'favoris' | 'tous';
 
@@ -13,6 +16,7 @@ export function LibraryScreen() {
   const asked = params.get('categorie');
   const filter: Filter = asked === 'favoris' ? 'favoris' : asked && (CATEGORY_ORDER as string[]).includes(asked) ? (asked as MindCategory) : 'tous';
   const { favorites } = useFavorites();
+  const { items: audio } = useAudioCatalog();
   const list = MIND_EXERCISES.filter((e) => (filter === 'tous' ? true : filter === 'favoris' ? favorites.includes(e.id) : e.categories.includes(filter)));
   const chips: { value: Filter; label: string }[] = [
     { value: 'tous', label: 'Tous' },
@@ -40,6 +44,7 @@ export function LibraryScreen() {
           </button>
         ))}
       </div>
+      {filter !== 'tous' && filter !== 'favoris' && <AudioShelf title="Séances audio" items={audioInCategory(audio, filter)} />}
       {list.length === 0 && <p className="text-[15px] text-cendre">{filter === 'favoris' ? 'Touche l’étoile d’un exercice pour le retrouver ici.' : 'Aucun exercice.'}</p>}
       {FAMILY_ORDER.map((f) => {
         const items = list.filter((e) => e.family === f);

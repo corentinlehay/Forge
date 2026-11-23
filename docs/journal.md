@@ -1,5 +1,25 @@
 # Journal des versions
 
+## Mind 2 : séances audio, lecteur, Hypnose et espace créateur (version de test, branche `mind-2`)
+
+### Fait
+- Stockage Cloudflare Workers KV (namespace `forge-audio`, inclus dans l'offre gratuite, sans carte) : catalogue, fichiers découpés en morceaux de 2 Mio, couvertures. Environ 1 Go disponible, soit une quarantaine de séances de 20 minutes ; passage à R2 possible plus tard.
+- Lecture par plages d'octets (Safari en a besoin pour lire et avancer), fichiers versionnés : un fichier remplacé n'est jamais servi depuis un cache périmé.
+- Espace créateur privé : cinq touchers sur la ligne de version dans Réglages, puis le code d'administration (secret Cloudflare `ADMIN_CODE`, jamais dans le code). Une fois le code saisi, une ligne « Espace créateur » apparaît dans Réglages sur cet appareil. Ajout depuis l'iPhone (MP3, M4A des Mémos vocaux, AAC, WAV, OGG, 95 Mo au plus) avec durée lue automatiquement, envoi morceau par morceau avec progression et nouvelles tentatives, titre, description, type, thèmes d'hypnose, catégories Mind, objectif, niveau, public, mots-clés, auteur affiché, couverture, brouillon ou publiée, ordre, remplacement du fichier, suppression. Les autres utilisateurs ne voient ni l'entrée ni rien à administrer.
+- Lecteur pour toute l'app : mini-lecteur au-dessus des onglets, lecteur plein écran, lecture et pause, ±15 s, barre de progression, minuteur d'arrêt (5 à 60 min, fondu quand le volume se règle), volume quand l'appareil le permet (pas sur iPhone, où il suit les boutons), commandes sur l'écran verrouillé, reprise à la dernière position.
+- Hors connexion : téléchargement de la séance sur l'iPhone, liste gardée de la dernière visite ; un téléchargement retiré ou remplacé par le créateur est effacé.
+- Historique : une écoute d'au moins une minute devient une pratique Mind (comptée dans ta pratique et tes dernières pratiques), terminée au-delà de 95 %.
+- Bibliothèque audio (reprendre, favoris, hors connexion, par type), fiche de séance clairement marquée « Séance originale de… », catégorie Hypnose par thèmes avec précautions (Inserm, 2015 ; La Revue du Praticien) : pas un soin, pas de résultat garanti, avis médical d'abord en cas de trouble psychotique, jamais en conduisant. Rien d'audio n'apparaît tant qu'aucune séance n'est publiée.
+- Séances audio aussi dans l'accueil Mind, Sommeil (séances pour la nuit) et les catégories d'exercices.
+- Base locale v8 : état d'écoute et téléchargements (migration v7 vers v8 testée ; l'état d'écoute est dans la sauvegarde, pas les fichiers téléchargés).
+- 205 tests dans l'app, 14 pour le serveur. Parcours vérifié au format iPhone avec un vrai fichier de 10 min : code faux puis bon, envoi, publication, accueil Mind, Hypnose, fiche, lecture, +15 s, minuteur, mini-lecteur, historique après une minute, reprise à 3:20, téléchargement puis lecture hors connexion, dépublication, suppression.
+
+### À faire de ton côté
+- Créer le secret `ADMIN_CODE` dans Cloudflare (12 caractères au moins), puis me prévenir : la version de test suivante l'embarquera.
+
+### À vérifier sur ton iPhone
+- La lecture écran verrouillé et le minuteur d'arrêt pendant le verrouillage dépendent d'iOS.
+
 ## Mind 1 : espace FORGE MIND, exercices guidés, journal, sommeil (version de test, branche `mind-1`)
 
 ### Fait
@@ -16,7 +36,7 @@
 - 200 tests. Parcours vérifié au format iPhone : respiration, relaxation menée au bout, cinq sens, attention, routine enchaînée, arrêt avant la fin, journal, check-in détaillé, favoris, routine personnalisée, coach depuis Training.
 
 ### Pas encore
-- Séances audio, lecteur et catégorie Hypnose : Mind 2.
+- Séances audio, lecteur et catégorie Hypnose : faits dans Mind 2.
 - Recommandations du coach IA à partir de Mind : livraison IA.
 
 ## Budget 1 : objectifs dynamiques et budget alimentaire (version de test, branche `budget-1`)

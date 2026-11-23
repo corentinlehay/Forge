@@ -253,6 +253,14 @@ const moodLogSchema = z.object({
   emotions: z.array(z.string().max(40)).max(12).optional(),
   note: z.string().max(1000).optional(),
 });
+const audioStateSchema = z.object({
+  id: z.string().min(1).max(40),
+  position: z.number().min(0).max(4 * 3600),
+  durationSec: z.number().min(0).max(4 * 3600),
+  favorite: z.boolean(),
+  lastPlayedAt: z.string().nullable(),
+  updatedAt: z.string(),
+});
 const mindSessionSchema = z.object({
   ...syncFields,
   date: dateKey,
@@ -294,6 +302,7 @@ export const backupSchema = z.object({
     targetChanges: z.array(targetChangeSchema).default([]),
     moodLogs: z.array(moodLogSchema).default([]),
     mindSessions: z.array(mindSessionSchema).default([]),
+    audioStates: z.array(audioStateSchema).default([]),
   }),
 });
 
@@ -329,6 +338,7 @@ const TABLES = [
   ['targetChanges', 'id'],
   ['moodLogs', 'id'],
   ['mindSessions', 'id'],
+  ['audioStates', 'id'],
 ] as const;
 
 type TableName = (typeof TABLES)[number][0];

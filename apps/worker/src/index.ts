@@ -6,9 +6,13 @@
  * Le moteur de recherche d'Open Food Facts n'autorise pas les autres sites à lire ses réponses
  * (pas d'en-tête CORS) : Safari les bloque. Ce relais l'interroge côté serveur, sans rien stocker
  * de personnel, et met les résultats en cache une heure.
+ *
+ * /api/audio et /api/admin : séances audio de FORGE MIND (voir audio.ts).
  */
 
-export interface Env {
+import { handleAudio, type AudioEnv } from './audio';
+
+export interface Env extends AudioEnv {
   ASSETS: Fetcher;
 }
 
@@ -82,6 +86,8 @@ export default {
   async fetch(request, env, ctx): Promise<Response> {
     const { pathname } = new URL(request.url);
     if (pathname === '/api/off/search') return handleOffSearch(request, { waitUntil: (p) => ctx.waitUntil(p) });
+    const audio = await handleAudio(request, env, (p) => ctx.waitUntil(p));
+    if (audio) return audio;
     if (pathname.startsWith('/api/')) return json({ erreur: 'Route inconnue.' }, 404);
     return env.ASSETS.fetch(request);
   },

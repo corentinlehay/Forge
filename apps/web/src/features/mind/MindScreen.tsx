@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { Link } from 'react-router';
 import { MIND_EXERCISE_BY_ID } from '../../data/mindExercises';
-import { repos, useCheckIns, useMindSessions, useMoodLogs, useProfile, useTemplates, useToday, useWorkouts } from '../../db/hooks';
+import { repos, useAudioStates, useCheckIns, useMindSessions, useMoodLogs, useProfile, useTemplates, useToday, useWorkouts } from '../../db/hooks';
 import type { MoodLog, Scale5 } from '../../db/types';
 import {
   CATEGORY_INFO,
@@ -27,6 +27,9 @@ import { Icon } from '../../ui/Icon';
 import { Screen } from '../../ui/Screen';
 import { useToast } from '../../ui/Toast';
 import { MindCaution, SessionRow, useRoutines } from './mindShared';
+import { useAudioCatalog } from '../../services/audioApi';
+import { resumePosition } from '../../domain/audio';
+import { AudioShelf } from '../audio/AudioScreens';
 
 const QUICK: MoodKey[] = ['mood', 'stress', 'mentalEnergy'];
 const DAY_LETTERS = ['L', 'M', 'M', 'J', 'V', 'S', 'D'];
@@ -42,6 +45,16 @@ export function MindScreen() {
   const templates = useTemplates();
   const { routines } = useRoutines();
   const toast = useToast();
+  const { items: audio } = useAudioCatalog();
+  const audioStates = useAudioStates();
+  const audioShelf = useMemo(() => {
+    const resumable = (id: string, d: number) => {
+      const st = audioStates?.get(id);
+      return st ? resumePosition(st.position, st.durationSec || d) > 0 : false;
+    };
+    return [...audio].sort((a, b) => Number(resumable(b.id, b.durationSec)) - Number(resumable(a.id, a.durationSec))).slice(0, 3);
+  }, [audio, audioStates]);
+  const hasHypnosis = audio.some((a) => a.format === 'hypnose');
 
   const model = useMemo(() => {
     if (!moods || !sessions || !checkIns || !workouts || !templates) return null;
@@ -163,6 +176,8 @@ export function MindScreen() {
         </section>
       )}
 
+      <AudioShelf title="Séances audio" items={audioShelf} more="/mind/audio" />
+
       <section aria-label="Catégories" className="flex flex-col gap-2">
         <div className="flex items-center justify-between">
           <h2 className="text-[17px] font-semibold">Exercices guidés</h2>
@@ -182,6 +197,16 @@ export function MindScreen() {
               <span className="text-[12px] text-cendre">{CATEGORY_INFO[c].blurb}</span>
             </Link>
           ))}
+          {hasHypnosis && (
+            <Link
+              to="/mind/hypnose"
+              viewTransition
+              className="flex min-h-[76px] flex-col justify-between rounded-[18px] bg-brume-voile p-3.5 outline-1 outline-brume/25 active:scale-[0.99]"
+            >
+              <span className="text-[17px] font-semibold">Hypnose</span>
+              <span className="text-[12px] text-cendre">Séances guidées, par thème</span>
+            </Link>
+          )}
           <Link to="/mind/preparation" viewTransition className="flex min-h-[76px] flex-col justify-between rounded-[18px] bg-anthracite p-3.5 active:scale-[0.99]">
             <span className="text-[17px] font-semibold">Mental du sportif</span>
             <span className="text-[12px] text-cendre">Pression, confiance, stagnation</span>

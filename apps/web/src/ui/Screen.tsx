@@ -5,7 +5,7 @@ export function Screen({ children, withTabBar = true }: { children: ReactNode; w
   return (
     <main
       className={`pt-safe mx-auto flex w-full max-w-[560px] flex-col gap-[18px] px-5 ${
-        withTabBar ? 'pb-[calc(env(safe-area-inset-bottom)+112px)] lg:pb-12' : 'pb-safe'
+        withTabBar ? 'pb-[calc(env(safe-area-inset-bottom)+112px+var(--player-offset,0px))] lg:pb-12' : 'pb-[calc(max(env(safe-area-inset-bottom),16px)+var(--player-offset,0px))]'
       }`}
     >
       {children}

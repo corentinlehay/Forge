@@ -6,9 +6,14 @@ const req = (q: string, method = 'GET') => new Request(`https://forge.example/ap
 
 describe('relais de recherche Open Food Facts', () => {
   it('interroge Search-a-licious et ne renvoie que les champs utiles', async () => {
-    const fetcher = vi.fn().mockResolvedValue(
-      upstream({ hits: [{ code: '1', product_name: 'Skyr', brands: ['Isey'], nutriments: { 'energy-kcal_100g': 64, proteins_100g: 11, salt_100g: 0.1 }, ingredients: 'lait' }], count: 1 }),
-    );
+    const fetcher = vi
+      .fn()
+      .mockResolvedValue(
+        upstream({
+          hits: [{ code: '1', product_name: 'Skyr', brands: ['Isey'], nutriments: { 'energy-kcal_100g': 64, proteins_100g: 11, salt_100g: 0.1 }, ingredients: 'lait' }],
+          count: 1,
+        }),
+      );
     const res = await handleOffSearch(req(' skyr  nature '), { fetcher, cache: null });
     expect(res.status).toBe(200);
     expect(res.headers.get('cache-control')).toContain('max-age=3600');
