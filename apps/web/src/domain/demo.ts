@@ -1,4 +1,21 @@
-import type { CheckIn, Exercise, Food, FoodEntry, MealSlot, MealTemplate, MetaEntry, Profile, Scale5, WaterLog, WeighIn, Workout, WorkoutSet, WorkoutTemplate } from '../db/types';
+import type {
+  CheckIn,
+  Exercise,
+  Food,
+  FoodEntry,
+  MealSlot,
+  MealTemplate,
+  MetaEntry,
+  Profile,
+  Program,
+  Scale5,
+  WaterLog,
+  WeighIn,
+  Workout,
+  WorkoutSet,
+  WorkoutTemplate,
+} from '../db/types';
+import { EXERCISE_LIBRARY } from '../data/exerciseLibrary';
 import { addDays } from '../lib/dates';
 import { ONBOARDING_KEY } from './onboarding';
 import { isoWeekday } from './training';
@@ -34,11 +51,35 @@ const PROGRAM: { name: string; weekday: number; exercises: DemoExercise[] }[] = 
     name: 'Upper A',
     weekday: 1,
     exercises: [
-      { name: 'Développé couché', sets: 4, reps: [6, 8], baseKg: 80, step: 2.5 },
+      {
+        name: 'Développé couché',
+        sets: 4,
+        reps: [6, 8],
+        baseKg: 80,
+        step: 2.5,
+      },
       { name: 'Rowing barre', sets: 4, reps: [8, 10], baseKg: 70, step: 2.5 },
-      { name: 'Développé militaire', sets: 3, reps: [8, 10], baseKg: 47.5, step: 2.5 },
-      { name: 'Tractions lestées', sets: 3, reps: [6, 8], baseKg: 7.5, step: 2.5 },
-      { name: 'Curl biceps haltères', sets: 3, reps: [10, 12], baseKg: 15, step: 1 },
+      {
+        name: 'Développé militaire debout',
+        sets: 3,
+        reps: [8, 10],
+        baseKg: 47.5,
+        step: 2.5,
+      },
+      {
+        name: 'Tractions pronation',
+        sets: 3,
+        reps: [6, 8],
+        baseKg: 7.5,
+        step: 2.5,
+      },
+      {
+        name: 'Curl aux haltères',
+        sets: 3,
+        reps: [10, 12],
+        baseKg: 15,
+        step: 1,
+      },
     ],
   },
   {
@@ -46,40 +87,130 @@ const PROGRAM: { name: string; weekday: number; exercises: DemoExercise[] }[] = 
     weekday: 2,
     exercises: [
       { name: 'Squat', sets: 4, reps: [5, 7], baseKg: 105, step: 2.5 },
-      { name: 'Soulevé de terre roumain', sets: 3, reps: [8, 10], baseKg: 95, step: 2.5 },
-      { name: 'Presse à cuisses', sets: 3, reps: [10, 12], baseKg: 190, step: 5 },
-      { name: 'Leg curl', sets: 3, reps: [10, 12], baseKg: 45, step: 2.5 },
-      { name: 'Mollets debout', sets: 4, reps: [12, 15], baseKg: 80, step: 5 },
+      {
+        name: 'Soulevé de terre roumain',
+        sets: 3,
+        reps: [8, 10],
+        baseKg: 95,
+        step: 2.5,
+      },
+      {
+        name: 'Presse à cuisses',
+        sets: 3,
+        reps: [10, 12],
+        baseKg: 190,
+        step: 5,
+      },
+      {
+        name: 'Leg curl allongé',
+        sets: 3,
+        reps: [10, 12],
+        baseKg: 45,
+        step: 2.5,
+      },
+      {
+        name: 'Mollets debout',
+        sets: 4,
+        reps: [12, 15],
+        baseKg: 80,
+        step: 5,
+      },
     ],
   },
   {
     name: 'Upper B',
     weekday: 4,
     exercises: [
-      { name: 'Développé incliné haltères', sets: 4, reps: [8, 10], baseKg: 30, step: 1 },
-      { name: 'Tirage horizontal', sets: 4, reps: [10, 12], baseKg: 62.5, step: 2.5 },
-      { name: 'Élévations latérales', sets: 4, reps: [12, 15], baseKg: 10, step: 1 },
-      { name: 'Dips lestés', sets: 3, reps: [8, 10], baseKg: 12.5, step: 2.5 },
+      {
+        name: 'Développé incliné aux haltères',
+        sets: 4,
+        reps: [8, 10],
+        baseKg: 30,
+        step: 1,
+      },
+      {
+        name: 'Tirage horizontal à la poulie',
+        sets: 4,
+        reps: [10, 12],
+        baseKg: 62.5,
+        step: 2.5,
+      },
+      {
+        name: 'Élévations latérales',
+        sets: 4,
+        reps: [12, 15],
+        baseKg: 10,
+        step: 1,
+      },
+      {
+        name: 'Dips, buste droit',
+        sets: 3,
+        reps: [8, 10],
+        baseKg: 12.5,
+        step: 2.5,
+      },
     ],
   },
   {
     name: 'Lower B',
     weekday: 5,
     exercises: [
-      { name: 'Soulevé de terre', sets: 3, reps: [4, 6], baseKg: 145, step: 2.5 },
-      { name: 'Fentes bulgares', sets: 3, reps: [8, 10], baseKg: 22, step: 1 },
+      {
+        name: 'Soulevé de terre',
+        sets: 3,
+        reps: [4, 6],
+        baseKg: 145,
+        step: 2.5,
+      },
+      {
+        name: 'Fentes bulgares',
+        sets: 3,
+        reps: [8, 10],
+        baseKg: 22,
+        step: 1,
+      },
       { name: 'Hip thrust', sets: 3, reps: [8, 10], baseKg: 115, step: 5 },
-      { name: 'Leg extension', sets: 3, reps: [12, 15], baseKg: 55, step: 2.5 },
+      {
+        name: 'Leg extension',
+        sets: 3,
+        reps: [12, 15],
+        baseKg: 55,
+        step: 2.5,
+      },
     ],
   },
   {
     name: 'Bras et épaules',
     weekday: 6,
     exercises: [
-      { name: 'Développé militaire haltères', sets: 3, reps: [8, 10], baseKg: 24, step: 1 },
-      { name: 'Élévations latérales', sets: 3, reps: [12, 15], baseKg: 10, step: 1 },
-      { name: 'Curl barre EZ', sets: 3, reps: [8, 10], baseKg: 32.5, step: 2.5 },
-      { name: 'Barre au front', sets: 3, reps: [8, 10], baseKg: 30, step: 2.5 },
+      {
+        name: 'Développé épaules assis aux haltères',
+        sets: 3,
+        reps: [8, 10],
+        baseKg: 24,
+        step: 1,
+      },
+      {
+        name: 'Élévations latérales',
+        sets: 3,
+        reps: [12, 15],
+        baseKg: 10,
+        step: 1,
+      },
+      {
+        name: 'Curl à la barre EZ',
+        sets: 3,
+        reps: [8, 10],
+        baseKg: 32.5,
+        step: 2.5,
+      },
+      {
+        name: 'Barre au front',
+        sets: 3,
+        reps: [8, 10],
+        baseKg: 30,
+        step: 2.5,
+      },
     ],
   },
 ];
@@ -134,6 +265,7 @@ export interface DemoTables {
   foods: Food[];
   mealTemplates: MealTemplate[];
   waterLogs: WaterLog[];
+  programs: Program[];
 }
 
 function localIso(dateKey: string, hour: number, minute = 0): string {
@@ -150,7 +282,12 @@ export function generateDemoData(today: string, now: Date): DemoTables {
   const hour = now.getHours();
   let seq = 0;
   const id = (prefix: string) => `demo-${prefix}-${String(++seq).padStart(5, '0')}`;
-  const sync = (prefix: string, at = stamp) => ({ id: id(prefix), createdAt: at, updatedAt: at, deletedAt: null });
+  const sync = (prefix: string, at = stamp) => ({
+    id: id(prefix),
+    createdAt: at,
+    updatedAt: at,
+    deletedAt: null,
+  });
 
   // Pesées : 12 semaines, quelques jours sans pesée.
   const weighIns: WeighIn[] = [];
@@ -159,7 +296,13 @@ export function generateDemoData(today: string, now: Date): DemoTables {
     if (i % 9 === 4) continue;
     const k = 83 - i;
     const w = 86.4 + 0.0428 * k + 0.32 * Math.sin(1.7 * k) + 0.18 * Math.sin(0.37 * k + 1) + 0.12 * Math.sin(3.1 * k + 2);
-    weighIns.push({ ...sync('pesee'), date: addDays(today, -i), time: `07:${String(5 + (k % 20)).padStart(2, '0')}`, weightKg: Math.round(w * 10) / 10, context: 'morning_fasted' });
+    weighIns.push({
+      ...sync('pesee'),
+      date: addDays(today, -i),
+      time: `07:${String(5 + (k % 20)).padStart(2, '0')}`,
+      weightKg: Math.round(w * 10) / 10,
+      context: 'morning_fasted',
+    });
   }
 
   // Programme et exercices.
@@ -167,17 +310,42 @@ export function generateDemoData(today: string, now: Date): DemoTables {
   const exerciseId = (name: string) => {
     let e = exercises.get(name);
     if (!e) {
-      e = { ...sync('exercice'), name };
+      const lib = EXERCISE_LIBRARY.find((l) => l.name === name);
+      e = lib
+        ? {
+            ...sync('exercice'),
+            name,
+            libraryId: lib.id,
+            muscle: lib.muscle,
+            secondary: lib.secondary,
+            equipment: lib.equipment,
+            kind: lib.kind,
+            cues: lib.cues,
+            restSec: lib.rest,
+          }
+        : { ...sync('exercice'), name };
       exercises.set(name, e);
     }
     return e.id;
+  };
+  const program: Program = {
+    ...sync('programme'),
+    name: 'Programme démo, 5 séances',
+    active: true,
   };
   const workoutTemplates: WorkoutTemplate[] = PROGRAM.map((t, position) => ({
     ...sync('seance-type'),
     name: t.name,
     weekdays: [t.weekday],
     position,
-    exercises: t.exercises.map((e) => ({ exerciseId: exerciseId(e.name), sets: e.sets, reps: `${e.reps[0]}-${e.reps[1]}` })),
+    programId: program.id,
+    exercises: t.exercises.map((e) => ({
+      exerciseId: exerciseId(e.name),
+      sets: e.sets,
+      reps: `${e.reps[0]}-${e.reps[1]}`,
+      restSec: EXERCISE_LIBRARY.find((l) => l.name === e.name)?.rest ?? 120,
+      rir: 2,
+    })),
   }));
 
   // Séances des 6 dernières semaines (hier compris), avec une progression lente des charges.
@@ -204,7 +372,15 @@ export function generateDemoData(today: string, now: Date): DemoTables {
       const load = roundTo(e.baseKg * (1 + 0.012 * weeksIn), e.step);
       for (let s = 0; s < e.sets; s++) {
         const reps = Math.max(e.reps[0], e.reps[1] - s - Math.floor(rand() * 2));
-        workoutSets.push({ ...sync('serie', workout.startedAt), workoutId: workout.id, exerciseId: exerciseId(e.name), position: position++, weightKg: load, reps });
+        workoutSets.push({
+          ...sync('serie', workout.startedAt),
+          workoutId: workout.id,
+          exerciseId: exerciseId(e.name),
+          position: position++,
+          weightKg: load,
+          reps,
+          rir: s === e.sets - 1 ? 1 : 2,
+        });
       }
     }
   }
@@ -217,7 +393,17 @@ export function generateDemoData(today: string, now: Date): DemoTables {
       if (i === 0 && hour < def.hour) continue;
       def.foods.forEach(([name, quantity, kcal, proteinG, carbsG, fatG], j) => {
         if (j > 0 && rand() < 0.15) return;
-        foodEntries.push({ ...sync('aliment', localIso(date, def.hour, j)), date, meal, name, quantity, kcal, proteinG, carbsG, fatG });
+        foodEntries.push({
+          ...sync('aliment', localIso(date, def.hour, j)),
+          date,
+          meal,
+          name,
+          quantity,
+          kcal,
+          proteinG,
+          carbsG,
+          fatG,
+        });
       });
     }
   }
@@ -250,7 +436,11 @@ export function generateDemoData(today: string, now: Date): DemoTables {
   };
 
   const meta: MetaEntry[] = [
-    { key: ONBOARDING_KEY, value: { installSkipped: true, welcomeDone: true, completedAt: stamp }, updatedAt: stamp },
+    {
+      key: ONBOARDING_KEY,
+      value: { installSkipped: true, welcomeDone: true, completedAt: stamp },
+      updatedAt: stamp,
+    },
     { key: 'lastBackupAt', value: stamp, updatedAt: stamp },
   ];
 
@@ -258,12 +448,32 @@ export function generateDemoData(today: string, now: Date): DemoTables {
   const waterLogs: WaterLog[] = [];
   for (let i = 13; i >= 0; i--) {
     const date = addDays(today, -i);
-    for (const [h, ml] of [[8, 500], [11, 500], [14, 750], [17, 500], [20, 250]] as const) {
+    for (const [h, ml] of [
+      [8, 500],
+      [11, 500],
+      [14, 750],
+      [17, 500],
+      [20, 250],
+    ] as const) {
       if (i === 0 && hour < h) continue;
       if (rand() < 0.15) continue;
       waterLogs.push({ ...sync('eau', localIso(date, h)), date, ml });
     }
   }
 
-  return { profile: [profile], weighIns, meta, foodEntries, exercises: [...exercises.values()], workoutTemplates, workouts, workoutSets, checkIns, foods: [], mealTemplates: [], waterLogs };
+  return {
+    profile: [profile],
+    weighIns,
+    meta,
+    foodEntries,
+    exercises: [...exercises.values()],
+    workoutTemplates,
+    workouts,
+    workoutSets,
+    checkIns,
+    foods: [],
+    mealTemplates: [],
+    waterLogs,
+    programs: [program],
+  };
 }

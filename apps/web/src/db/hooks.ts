@@ -5,8 +5,9 @@ import { getDb } from './schema';
 import { createMetaRepo } from './repositories/meta';
 import { createProfileRepo } from './repositories/profile';
 import { createWeighInRepo } from './repositories/weighIns';
-import { createCheckInRepo, createExerciseRepo, createFoodCatalogRepo, createFoodRepo, createMealTemplateRepo, createSetRepo, createTemplateRepo, createWaterRepo, createWorkoutRepo } from './repositories/entities';
-import type { CheckIn, Exercise, Food, FoodEntry, MealTemplate, Profile, WaterLog, WeighIn, Workout, WorkoutSet, WorkoutTemplate } from './types';
+import { createCheckInRepo, createExerciseRepo, createFoodCatalogRepo, createFoodRepo, createMealTemplateRepo, createProgramRepo, createSetRepo, createTemplateRepo, createWaterRepo, createWorkoutRepo } from './repositories/entities';
+import type { CheckIn, Exercise, Food, FoodEntry, MealTemplate, Profile, Program, WaterLog, WeighIn, Workout, WorkoutSet, WorkoutTemplate } from './types';
+import { programTemplates } from '../domain/training';
 
 /**
  * Lectures réactives : chaque écran se met à jour dès qu'une donnée change en base.
@@ -50,7 +51,19 @@ export const repos = {
   get water() {
     return createWaterRepo(getDb());
   },
+  get programs() {
+    return createProgramRepo(getDb());
+  },
 };
+
+export function usePrograms(): Program[] | undefined {
+  return useLiveQuery(async () => (await repos.programs.listActive()).sort((a, b) => a.createdAt.localeCompare(b.createdAt)), []);
+}
+
+/** Toutes les séances-types, tous programmes confondus. */
+export function useAllTemplates(): WorkoutTemplate[] | undefined {
+  return useLiveQuery(async () => (await repos.templates.listActive()).sort((a, b) => a.position - b.position), []);
+}
 
 export function useFoods(): Food[] | undefined {
   return useLiveQuery(() => repos.foods.listActive(), []);
@@ -72,8 +85,9 @@ export function useExercises(): Exercise[] | undefined {
   return useLiveQuery(() => repos.exercises.listActive(), []);
 }
 
+/** Les séances du programme actif. */
 export function useTemplates(): WorkoutTemplate[] | undefined {
-  return useLiveQuery(async () => (await repos.templates.listActive()).sort((a, b) => a.position - b.position), []);
+  return useLiveQuery(async () => programTemplates(await repos.templates.listActive(), await repos.programs.listActive()), []);
 }
 
 export function useWorkouts(): Workout[] | undefined {

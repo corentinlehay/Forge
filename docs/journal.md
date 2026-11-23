@@ -1,5 +1,21 @@
 # Journal des versions
 
+## Training 1 : séance en direct, programmes, bibliothèque, progression (version de test, branche `training-1`)
+
+### Fait
+- Base locale v4 : programmes ; repos et RIR visés par exercice ; RIR par série ; notes de séance et d'exercice ; fiche d'exercice (muscles, matériel, type, consignes, repos). Une table ajoutée, rien de supprimé. À la mise à jour, tes séances existantes sont rangées dans « Mon programme », actif. Migration v3 vers v4 testée, et vérifiée dans le navigateur : données créées avec la version en production, puis ouverture de la nouvelle version, sans perte.
+- Bibliothèque de 76 exercices classés dans les 15 groupes musculaires (pectoraux à mollets) : nom français, deux photos (départ et fin du mouvement, en alternance), muscle principal et secondaires, matériel, type de mouvement, repos conseillé, consignes techniques rédigées pour FORGE. Photos : Free Exercise DB, domaine public, converties en WebP (2,6 Mo, disponibles hors ligne ; scripts/build-exercise-images.py).
+- Exercices perso : création et modification (nom, muscles, matériel, type, repos, consignes). Un ancien exercice saisi au clavier qui porte le nom d'un exercice de la bibliothèque y est rattaché avec tout son historique ; les autres demandent leur muscle principal au moment de les ouvrir.
+- Programmes : plusieurs programmes, un seul actif ; créer, renommer, dupliquer (avec ses séances), supprimer. Séances du programme sur une page dédiée : jours, exercices choisis dans la bibliothèque, séries, fourchette de répétitions, repos et RIR visés, ordre modifiable, duplication.
+- Séance en direct : bouton fixe en bas de l'écran « Série 2 sur 4 : exercice » qui enchaîne les séries prévues, puis « Terminer la séance ». Saisie au pavé préremplie avec ta dernière série, RIR en un toucher (RPE affiché), objectif proposé appliqué seulement si tu le touches. Minuteur de repos lancé à chaque série (repos visé de la séance, sinon celui de l'exercice), −15 s, +15 s, Passer ; il survit à un rechargement ; signal sonore à la fin. Écran maintenu allumé pendant la séance quand l'iPhone le permet. Ajouter, retirer et réordonner les exercices, technique et consignes, note par exercice et note de séance. Chaque série est enregistrée immédiatement : une séance interrompue se reprend telle quelle.
+- Surcharge progressive : objectif proposé par exercice selon la fourchette visée et le RIR (double progression : une répétition de plus sur chaque série jusqu'au haut de la fourchette, puis +2,5 kg, ou +1 kg sous 20 kg ; pas de hausse après une dernière série à l'échec). FORGE ne modifie jamais une charge de lui-même. Tendance par exercice : progression, stagnation, régression ou irrégularité (plus de 14 jours entre deux séances).
+- Fiche d'exercice : records sur 30 jours, 90 jours, 1 an ou depuis toujours (meilleure charge, meilleures répétitions, 1RM estimé, meilleur volume), courbe tactile par séance (1RM estimé, charge max ou volume), historique détaillé. Les records de Progression mènent à la fiche.
+- 140 tests. Parcours vérifiés au format iPhone : création de séance depuis la bibliothèque, séance en direct avec minuteur, rechargement en plein repos, notes, réordonnancement, exercice perso, programmes, fiche avec données de démo, mise à jour depuis la version en production.
+
+### Limites connues
+- Le signal sonore ne passe pas en mode silencieux, ni quand l'app est en arrière-plan : l'iPhone suspend alors les apps web. Le temps restant est juste au retour.
+- La carte anatomique (volume et fréquence par muscle) arrive à la livraison 3 ; la génération de programme par IA à la livraison 6.
+
 ## Nutrition 1 : ajout d'aliments (version de test, branche `nutrition-1`)
 
 ### Fait

@@ -1,4 +1,4 @@
-import type { Workout, WorkoutSet, WorkoutTemplate } from '../db/types';
+import type { Program, Workout, WorkoutSet, WorkoutTemplate } from '../db/types';
 import { addDays } from '../lib/dates';
 
 /**
@@ -68,6 +68,24 @@ export function completedWorkouts(workouts: readonly Workout[]): Workout[] {
 
 export function inProgressWorkout(workouts: readonly Workout[]): Workout | null {
   return activeOnly(workouts).find((w) => !w.endedAt) ?? null;
+}
+
+/** Le programme actif (un seul à la fois). */
+export function activeProgram(programs: readonly Program[]): Program | null {
+  return activeOnly(programs).find((p) => p.active) ?? null;
+}
+
+/**
+ * Les séances d'un programme (par défaut le programme actif), dans l'ordre.
+ * Une séance sans programme (sauvegarde antérieure aux programmes) suit le programme actif.
+ */
+export function programTemplates(templates: readonly WorkoutTemplate[], programs: readonly Program[], programId?: string | null): WorkoutTemplate[] {
+  const active = activeProgram(programs)?.id ?? null;
+  const target = programId === undefined ? active : programId;
+  const known = new Set(activeOnly(programs).map((p) => p.id));
+  return activeOnly(templates)
+    .filter((t) => (t.programId && known.has(t.programId) ? t.programId === target : target === active))
+    .sort((a, b) => a.position - b.position);
 }
 
 /** Séance du programme prévue ce jour-là (la première dans l'ordre du programme). */

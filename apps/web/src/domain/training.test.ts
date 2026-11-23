@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { Workout, WorkoutSet, WorkoutTemplate } from '../db/types';
 import { bestE1rm, e1rm, findRecords, isoWeekday, lastPerformance, plannedPerWeek, plannedSoFar, sessionsInWeek, templateForDay, weekStart, weeklyVolumes, workoutStats } from './training';
+import { activeProgram, programTemplates } from './training';
 
 const base = { createdAt: 'x', updatedAt: 'x', deletedAt: null };
 const workout = (id: string, date: string, ended = true): Workout => ({ ...base, id, date, name: id, exerciseIds: [], startedAt: `${date}T17:00:00.000Z`, endedAt: ended ? `${date}T18:00:00.000Z` : null });
@@ -62,5 +63,21 @@ describe('séances', () => {
     expect(lastPerformance('dc', [w1, w2, w3], sets, 'w3')).toEqual({ date: '2026-11-23', weightKg: 85, reps: 6, sets: 1 });
     expect(bestE1rm('dc', [w1, w2, w3], sets, 'w3')).toBeCloseTo(102, 6);
     expect(lastPerformance('inconnu', [w1], sets)).toBeNull();
+  });
+});
+
+describe('programmes', () => {
+  const sync = { createdAt: 'x', updatedAt: 'x', deletedAt: null };
+  const p = (id: string, active: boolean) => ({ ...sync, id, name: id, active });
+  const t = (id: string, programId: string | null, position = 0) => ({ ...sync, id, name: id, weekdays: [1], exercises: [], position, programId });
+  it('ne garde que les séances du programme actif, et rattache les séances sans programme', () => {
+    const programs = [p('a', false), p('b', true)];
+    const templates = [t('a1', 'a'), t('b2', 'b', 2), t('b1', 'b', 1), t('orphan', null, 3)];
+    expect(activeProgram(programs)?.id).toBe('b');
+    expect(programTemplates(templates, programs).map((x) => x.id)).toEqual(['b1', 'b2', 'orphan']);
+    expect(programTemplates(templates, programs, 'a').map((x) => x.id)).toEqual(['a1']);
+  });
+  it('sans programme, montre les séances non rattachées', () => {
+    expect(programTemplates([t('x', null)], []).map((x) => x.id)).toEqual(['x']);
   });
 });

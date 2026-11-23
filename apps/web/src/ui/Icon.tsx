@@ -37,6 +37,15 @@ const paths = {
   barcode: 'M4 6v12M7 6v12M10 6v12M14 6v12M16.5 6v12M20 6v12',
   drop: 'M12 3s6 6.5 6 11a6 6 0 0 1-12 0c0-4.5 6-11 6-11z',
   copy: 'M8 8h11v12H8zM5 16V4h11',
+  up: 'M12 19V5M6 11l6-6 6 6',
+  down: 'M12 5v14M6 13l6 6 6-6',
+  trash: 'M4 7h16M9.5 7V4.5h5V7M6.5 7l1 13h9l1-13M10 11v5.5M14 11v5.5',
+  note: 'M5 4h14v12l-4 4H5zM15 20v-4h4M8.5 9h7M8.5 12.5h5',
+  timer: 'M12 21a8 8 0 1 0 0-16 8 8 0 0 0 0 16zM12 9v4.5M9.5 2.5h5M18.5 6l1.5-1.5',
+  trendUp: 'M3 17l6-6 4 4 8-8M15 7h6v6',
+  trendDown: 'M3 7l6 6 4-4 8 8M15 17h6v-6',
+  flat: 'M4 12h16M16 8l4 4-4 4',
+  list: 'M9 6h11M9 12h11M9 18h11M4.5 6h.01M4.5 12h.01M4.5 18h.01',
   bolt2: 'M4 12h16',
 } as const;
 

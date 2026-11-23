@@ -148,6 +148,16 @@ export interface WaterLog extends SyncFields {
 
 export interface Exercise extends SyncFields {
   name: string;
+  /** Exercice de la bibliothèque FORGE (null : exercice perso). */
+  libraryId?: string | null;
+  /** Groupe musculaire principal et secondaires (identifiants de src/data/muscles.ts). */
+  muscle?: string | null;
+  secondary?: string[];
+  equipment?: string | null;
+  kind?: 'compound' | 'isolation' | null;
+  cues?: string[];
+  /** Repos par défaut entre les séries, en secondes. */
+  restSec?: number | null;
 }
 
 export interface TemplateExercise {
@@ -155,6 +165,17 @@ export interface TemplateExercise {
   sets: number;
   /** Fourchette de répétitions visée, texte libre : « 8-10 ». */
   reps: string;
+  /** Repos visé entre les séries, en secondes. */
+  restSec?: number | null;
+  /** Répétitions en réserve visées (RIR). */
+  rir?: number | null;
+}
+
+/** Un programme : un ensemble de séances. Un seul est actif à la fois. */
+export interface Program extends SyncFields {
+  name: string;
+  active: boolean;
+  note?: string;
 }
 
 /** Une séance du programme, prévue certains jours de la semaine (1 = lundi … 7 = dimanche). */
@@ -163,6 +184,7 @@ export interface WorkoutTemplate extends SyncFields {
   weekdays: number[];
   exercises: TemplateExercise[];
   position: number;
+  programId?: string | null;
 }
 
 /** Une séance réalisée (ou en cours tant que endedAt est vide). */
@@ -174,6 +196,9 @@ export interface Workout extends SyncFields {
   exerciseIds: string[];
   startedAt: string;
   endedAt?: string | null;
+  note?: string;
+  /** Notes par exercice pendant la séance. */
+  exerciseNotes?: Record<string, string>;
 }
 
 export interface WorkoutSet extends SyncFields {
@@ -182,6 +207,8 @@ export interface WorkoutSet extends SyncFields {
   position: number;
   weightKg: number;
   reps: number;
+  /** Répétitions en réserve ressenties (RIR). RPE = 10 − RIR. */
+  rir?: number | null;
 }
 
 export type Scale5 = 1 | 2 | 3 | 4 | 5;

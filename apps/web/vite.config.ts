@@ -56,8 +56,8 @@ export default defineConfig({
         ],
       },
       workbox: {
-        globPatterns: ['**/*.{js,css,html,svg,png,woff2,json,webmanifest,wasm}'],
-        // Le moteur du scanner (≈ 1 Mo) et la table Ciqual sont mis en cache pour marcher hors ligne.
+        globPatterns: ['**/*.{js,css,html,svg,png,woff2,json,webmanifest,wasm,webp}'],
+        // Le moteur du scanner (≈ 1 Mo), la table Ciqual et les illustrations d'exercices (≈ 2,6 Mo) sont mis en cache pour marcher hors ligne.
         maximumFileSizeToCacheInBytes: 4 * 1024 * 1024,
         navigateFallback: '/index.html',
         cleanupOutdatedCaches: true,

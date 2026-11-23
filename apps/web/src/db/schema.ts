@@ -1,6 +1,7 @@
 import Dexie, { type EntityTable } from 'dexie';
 import { activeDbName } from './dataMode';
-import type { CheckIn, Exercise, Food, FoodEntry, MealTemplate, MetaEntry, Profile, WaterLog, WeighIn, Workout, WorkoutSet, WorkoutTemplate } from './types';
+import type { CheckIn, Exercise, Food, FoodEntry, MealTemplate, MetaEntry, Profile, Program, WaterLog, WeighIn, Workout, WorkoutSet, WorkoutTemplate } from './types';
+import { newId, nowIso } from '../lib/ids';
 
 /**
  * Base locale unique de FORGE (IndexedDB via Dexie).
@@ -10,8 +11,9 @@ import type { CheckIn, Exercise, Food, FoodEntry, MealTemplate, MetaEntry, Profi
  * v1 : profil, pesées, réglages.
  * v2 : + journal alimentaire, exercices, programme, séances, séries, check-ins (tables ajoutées, rien de modifié).
  * v3 : + aliments (perso, Ciqual, Open Food Facts), repas habituels, hydratation (tables ajoutées, rien de modifié).
+ * v4 : + programmes ; les séances existantes sont rattachées à un premier programme actif.
  */
-export const SCHEMA_VERSION = 3;
+export const SCHEMA_VERSION = 4;
 
 export class ForgeDB extends Dexie {
   profile!: EntityTable<Profile, 'id'>;
@@ -26,6 +28,7 @@ export class ForgeDB extends Dexie {
   foods!: EntityTable<Food, 'id'>;
   mealTemplates!: EntityTable<MealTemplate, 'id'>;
   waterLogs!: EntityTable<WaterLog, 'id'>;
+  programs!: EntityTable<Program, 'id'>;
 
   constructor(name = 'forge') {
     super(name);
@@ -47,6 +50,19 @@ export class ForgeDB extends Dexie {
       mealTemplates: 'id, updatedAt',
       waterLogs: 'id, date, updatedAt',
     });
+    this.version(4)
+      .stores({ programs: 'id, updatedAt' })
+      .upgrade(async (tx) => {
+        const templates = tx.table('workoutTemplates');
+        const existing = (await templates.toArray()) as WorkoutTemplate[];
+        if (!existing.some((t) => !t.deletedAt)) return;
+        const stamp = nowIso(new Date());
+        const id = newId();
+        await tx.table('programs').add({ id, createdAt: stamp, updatedAt: stamp, deletedAt: null, name: 'Mon programme', active: true });
+        await templates.toCollection().modify((t: WorkoutTemplate) => {
+          if (!t.programId) t.programId = id;
+        });
+      });
   }
 }
 

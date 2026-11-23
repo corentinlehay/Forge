@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { useSearchParams } from 'react-router';
+import { Link, useSearchParams } from 'react-router';
 import { useCheckIns, useExercises, useToday, useWorkouts, useWorkoutSets } from '../../db/hooks';
 import { e1rm, findRecords, weeklyVolumes } from '../../domain/training';
 import { averageCheckIns, recoveryScore } from '../../domain/wellbeing';
@@ -110,8 +110,9 @@ function TrainingPanel() {
         ) : (
           <ul>
             {model.records.slice(0, 10).map((r) => (
-              <li key={`${r.workoutId}-${r.exerciseId}`} className="flex min-h-11 items-center justify-between gap-3 border-b border-anthracite py-2 last:border-b-0">
-                <span className="flex min-w-0 items-center gap-2.5">
+              <li key={`${r.workoutId}-${r.exerciseId}`} className="border-b border-anthracite last:border-b-0">
+                <Link to={`/training/exercices/${r.exerciseId}`} viewTransition className="flex min-h-11 items-center justify-between gap-3 py-2">
+                  <span className="flex min-w-0 items-center gap-2.5">
                   <Icon name="trophy" size={18} className="shrink-0 text-citron" />
                   <span className="min-w-0">
                     <span className="block truncate text-[15px]">{r.name}</span>
@@ -120,9 +121,10 @@ function TrainingPanel() {
                     </span>
                   </span>
                 </span>
-                <span className="shrink-0 text-[15px] font-semibold tabular-nums">
-                  {kg(r.weightKg)} kg × {r.reps}
-                </span>
+                  <span className="shrink-0 text-[15px] font-semibold tabular-nums">
+                    {kg(r.weightKg)} kg × {r.reps}
+                  </span>
+                </Link>
               </li>
             ))}
           </ul>
@@ -133,12 +135,14 @@ function TrainingPanel() {
         <h2 className="mb-1 text-[17px] font-semibold">Meilleures performances</h2>
         <ul>
           {model.bests.map((b) => (
-            <li key={b.id} className="flex min-h-11 items-center justify-between gap-3 border-b border-anthracite py-2 last:border-b-0">
-              <span className="min-w-0 truncate text-[15px]">{b.name}</span>
+            <li key={b.id} className="border-b border-anthracite last:border-b-0">
+              <Link to={`/training/exercices/${b.id}`} viewTransition className="flex min-h-11 items-center justify-between gap-3 py-2">
+                <span className="min-w-0 truncate text-[15px]">{b.name}</span>
               <span className="shrink-0 text-right">
                 <span className="block text-[15px] font-semibold tabular-nums">{kg(b.weightKg)} kg × {b.reps}</span>
                 <span className="block text-[12px] text-cendre">1RM estimé {kg(Math.round(b.value * 2) / 2)} kg</span>
               </span>
+              </Link>
             </li>
           ))}
         </ul>

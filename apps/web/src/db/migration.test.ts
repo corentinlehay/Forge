@@ -77,11 +77,49 @@ describe('migration v2 → v3', () => {
 
     const db = new ForgeDB(name);
     await db.open();
-    expect(db.verno).toBe(3);
+    expect(db.verno).toBe(SCHEMA_VERSION);
     expect((await db.foodEntries.get('f'))?.kcal).toBe(390);
     expect(await db.workouts.count()).toBe(1);
     expect(await db.foods.count()).toBe(0);
     expect(await db.waterLogs.count()).toBe(0);
+    db.close();
+  });
+});
+
+describe('migration v3 → v4', () => {
+  it('rattache les séances existantes à un premier programme actif', async () => {
+    const name = `migration4-${crypto.randomUUID()}`;
+    names.push(name);
+    const v3 = new Dexie(name);
+    v3.version(1).stores({ profile: 'id, updatedAt', weighIns: 'id, date, [date+time], updatedAt', meta: 'key' });
+    v3.version(2).stores({
+      foodEntries: 'id, date, updatedAt',
+      exercises: 'id, name, updatedAt',
+      workoutTemplates: 'id, updatedAt',
+      workouts: 'id, date, updatedAt',
+      workoutSets: 'id, workoutId, exerciseId, updatedAt',
+      checkIns: 'id, date, updatedAt',
+    });
+    v3.version(3).stores({ foods: 'id, [source+sourceId], name, updatedAt', mealTemplates: 'id, updatedAt', waterLogs: 'id, date, updatedAt' });
+    const t = (id: string) => ({ id, createdAt: 'a', updatedAt: 'a', deletedAt: null, name: id, weekdays: [1], exercises: [], position: 0 });
+    await v3.table('workoutTemplates').bulkPut([t('Upper A'), t('Lower A')]);
+    v3.close();
+
+    const db = new ForgeDB(name);
+    await db.open();
+    const programs = await db.programs.toArray();
+    expect(programs).toHaveLength(1);
+    expect(programs[0]).toMatchObject({ name: 'Mon programme', active: true });
+    expect((await db.workoutTemplates.toArray()).every((x) => x.programId === programs[0]!.id)).toBe(true);
+    db.close();
+  });
+
+  it('ne crée pas de programme vide sans séance', async () => {
+    const name = `migration4b-${crypto.randomUUID()}`;
+    names.push(name);
+    const db = new ForgeDB(name);
+    await db.open();
+    expect(await db.programs.count()).toBe(0);
     db.close();
   });
 });

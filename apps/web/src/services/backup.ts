@@ -116,14 +116,35 @@ const mealTemplateSchema = z.object({
 
 const waterSchema = z.object({ ...syncFields, date: dateKey, ml: z.number().int().min(1).max(3000) });
 
-const exerciseSchema = z.object({ ...syncFields, name: z.string().min(1).max(80) });
+const exerciseSchema = z.object({
+  ...syncFields,
+  name: z.string().min(1).max(80),
+  libraryId: z.string().nullable().optional(),
+  muscle: z.string().nullable().optional(),
+  secondary: z.array(z.string()).optional(),
+  equipment: z.string().nullable().optional(),
+  kind: z.enum(['compound', 'isolation']).nullable().optional(),
+  cues: z.array(z.string().max(300)).optional(),
+  restSec: z.number().int().min(0).max(900).nullable().optional(),
+});
+
+const programSchema = z.object({ ...syncFields, name: z.string().min(1).max(60), active: z.boolean(), note: z.string().max(500).optional() });
 
 const templateSchema = z.object({
   ...syncFields,
   name: z.string().min(1).max(60),
   weekdays: z.array(z.number().int().min(1).max(7)),
-  exercises: z.array(z.object({ exerciseId: z.string().min(1), sets: z.number().int().min(1).max(20), reps: z.string().max(20) })),
+  exercises: z.array(
+    z.object({
+      exerciseId: z.string().min(1),
+      sets: z.number().int().min(1).max(20),
+      reps: z.string().max(20),
+      restSec: z.number().int().min(0).max(900).nullable().optional(),
+      rir: z.number().int().min(0).max(10).nullable().optional(),
+    }),
+  ),
   position: z.number(),
+  programId: z.string().nullable().optional(),
 });
 
 const workoutSchema = z.object({
@@ -134,6 +155,8 @@ const workoutSchema = z.object({
   exerciseIds: z.array(z.string()),
   startedAt: z.string().min(1),
   endedAt: z.string().nullable().optional(),
+  note: z.string().max(2000).optional(),
+  exerciseNotes: z.record(z.string(), z.string().max(1000)).optional(),
 });
 
 const setSchema = z.object({
@@ -143,6 +166,7 @@ const setSchema = z.object({
   position: z.number(),
   weightKg: z.number().min(0).max(500),
   reps: z.number().int().min(1).max(100),
+  rir: z.number().int().min(0).max(10).nullable().optional(),
 });
 
 const scale = z.union([z.literal(1), z.literal(2), z.literal(3), z.literal(4), z.literal(5)]);
@@ -175,6 +199,7 @@ export const backupSchema = z.object({
     foods: z.array(foodSchema).default([]),
     mealTemplates: z.array(mealTemplateSchema).default([]),
     waterLogs: z.array(waterSchema).default([]),
+    programs: z.array(programSchema).default([]),
   }),
 });
 
@@ -201,6 +226,7 @@ const TABLES = [
   ['foods', 'id'],
   ['mealTemplates', 'id'],
   ['waterLogs', 'id'],
+  ['programs', 'id'],
 ] as const;
 
 type TableName = (typeof TABLES)[number][0];

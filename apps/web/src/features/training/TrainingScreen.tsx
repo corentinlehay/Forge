@@ -1,8 +1,8 @@
 import { useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router';
-import { useExercises, useTemplates, useToday, useWorkouts, useWorkoutSets } from '../../db/hooks';
-import type { WorkoutTemplate } from '../../db/types';
-import { completedWorkouts, isoWeekday, setsByWorkout, weekStart, workoutStats } from '../../domain/training';
+import { EXERCISE_LIBRARY } from '../../data/exerciseLibrary';
+import { useAllTemplates, usePrograms, useExercises, useTemplates, useToday, useWorkouts, useWorkoutSets } from '../../db/hooks';
+import { activeProgram, completedWorkouts, isoWeekday, setsByWorkout, weekStart, workoutStats } from '../../domain/training';
 import { addDays } from '../../lib/dates';
 import { countLabel, formatDayShort, formatNumber } from '../../lib/format';
 import { Button } from '../../ui/Button';
@@ -11,24 +11,24 @@ import { Screen } from '../../ui/Screen';
 import { Sheet } from '../../ui/Sheet';
 import { useDashboardData } from '../dashboard/useDashboardData';
 import { SessionHero } from './SessionHero';
-import { TemplateForm } from './TemplateForm';
+import { ProgramsPanel } from './ProgramsSheet';
 import { startWorkout } from './workoutActions';
 
 const DAY_LETTERS = ['L', 'M', 'M', 'J', 'V', 'S', 'D'];
 const DAY_SHORT = ['lun.', 'mar.', 'mer.', 'jeu.', 'ven.', 'sam.', 'dim.'];
 const HISTORY_PREVIEW = 6;
 
-type SheetState = { kind: 'none' } | { kind: 'new' } | { kind: 'edit'; template: WorkoutTemplate };
-
 export function TrainingScreen() {
   const data = useDashboardData();
   const today = useToday();
   const templates = useTemplates();
+  const allTemplates = useAllTemplates();
+  const programs = usePrograms();
   const exercises = useExercises();
   const workouts = useWorkouts();
   const sets = useWorkoutSets();
   const navigate = useNavigate();
-  const [sheet, setSheet] = useState<SheetState>({ kind: 'none' });
+  const [programsOpen, setProgramsOpen] = useState(false);
   const [showAll, setShowAll] = useState(false);
 
   const history = useMemo(() => {
@@ -50,7 +50,8 @@ export function TrainingScreen() {
     navigate(`/training/seance/${id}`, { viewTransition: true });
   };
 
-  const close = () => setSheet({ kind: 'none' });
+  const program = programs ? activeProgram(programs) : null;
+  const ownExercises = exercises?.filter((e) => !e.libraryId).length ?? 0;
   const visible = showAll ? history : history.slice(0, HISTORY_PREVIEW);
 
   return (
@@ -86,47 +87,60 @@ export function TrainingScreen() {
       {data && <SessionHero data={data} linkToTraining={false} />}
 
       <section aria-label="Programme" className="flex flex-col gap-2">
-        <div className="flex items-center justify-between">
-          <h2 className="text-[17px] font-semibold">Programme</h2>
-          {templates && templates.length > 0 && (
-            <Button variant="quiet" className="-mr-2" onClick={() => setSheet({ kind: 'new' })}>
-              <Icon name="plus" size={18} />
-              Ajouter
-            </Button>
-          )}
+        <div className="flex items-center justify-between gap-3">
+          <div className="min-w-0">
+            <h2 className="text-[17px] font-semibold">Programme</h2>
+            {program && <p className="truncate text-[13px] text-cendre">{program.name}</p>}
+          </div>
+          <Button variant="quiet" className="-mr-2 shrink-0" onClick={() => setProgramsOpen(true)}>
+            <Icon name="list" size={18} />
+            Programmes
+          </Button>
         </div>
         {templates?.length === 0 && (
           <div className="flex flex-col gap-3 rounded-[18px] bg-anthracite p-4">
             <p className="text-[15px] leading-snug text-cendre">Aucune séance au programme. Ajoute tes séances et leurs jours : la séance du jour apparaîtra sur l’Accueil.</p>
-            <Button variant="secondary" onClick={() => setSheet({ kind: 'new' })}>
-              <Icon name="plus" size={18} />
-              Créer une séance
-            </Button>
           </div>
         )}
         <ul className="flex flex-col gap-2">
           {templates?.map((t) => (
             <li key={t.id}>
-              <button
-                type="button"
-                onClick={() => setSheet({ kind: 'edit', template: t })}
+              <Link
+                to={`/training/programme/${t.id}`}
+                viewTransition
                 className="flex min-h-[60px] w-full items-center justify-between gap-3 rounded-[18px] bg-anthracite px-4 py-3 text-left active:scale-[0.99]"
               >
                 <span className="min-w-0">
                   <span className="block truncate text-[17px] font-semibold">{t.name}</span>
                   <span className="block text-[13px] text-cendre">
-                    {t.weekdays.length ? t.weekdays.map((d) => DAY_SHORT[d - 1]).join(', ') : 'Sans jour fixe'}, {t.exercises.length} exercice{t.exercises.length > 1 ? 's' : ''}
+                    {t.weekdays.length ? t.weekdays.map((d) => DAY_SHORT[d - 1]).join(', ') : 'Sans jour fixe'}, {t.exercises.length} exercice
+                    {t.exercises.length > 1 ? 's' : ''}
                   </span>
                 </span>
                 <span className="flex items-center gap-2 text-cendre">
                   {t.weekdays.includes(isoWeekday(today)) && <span className="rounded-full bg-citron-voile px-2 py-0.5 text-[12px] text-citron">Aujourd’hui</span>}
                   <Icon name="edit" size={18} />
                 </span>
-              </button>
+              </Link>
             </li>
           ))}
         </ul>
+        <Link to="/training/programme/nouvelle" viewTransition className="flex h-[52px] items-center justify-center gap-2 rounded-[16px] bg-graphite text-[17px] font-semibold">
+          <Icon name="plus" size={18} />
+          {templates?.length ? 'Ajouter une séance' : 'Créer une séance'}
+        </Link>
       </section>
+
+      <Link to="/training/exercices" viewTransition className="flex min-h-[64px] items-center justify-between gap-3 rounded-[18px] bg-anthracite px-4 py-3 active:scale-[0.99]">
+        <span className="min-w-0">
+          <span className="block text-[17px] font-semibold">Exercices</span>
+          <span className="block text-[13px] text-cendre">
+            {EXERCISE_LIBRARY.length} exercices illustrés, records et progression
+            {ownExercises ? `, ${ownExercises} exercice${ownExercises > 1 ? 's' : ''} perso` : ''}
+          </span>
+        </span>
+        <Icon name="chevron" size={16} className="shrink-0 text-cendre" />
+      </Link>
 
       <section aria-label="Historique" className="flex flex-col">
         <h2 className="mb-1 text-[17px] font-semibold">Historique</h2>
@@ -161,16 +175,8 @@ export function TrainingScreen() {
         )}
       </section>
 
-      <Sheet open={sheet.kind !== 'none'} title={sheet.kind === 'edit' ? 'Modifier la séance' : 'Nouvelle séance'} onClose={close}>
-        {sheet.kind !== 'none' && exercises && (
-          <TemplateForm
-            key={sheet.kind === 'edit' ? sheet.template.id : 'new'}
-            editing={sheet.kind === 'edit' ? sheet.template : null}
-            position={templates?.length ?? 0}
-            exercises={exercises}
-            onDone={close}
-          />
-        )}
+      <Sheet open={programsOpen} title="Programmes" onClose={() => setProgramsOpen(false)}>
+        {programsOpen && programs && allTemplates && <ProgramsPanel programs={programs} templates={allTemplates} onDone={() => setProgramsOpen(false)} />}
       </Sheet>
     </Screen>
   );

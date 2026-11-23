@@ -7,6 +7,9 @@ import { ProgressionScreen } from '../features/progression/ProgressionScreen';
 import { SettingsScreen } from '../features/settings/SettingsScreen';
 import { TrainingScreen } from '../features/training/TrainingScreen';
 import { WorkoutScreen } from '../features/training/WorkoutScreen';
+import { TemplateScreen } from '../features/training/TemplateScreen';
+import { ExerciseLibraryScreen } from '../features/training/ExerciseLibraryScreen';
+import { ExerciseDetailScreen } from '../features/training/ExerciseDetailScreen';
 import { AppShell } from './AppShell';
 import { RouteError } from './RouteError';
 
@@ -19,6 +22,9 @@ export const router = createBrowserRouter([
       { index: true, element: <HomeScreen /> },
       { path: 'training', element: <TrainingScreen /> },
       { path: 'training/seance/:id', element: <WorkoutScreen /> },
+      { path: 'training/programme/:templateId', element: <TemplateScreen /> },
+      { path: 'training/exercices', element: <ExerciseLibraryScreen /> },
+      { path: 'training/exercices/:key', element: <ExerciseDetailScreen /> },
       { path: 'nutrition', element: <NutritionScreen /> },
       { path: 'nutrition/ajouter', element: <AddFoodScreen /> },
       { path: 'progression', element: <ProgressionScreen /> },

@@ -1,6 +1,7 @@
 import type { EntityTable, Table } from 'dexie';
 import type { ForgeDB } from '../schema';
-import type { CheckIn, Exercise, Food, FoodEntry, MealTemplate, Per100, SyncFields, WaterLog, Workout, WorkoutSet, WorkoutTemplate } from '../types';
+import type { CheckIn, Exercise, Food, FoodEntry, MealTemplate, Per100, Program, SyncFields, WaterLog, Workout, WorkoutSet, WorkoutTemplate } from '../types';
+import type { LibraryExercise } from '../../data/exerciseLibrary';
 import { isDateKey } from '../../lib/dates';
 import { newId, nowIso } from '../../lib/ids';
 
@@ -91,10 +92,72 @@ export function createExerciseRepo(db: ForgeDB) {
       const found = all.find((e) => e.name.toLocaleLowerCase('fr-FR') === clean.toLocaleLowerCase('fr-FR'));
       return found ?? base.add({ name: clean }, now);
     },
+    /** L'exercice de la bibliothèque dans ta base (créé ou relié à un exercice du même nom au premier usage). */
+    async fromLibrary(lib: LibraryExercise, now: Date = new Date()): Promise<Exercise> {
+      const all = await base.listActive();
+      const fields = { libraryId: lib.id, muscle: lib.muscle, secondary: lib.secondary, equipment: lib.equipment, kind: lib.kind, cues: lib.cues, restSec: lib.rest };
+      const linked = all.find((e) => e.libraryId === lib.id);
+      if (linked) return linked;
+      const sameName = all.find((e) => !e.libraryId && e.name.toLocaleLowerCase('fr-FR') === lib.name.toLocaleLowerCase('fr-FR'));
+      if (sameName) return base.update(sameName.id, fields, now);
+      return base.add({ name: lib.name, ...fields }, now);
+    },
+  };
+}
+
+export function createProgramRepo(db: ForgeDB) {
+  const base = entityRepo<Program>(db.programs, (i) => {
+    if (i.name !== undefined) check(i.name.trim().length > 0 && i.name.length <= 60, 'Donne un nom au programme (60 caractères maximum).');
+  });
+  return {
+    ...base,
+    /** Le programme actif ; s'il n'y en a pas, « Mon programme » est créé et activé. */
+    async ensureActive(now: Date = new Date()): Promise<Program> {
+      const all = await base.listActive();
+      const current = all.find((p) => p.active);
+      if (current) return current;
+      if (all[0]) {
+        await this.activate(all[0].id, now);
+        return { ...all[0], active: true };
+      }
+      return base.add({ name: 'Mon programme', active: true }, now);
+    },
+    /** Copie un programme et ses séances (la copie n'est pas activée). */
+    async duplicate(id: string, now: Date = new Date()): Promise<Program> {
+      const source = await base.get(id);
+      if (!source || source.deletedAt) throw new DataError('Programme introuvable.');
+      const templates = templateRepo(db);
+      return db.transaction('rw', db.programs, db.workoutTemplates, async () => {
+        const copy = await base.add({ name: `${source.name.slice(0, 52)} (copie)`, active: false, ...(source.note ? { note: source.note } : {}) }, now);
+        const own = (await templates.listActive()).filter((t) => t.programId === id);
+        for (const t of own) await templates.add({ name: t.name, weekdays: t.weekdays, exercises: t.exercises, position: t.position, programId: copy.id }, now);
+        return copy;
+      });
+    },
+    /** Supprime un programme et ses séances. Les séances déjà faites restent dans l'historique. */
+    async removeWithTemplates(id: string, now: Date = new Date()): Promise<void> {
+      const templates = templateRepo(db);
+      await db.transaction('rw', db.programs, db.workoutTemplates, async () => {
+        for (const t of (await templates.listActive()).filter((x) => x.programId === id)) await templates.remove(t.id, now);
+        await base.remove(id, now);
+      });
+    },
+    /** Active un programme et désactive les autres. */
+    async activate(id: string, now: Date = new Date()): Promise<void> {
+      await db.transaction('rw', db.programs, async () => {
+        for (const p of await base.listActive()) {
+          if (p.active !== (p.id === id)) await base.update(p.id, { active: p.id === id }, now);
+        }
+      });
+    },
   };
 }
 
 export function createTemplateRepo(db: ForgeDB) {
+  return templateRepo(db);
+}
+
+function templateRepo(db: ForgeDB) {
   return entityRepo<WorkoutTemplate>(db.workoutTemplates, (i) => {
     if (i.name !== undefined) check(i.name.trim().length > 0 && i.name.length <= 60, 'Donne un nom à la séance (60 caractères maximum).');
     if (i.weekdays !== undefined) check(i.weekdays.every((d) => Number.isInteger(d) && d >= 1 && d <= 7) && new Set(i.weekdays).size === i.weekdays.length, 'Jours invalides.');
@@ -103,6 +166,8 @@ export function createTemplateRepo(db: ForgeDB) {
       for (const e of i.exercises) {
         check(Number.isInteger(e.sets) && e.sets >= 1 && e.sets <= 20, 'Entre 1 et 20 séries par exercice.');
         check(e.reps.length <= 20, 'Répétitions : 20 caractères maximum.');
+        if (e.restSec !== undefined && e.restSec !== null) check(Number.isInteger(e.restSec) && between(e.restSec, 0, 900), 'Repos entre 0 et 15 minutes.');
+        if (e.rir !== undefined && e.rir !== null) check(Number.isInteger(e.rir) && between(e.rir, 0, 10), 'RIR cible entre 0 et 10.');
       }
     }
   });
@@ -119,6 +184,7 @@ export function createSetRepo(db: ForgeDB) {
   return entityRepo<WorkoutSet>(db.workoutSets, (i) => {
     if (i.weightKg !== undefined) check(between(i.weightKg, 0, 500), 'La charge doit être comprise entre 0 et 500 kg.');
     if (i.reps !== undefined) check(Number.isInteger(i.reps) && between(i.reps, 1, 100), 'Entre 1 et 100 répétitions.');
+    if (i.rir !== undefined && i.rir !== null) check(Number.isInteger(i.rir) && between(i.rir, 0, 10), 'RIR entre 0 et 10.');
   });
 }
 
