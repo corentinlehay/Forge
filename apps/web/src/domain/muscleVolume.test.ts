@@ -4,7 +4,15 @@ import { muscleHistory, muscleWeek, volumeLevel, volumeStatus, type MuscleResolv
 
 const base = { createdAt: 'x', updatedAt: 'x', deletedAt: null };
 let n = 0;
-const w = (id: string, date: string, deleted = false): Workout => ({ ...base, id, date, name: id, exerciseIds: [], startedAt: `${date}T17:00:00Z`, deletedAt: deleted ? 'x' : null });
+const w = (id: string, date: string, deleted = false): Workout => ({
+  ...base,
+  id,
+  date,
+  name: id,
+  exerciseIds: [],
+  startedAt: `${date}T17:00:00Z`,
+  deletedAt: deleted ? 'x' : null,
+});
 const s = (workoutId: string, exerciseId: string): WorkoutSet => ({ ...base, id: `s${++n}`, workoutId, exerciseId, position: n, weightKg: 50, reps: 8 });
 const resolve: MuscleResolver = (id) =>
   ({

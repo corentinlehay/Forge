@@ -123,3 +123,35 @@ describe('migration v3 → v4', () => {
     db.close();
   });
 });
+
+describe('migration v4 → v5', () => {
+  it('ajoute les tables Kitchen sans toucher aux données existantes', async () => {
+    const name = `migration5-${crypto.randomUUID()}`;
+    names.push(name);
+    const v4 = new Dexie(name);
+    v4.version(1).stores({ profile: 'id, updatedAt', weighIns: 'id, date, [date+time], updatedAt', meta: 'key' });
+    v4.version(2).stores({
+      foodEntries: 'id, date, updatedAt',
+      exercises: 'id, name, updatedAt',
+      workoutTemplates: 'id, updatedAt',
+      workouts: 'id, date, updatedAt',
+      workoutSets: 'id, workoutId, exerciseId, updatedAt',
+      checkIns: 'id, date, updatedAt',
+    });
+    v4.version(3).stores({ foods: 'id, [source+sourceId], name, updatedAt', mealTemplates: 'id, updatedAt', waterLogs: 'id, date, updatedAt' });
+    v4.version(4).stores({ programs: 'id, updatedAt' });
+    await v4.table('foodEntries').put({ id: 'e1', createdAt: 'a', updatedAt: 'a', deletedAt: null, date: '2026-11-23', meal: 'lunch', name: 'Skyr', kcal: 100, proteinG: 15, carbsG: 5, fatG: 0 });
+    await v4.table('programs').put({ id: 'p1', createdAt: 'a', updatedAt: 'a', deletedAt: null, name: 'Mon programme', active: true });
+    v4.close();
+
+    const db = new ForgeDB(name);
+    await db.open();
+    expect(db.verno).toBe(5);
+    expect(await db.foodEntries.get('e1')).toMatchObject({ name: 'Skyr', kcal: 100 });
+    expect(await db.programs.count()).toBe(1);
+    expect(await db.recipes.count()).toBe(0);
+    await db.prices.add({ id: 'x', createdAt: 'a', updatedAt: 'a', deletedAt: null, key: 'ciqual:9119', name: 'Riz', amountEur: 2, quantity: 1000, unit: 'g' });
+    expect(await db.prices.where('key').equals('ciqual:9119').count()).toBe(1);
+    db.close();
+  });
+});

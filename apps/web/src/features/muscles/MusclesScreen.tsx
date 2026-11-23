@@ -41,7 +41,8 @@ export function MusclesScreen() {
   const view = useMemo(() => {
     if (!data) return null;
     const start = weekStart(data.today);
-    const range = period === 'semaine' ? [start, addDays(start, 6)] : period === 'precedente' ? [addDays(start, -7), addDays(start, -1)] : [addDays(start, -28), addDays(start, -1)];
+    const range =
+      period === 'semaine' ? [start, addDays(start, 6)] : period === 'precedente' ? [addDays(start, -7), addDays(start, -1)] : [addDays(start, -28), addDays(start, -1)];
     const result = muscleVolumeBetween(data.workouts, data.sets, data.resolve, range[0]!, range[1]!);
     const divisor = period === 'moyenne' ? 4 : 1;
     const muscles = Object.fromEntries(
@@ -55,7 +56,12 @@ export function MusclesScreen() {
     return { muscles, levels, unknown };
   }, [data, period]);
 
-  if (!data || !view) return <Screen withTabBar={false}><BackLink /></Screen>;
+  if (!data || !view)
+    return (
+      <Screen withTabBar={false}>
+        <BackLink />
+      </Screen>
+    );
   const current = selected ? view.muscles[selected] : null;
   const describe = (m: MuscleGroup) => `${MUSCLE_LABELS[m]} : ${setsText(view.muscles[m].fractional)}`;
   const worked = MUSCLE_GROUPS.filter((m) => view.muscles[m].fractional > 0).length;
@@ -67,7 +73,9 @@ export function MusclesScreen() {
       <div className="flex flex-col gap-1">
         <h1 className="font-metal text-[40px] leading-none">Muscles</h1>
         <p className="text-[15px] text-cendre">
-          {worked ? `${worked} groupe${worked > 1 ? 's' : ''} travaillé${worked > 1 ? 's' : ''}, ${inRange} dans le repère de ${VOLUME_REFERENCE.low} à ${VOLUME_REFERENCE.high} séries.` : 'Aucune série sur cette période.'}
+          {worked
+            ? `${worked} groupe${worked > 1 ? 's' : ''} travaillé${worked > 1 ? 's' : ''}, ${inRange} dans le repère de ${VOLUME_REFERENCE.low} à ${VOLUME_REFERENCE.high} séries.`
+            : 'Aucune série sur cette période.'}
         </p>
       </div>
       <Segmented label="Période" options={PERIODS} value={period} onChange={setPeriod} />
@@ -79,12 +87,18 @@ export function MusclesScreen() {
           <div className="flex flex-col gap-2 border-t border-graphite pt-3" aria-live="polite">
             <div className="flex items-center justify-between gap-3">
               <h2 className="text-[17px] font-semibold">{MUSCLE_LABELS[current.muscle]}</h2>
-              <StatusChip icon={volumeStatus(current.fractional).tone === 'good' ? 'check' : 'info'} tone={volumeStatus(current.fractional).tone} label={volumeStatus(current.fractional).label} />
+              <StatusChip
+                icon={volumeStatus(current.fractional).tone === 'good' ? 'check' : 'info'}
+                tone={volumeStatus(current.fractional).tone}
+                label={volumeStatus(current.fractional).label}
+              />
             </div>
             <p className="font-metal text-[32px] leading-none">{setsText(current.fractional)}</p>
             <p className="text-[13px] text-cendre">
-              {formatNumber(current.directSets, current.directSets % 1 ? 1 : 0)} directe{current.directSets >= 2 ? 's' : ''}, {formatNumber(current.indirectSets, current.indirectSets % 1 ? 1 : 0)} indirecte
-              {current.indirectSets >= 2 ? 's' : ''} (comptées pour moitié), {formatNumber(current.days, current.days % 1 ? 1 : 0)} jour{current.days >= 2 ? 's' : ''} d’entraînement
+              {formatNumber(current.directSets, current.directSets % 1 ? 1 : 0)} directe{current.directSets >= 2 ? 's' : ''},{' '}
+              {formatNumber(current.indirectSets, current.indirectSets % 1 ? 1 : 0)} indirecte
+              {current.indirectSets >= 2 ? 's' : ''} (comptées pour moitié), {formatNumber(current.days, current.days % 1 ? 1 : 0)} jour{current.days >= 2 ? 's' : ''}{' '}
+              d’entraînement
               {period === 'moyenne' ? ' par semaine' : ''}.
             </p>
             <Button variant="secondary" onClick={() => navigate(`/training/muscles/${current.muscle}`, { viewTransition: true })}>
@@ -135,8 +149,8 @@ export function MusclesScreen() {
           })}
         </ul>
         <p className="mt-2 text-[12px] leading-snug text-cendre">
-          Le trait marque {VOLUME_REFERENCE.low} séries : un volume de 10 séries par semaine et plus par muscle est associé à une meilleure prise de muscle (Schoenfeld et al., 2017). Une série compte pour le muscle
-          principal de l’exercice et pour moitié pour ses muscles secondaires (Pelland et al., 2024).
+          Le trait marque {VOLUME_REFERENCE.low} séries : un volume de 10 séries par semaine et plus par muscle est associé à une meilleure prise de muscle (Schoenfeld et al.,
+          2017). Une série compte pour le muscle principal de l’exercice et pour moitié pour ses muscles secondaires (Pelland et al., 2024).
         </p>
       </section>
     </Screen>

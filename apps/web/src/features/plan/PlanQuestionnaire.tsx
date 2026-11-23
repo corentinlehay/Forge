@@ -75,7 +75,10 @@ export function PlanQuestionnaire({ mode, onFinished, onCancel, onSkip }: { mode
   const previous = useMeta<QuestionnaireRecord>(QUESTIONNAIRE_KEY);
   const hasPrograms = useLiveQuery(async () => (await repos.programs.listActive()).length > 0, []);
   if (profile === undefined || weighIns === undefined || previous === undefined || hasPrograms === undefined) return <Screen withTabBar={false}>{null}</Screen>;
-  const last = [...weighIns].filter((w) => !w.deletedAt).sort((a, b) => (a.date + a.time).localeCompare(b.date + b.time)).at(-1);
+  const last = [...weighIns]
+    .filter((w) => !w.deletedAt)
+    .sort((a, b) => (a.date + a.time).localeCompare(b.date + b.time))
+    .at(-1);
   const p = previous?.answers;
   const initial: Draft = {
     goal: p?.goal ?? profile?.goal ?? null,
@@ -311,8 +314,16 @@ function Flow({
 
         {step === 'zones' && (
           <Question title="Une zone à ménager ?" hint="Facultatif. FORGE écarte les mouvements les plus exigeants pour la zone choisie.">
-            <Chips label="Zones" hideLabel options={ZONES} selected={draft.zones} onToggle={(v) => set({ zones: draft.zones.includes(v) ? draft.zones.filter((x) => x !== v) : [...draft.zones, v] })} />
-            <p className="text-[13px] leading-snug text-cendre">Douleur, blessure récente ou traitement en cours : demande l’avis d’un professionnel de santé avant de reprendre.</p>
+            <Chips
+              label="Zones"
+              hideLabel
+              options={ZONES}
+              selected={draft.zones}
+              onToggle={(v) => set({ zones: draft.zones.includes(v) ? draft.zones.filter((x) => x !== v) : [...draft.zones, v] })}
+            />
+            <p className="text-[13px] leading-snug text-cendre">
+              Douleur, blessure récente ou traitement en cours : demande l’avis d’un professionnel de santé avant de reprendre.
+            </p>
           </Question>
         )}
 
@@ -491,8 +502,12 @@ function PlanSummary({
           ))}
           <li>
             Repères : métabolisme de base de Mifflin-St Jeor (1990) ; protéines 1,6 à 2,2 g par kg (Morton et al., 2018) ;{' '}
-            {n.goal === 'perte' ? 'perte de 0,5 à 1 % du poids par semaine (Helms et al., 2014)' : n.goal === 'muscle' ? 'prise de 0,25 à 0,5 % par semaine (Iraki et al., 2019)' : 'poids stable'} ; fibres 30 g (ANSES) ;
-            boissons d’après l’EFSA (2010).
+            {n.goal === 'perte'
+              ? 'perte de 0,5 à 1 % du poids par semaine (Helms et al., 2014)'
+              : n.goal === 'muscle'
+                ? 'prise de 0,25 à 0,5 % par semaine (Iraki et al., 2019)'
+                : 'poids stable'}{' '}
+            ; fibres 30 g (ANSES) ; boissons d’après l’EFSA (2010).
           </li>
         </ul>
       </section>
@@ -522,7 +537,8 @@ function PlanSummary({
           </div>
         ))}
         <p className="text-[12px] leading-snug text-cendre">
-          RIR visé {training.sessions[0]?.exercises[0]?.rir ?? 2} (répétitions gardées en réserve), repos de {formatRest(Math.min(...training.sessions.flatMap((s) => s.exercises.map((e) => e.restSec))))} à{' '}
+          RIR visé {training.sessions[0]?.exercises[0]?.rir ?? 2} (répétitions gardées en réserve), repos de{' '}
+          {formatRest(Math.min(...training.sessions.flatMap((s) => s.exercises.map((e) => e.restSec))))} à{' '}
           {formatRest(Math.max(...training.sessions.flatMap((s) => s.exercises.map((e) => e.restSec))))}. FORGE te proposera ensuite tes charges, séance après séance.
         </p>
         {training.warnings.map((w) => (
@@ -545,8 +561,8 @@ function PlanSummary({
       )}
 
       <p className="text-[12px] leading-snug text-cendre">
-        Repères généraux, pas un avis médical. Grossesse, maladie, traitement, trouble du comportement alimentaire : demande l’avis d’un professionnel de santé avant de suivre
-        un plan.
+        Repères généraux, pas un avis médical. Grossesse, maladie, traitement, trouble du comportement alimentaire : demande l’avis d’un professionnel de santé avant de suivre un
+        plan.
       </p>
       {error && (
         <p className="text-[15px] text-braise" role="alert">

@@ -5,8 +5,8 @@ import { getDb } from './schema';
 import { createMetaRepo } from './repositories/meta';
 import { createProfileRepo } from './repositories/profile';
 import { createWeighInRepo } from './repositories/weighIns';
-import { createCheckInRepo, createExerciseRepo, createFoodCatalogRepo, createFoodRepo, createMealTemplateRepo, createProgramRepo, createSetRepo, createTemplateRepo, createWaterRepo, createWorkoutRepo } from './repositories/entities';
-import type { CheckIn, Exercise, Food, FoodEntry, MealTemplate, Profile, Program, WaterLog, WeighIn, Workout, WorkoutSet, WorkoutTemplate } from './types';
+import { createCheckInRepo, createExerciseRepo, createFoodCatalogRepo, createFoodRepo, createMealPlanRepo, createMealTemplateRepo, createPriceRepo, createProgramRepo, createRecipePhotoRepo, createRecipeRepo, createSetRepo, createShoppingListRepo, createTemplateRepo, createWaterRepo, createWorkoutRepo } from './repositories/entities';
+import type { CheckIn, Exercise, Food, FoodEntry, MealPlan, MealTemplate, PriceRecord, Profile, Program, RecipePhoto, RecipeRecord, ShoppingList, WaterLog, WeighIn, Workout, WorkoutSet, WorkoutTemplate } from './types';
 import { programTemplates } from '../domain/training';
 
 /**
@@ -54,7 +54,42 @@ export const repos = {
   get programs() {
     return createProgramRepo(getDb());
   },
+  get recipes() {
+    return createRecipeRepo(getDb());
+  },
+  get recipePhotos() {
+    return createRecipePhotoRepo(getDb());
+  },
+  get mealPlans() {
+    return createMealPlanRepo(getDb());
+  },
+  get shoppingLists() {
+    return createShoppingListRepo(getDb());
+  },
+  get prices() {
+    return createPriceRepo(getDb());
+  },
 };
+
+export function useRecipeRecords(): RecipeRecord[] | undefined {
+  return useLiveQuery(() => repos.recipes.listActive(), []);
+}
+
+export function useRecipePhotos(): RecipePhoto[] | undefined {
+  return useLiveQuery(() => repos.recipePhotos.listActive(), []);
+}
+
+export function useMealPlans(): MealPlan[] | undefined {
+  return useLiveQuery(() => repos.mealPlans.listActive(), []);
+}
+
+export function useShoppingLists(): ShoppingList[] | undefined {
+  return useLiveQuery(async () => (await repos.shoppingLists.listActive()).sort((a, b) => b.createdAt.localeCompare(a.createdAt)), []);
+}
+
+export function usePrices(): PriceRecord[] | undefined {
+  return useLiveQuery(() => repos.prices.listActive(), []);
+}
 
 export function usePrograms(): Program[] | undefined {
   return useLiveQuery(async () => (await repos.programs.listActive()).sort((a, b) => a.createdAt.localeCompare(b.createdAt)), []);

@@ -1,6 +1,6 @@
 import type { EntityTable, Table } from 'dexie';
 import type { ForgeDB } from '../schema';
-import type { CheckIn, Exercise, Food, FoodEntry, MealTemplate, Per100, Program, SyncFields, WaterLog, Workout, WorkoutSet, WorkoutTemplate } from '../types';
+import type { CheckIn, Exercise, Food, FoodEntry, MealPlan, MealTemplate, Per100, PriceRecord, Program, RecipePhoto, RecipeRecord, ShoppingList, SyncFields, WaterLog, Workout, WorkoutSet, WorkoutTemplate } from '../types';
 import type { LibraryExercise } from '../../data/exerciseLibrary';
 import { isDateKey } from '../../lib/dates';
 import { newId, nowIso } from '../../lib/ids';
@@ -246,4 +246,64 @@ export function createWaterRepo(db: ForgeDB) {
     if (i.date !== undefined) check(isDateKey(i.date), 'Date invalide.');
     if (i.ml !== undefined) check(Number.isInteger(i.ml) && between(i.ml, 1, 3000), 'Entre 1 et 3 000 ml par ajout.');
   });
+}
+
+export function createRecipeRepo(db: ForgeDB) {
+  return entityRepo<RecipeRecord>(db.recipes, (i) => {
+    if (i.name !== undefined) check(i.name.trim().length > 0 && i.name.length <= 80, 'Donne un nom à la recette (80 caractères maximum).');
+    if (i.description !== undefined) check(i.description.length <= 400, 'Description : 400 caractères maximum.');
+    if (i.servings !== undefined) check(Number.isInteger(i.servings) && between(i.servings, 1, 50), 'Entre 1 et 50 portions.');
+    if (i.prepMin !== undefined) check(Number.isInteger(i.prepMin) && between(i.prepMin, 0, 1440), 'Temps de préparation entre 0 et 1 440 minutes.');
+    if (i.cookMin !== undefined) check(Number.isInteger(i.cookMin) && between(i.cookMin, 0, 1440), 'Temps de cuisson entre 0 et 1 440 minutes.');
+    if (i.ingredients !== undefined) {
+      check(i.ingredients.length >= 1 && i.ingredients.length <= 60, 'Entre 1 et 60 ingrédients.');
+      for (const ing of i.ingredients) check(ing.name.trim().length > 0 && Number.isFinite(ing.grams) && between(ing.grams, 0.1, 20000), `Quantité de « ${ing.name} » entre 0,1 g et 20 kg.`);
+    }
+    if (i.steps !== undefined) check(i.steps.length <= 30 && i.steps.every((st) => st.length <= 600), 'Étapes : 30 au maximum, 600 caractères chacune.');
+  });
+}
+
+export function createRecipePhotoRepo(db: ForgeDB) {
+  const base = entityRepo<RecipePhoto>(db.recipePhotos, (i) => {
+    if (i.dataUrl !== undefined) check(i.dataUrl.startsWith('data:image/') && i.dataUrl.length < 1_500_000, 'Photo trop lourde ou invalide.');
+  });
+  return {
+    ...base,
+    /** Remplace la photo d'une recette. */
+    async setFor(recipeKey: string, dataUrl: string, now: Date = new Date()): Promise<RecipePhoto> {
+      for (const old of (await db.recipePhotos.where('recipeKey').equals(recipeKey).toArray()).filter((p) => !p.deletedAt)) await base.remove(old.id, now);
+      return base.add({ recipeKey, dataUrl }, now);
+    },
+    async removeFor(recipeKey: string, now: Date = new Date()): Promise<void> {
+      for (const old of (await db.recipePhotos.where('recipeKey').equals(recipeKey).toArray()).filter((p) => !p.deletedAt)) await base.remove(old.id, now);
+    },
+  };
+}
+
+export function createMealPlanRepo(db: ForgeDB) {
+  return entityRepo<MealPlan>(db.mealPlans, (i) => {
+    if (i.servings !== undefined) check(Number.isFinite(i.servings) && between(i.servings, 0.25, 20), 'Entre 0,25 et 20 portions.');
+  });
+}
+
+export function createShoppingListRepo(db: ForgeDB) {
+  return entityRepo<ShoppingList>(db.shoppingLists, (i) => {
+    if (i.name !== undefined) check(i.name.trim().length > 0 && i.name.length <= 80, 'Donne un nom à la liste.');
+    if (i.items !== undefined) check(i.items.length <= 300, 'Liste trop longue.');
+  });
+}
+
+export function createPriceRepo(db: ForgeDB) {
+  const base = entityRepo<PriceRecord>(db.prices, (i) => {
+    if (i.amountEur !== undefined) check(Number.isFinite(i.amountEur) && between(i.amountEur, 0.01, 1000), 'Prix entre 0,01 et 1 000 €.');
+    if (i.quantity !== undefined) check(Number.isFinite(i.quantity) && between(i.quantity, 0.1, 100000), 'Quantité invalide.');
+  });
+  return {
+    ...base,
+    /** Enregistre (ou remplace) le prix d'un ingrédient. */
+    async setPrice(input: Pick<PriceRecord, 'key' | 'name' | 'amountEur' | 'quantity' | 'unit'>, now: Date = new Date()): Promise<PriceRecord> {
+      const existing = (await db.prices.where('key').equals(input.key).toArray()).find((p) => !p.deletedAt);
+      return existing ? base.update(existing.id, input, now) : base.add(input, now);
+    },
+  };
 }

@@ -21,7 +21,19 @@ export const LEVEL_LABELS: Record<VolumeLevel, string> = {
 
 const mirror = `matrix(-1 0 0 1 ${VIEW_W} 0)`;
 
-function Figure({ view, levels, selected, describe, onSelect }: { view: View; levels: Record<MuscleGroup, VolumeLevel>; selected: MuscleGroup | null; describe: (m: MuscleGroup) => string; onSelect: (m: MuscleGroup) => void }) {
+function Figure({
+  view,
+  levels,
+  selected,
+  describe,
+  onSelect,
+}: {
+  view: View;
+  levels: Record<MuscleGroup, VolumeLevel>;
+  selected: MuscleGroup | null;
+  describe: (m: MuscleGroup) => string;
+  onSelect: (m: MuscleGroup) => void;
+}) {
   const shapes = MUSCLE_SHAPES[view];
   return (
     <figure className="m-0 flex flex-1 flex-col items-center gap-1">
@@ -68,7 +80,12 @@ function Figure({ view, levels, selected, describe, onSelect }: { view: View; le
 }
 
 /** Corps de face et de dos ; chaque muscle se touche. */
-export function BodyMap(props: { levels: Record<MuscleGroup, VolumeLevel>; selected: MuscleGroup | null; describe: (m: MuscleGroup) => string; onSelect: (m: MuscleGroup) => void }) {
+export function BodyMap(props: {
+  levels: Record<MuscleGroup, VolumeLevel>;
+  selected: MuscleGroup | null;
+  describe: (m: MuscleGroup) => string;
+  onSelect: (m: MuscleGroup) => void;
+}) {
   return (
     <div className="flex gap-3">
       <Figure view="face" {...props} />

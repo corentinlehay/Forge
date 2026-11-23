@@ -1,5 +1,25 @@
 # Journal des versions
 
+## Kitchen 1 : recettes, Compose mon repas, planning et courses (version de test, branche `kitchen-1`)
+
+### Fait
+- Base locale v5 : recettes perso, photos de recettes, planning des repas, listes de courses, prix des ingrédients. Tables ajoutées, rien de modifié ; migration v4 vers v5 testée. Le journal garde, pour une recette mangée, la recette, les portions et le coût.
+- 32 recettes FORGE, cuisine sportive et cuisine plaisir : petits-déjeuners, meal prep, bowls, plats mijotés, pizza, burger, wraps, quiche, carbonara, collations, desserts. Chaque ingrédient est relié à la table Ciqual 2025 (Anses) : calories, protéines, glucides, lipides et fibres sont calculés, jamais saisis. Un test vérifie chaque code Ciqual et la cohérence des valeurs.
+- Bibliothèque : recherche par nom ou ingrédient, catégories (petit-déjeuner, déjeuner, dîner, collations, desserts, repas rapides, meal prep, économiques, plaisir, riches en protéines, favoris, mes recettes), filtres par calories, protéines, temps, difficulté et budget par portion.
+- Fiche recette : visuel graphique FORGE ou ta photo, temps, difficulté, portions ajustables (quantités et valeurs recalculées), valeurs par portion et totales avec leur source, coût par portion (seulement quand tous les prix sont saisis, sinon « à renseigner »), ingrédients, étapes, conservation. Actions : « J’en mange » (ajout au journal), planifier, ajouter aux courses, favori, dupliquer, exporter.
+- Recettes perso : création et modification avec ingrédients cherchés dans tes aliments, la table Ciqual ou Open Food Facts (ou sans valeurs), rayon, étapes, conservation ; valeurs recalculées en direct. Une recette FORGE se duplique pour être modifiée. Import et export d’une recette en fichier FORGE.
+- Prix : tu saisis le prix payé et la quantité du paquet ; FORGE calcule le coût des quantités réellement utilisées (jamais le prix du paquet entier).
+- Préférences : allergènes et exclusions, végétarien, aliments aimés (mis en avant) et détestés ou à éviter (recettes masquées, avec un lien pour les afficher), budget par portion et temps maximal. Les allergènes des ingrédients perso ou importés ne sont pas connus : l’app le dit et rappelle de vérifier les étiquettes.
+- Compose mon repas : à partir des calories et protéines restantes du jour, du type de repas, du temps, du budget et des ingrédients à utiliser, FORGE propose les recettes et le nombre de portions (½ à 3) les plus proches. Ajout au journal en un geste.
+- Planning de la semaine : repas prévus par jour, distincts du journal jusqu’à « J’ai mangé » ; calories prévues par jour ; liste de courses de la semaine en un geste.
+- Listes de courses : ingrédients additionnés sans doublon, rangés par rayon, cases à cocher enregistrées, coût estimé (ou partiel avec le nombre d’articles sans prix).
+- Nutrition : accès à Recettes et à Compose mon repas sous le bilan du jour.
+- 167 tests. Parcours vérifié au format iPhone : bibliothèque, préférences (5 recettes masquées), catégories, fiche, portions, prix, j’en mange, planification, liste de courses cochée, Compose mon repas (750 kcal et 55 g de protéines), recette perso créée depuis la table Ciqual.
+
+### Pas encore
+- Génération de recettes et de menus par l’IA : livraison 6 (avec ta clé API).
+- Budget journalier et hebdomadaire, suivi des dépenses : livraison 5.
+
 ## Training 2 : carte des muscles (version de test, branche `muscles-1`)
 
 ### Fait

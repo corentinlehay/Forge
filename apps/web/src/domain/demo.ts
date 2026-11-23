@@ -266,6 +266,11 @@ export interface DemoTables {
   mealTemplates: MealTemplate[];
   waterLogs: WaterLog[];
   programs: Program[];
+  recipes: [];
+  recipePhotos: [];
+  mealPlans: [];
+  shoppingLists: [];
+  prices: [];
 }
 
 function localIso(dateKey: string, hour: number, minute = 0): string {
@@ -475,5 +480,10 @@ export function generateDemoData(today: string, now: Date): DemoTables {
     mealTemplates: [],
     waterLogs,
     programs: [program],
+    recipes: [],
+    recipePhotos: [],
+    mealPlans: [],
+    shoppingLists: [],
+    prices: [],
   };
 }

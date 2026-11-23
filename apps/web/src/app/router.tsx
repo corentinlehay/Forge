@@ -11,6 +11,12 @@ import { TemplateScreen } from '../features/training/TemplateScreen';
 import { ExerciseLibraryScreen } from '../features/training/ExerciseLibraryScreen';
 import { ExerciseDetailScreen } from '../features/training/ExerciseDetailScreen';
 import { PlanScreen } from '../features/plan/PlanScreen';
+import { KitchenScreen } from '../features/kitchen/KitchenScreen';
+import { RecipeScreen } from '../features/kitchen/RecipeScreen';
+import { RecipeEditor } from '../features/kitchen/RecipeEditor';
+import { ComposeScreen } from '../features/kitchen/ComposeScreen';
+import { PlanningScreen } from '../features/kitchen/PlanningScreen';
+import { ShoppingListScreen, ShoppingListsScreen } from '../features/kitchen/ShoppingScreen';
 import { MusclesScreen } from '../features/muscles/MusclesScreen';
 import { MuscleDetailScreen } from '../features/muscles/MuscleDetailScreen';
 import { AppShell } from './AppShell';
@@ -29,6 +35,14 @@ export const router = createBrowserRouter([
       { path: 'training/exercices', element: <ExerciseLibraryScreen /> },
       { path: 'training/exercices/:key', element: <ExerciseDetailScreen /> },
       { path: 'reglages/plan', element: <PlanScreen /> },
+      { path: 'nutrition/recettes', element: <KitchenScreen /> },
+      { path: 'nutrition/recettes/nouvelle', element: <RecipeEditor /> },
+      { path: 'nutrition/recettes/:key', element: <RecipeScreen /> },
+      { path: 'nutrition/recettes/:key/modifier', element: <RecipeEditor /> },
+      { path: 'nutrition/compose', element: <ComposeScreen /> },
+      { path: 'nutrition/planning', element: <PlanningScreen /> },
+      { path: 'nutrition/courses', element: <ShoppingListsScreen /> },
+      { path: 'nutrition/courses/:id', element: <ShoppingListScreen /> },
       { path: 'training/muscles', element: <MusclesScreen /> },
       { path: 'training/muscles/:muscle', element: <MuscleDetailScreen /> },
       { path: 'nutrition', element: <NutritionScreen /> },

@@ -79,13 +79,16 @@ export type PlanResult<T> = { ok: true; plan: T } | { ok: false; reason: string 
 
 export function nutritionPlan(a: PlanAnswers, today: string): PlanResult<NutritionPlan> {
   const age = ageOn(a.birthDate, today);
-  if (age < MIN_AGE) return { ok: false, reason: 'FORGE est conçu pour les adultes : les besoins des moins de 18 ans sont différents. Parles-en à un médecin ou à un coach diplômé.' };
+  if (age < MIN_AGE)
+    return { ok: false, reason: 'FORGE est conçu pour les adultes : les besoins des moins de 18 ans sont différents. Parles-en à un médecin ou à un coach diplômé.' };
   const notes: string[] = [];
   const b = bmi(a.weightKg, a.heightCm);
   let goal = a.goal;
   if (goal === 'perte' && b < 20) {
     goal = 'recompo';
-    notes.push('Ton poids est déjà dans le bas de la norme : FORGE ne propose pas de déficit et vise la stabilité. Si tu veux perdre du poids, parles-en à un professionnel de santé.');
+    notes.push(
+      'Ton poids est déjà dans le bas de la norme : FORGE ne propose pas de déficit et vise la stabilité. Si tu veux perdre du poids, parles-en à un professionnel de santé.',
+    );
   } else if (b < 18.5) {
     notes.push('Ton IMC est sous 18,5 : avant un changement d’alimentation, demande l’avis d’un professionnel de santé.');
   }
@@ -164,20 +167,122 @@ interface SessionModel {
   slots: [Slot, number][];
 }
 
-const FULL_A: SessionModel = { name: 'Corps entier A', slots: [[S.squat, 0], [S.pousseH, 0], [S.tirageV, 0], [S.ischios, 0], [S.epaules, 0], [S.triceps, 0], [S.abdos, 0]] };
-const FULL_B: SessionModel = { name: 'Corps entier B', slots: [[S.charniere, 0], [S.pousseV, 0], [S.tirageH, 0], [S.fente, 0], [S.biceps, 0], [S.mollets, 0], [S.abdos, 1]] };
-const FULL_C: SessionModel = { name: 'Corps entier C', slots: [[S.squat, 1], [S.tirageV, 1], [S.pousseH, 1], [S.fessiers, 0], [S.arriere, 0], [S.triceps, 1], [S.abdos, 2]] };
+const FULL_A: SessionModel = {
+  name: 'Corps entier A',
+  slots: [
+    [S.squat, 0],
+    [S.pousseH, 0],
+    [S.tirageV, 0],
+    [S.ischios, 0],
+    [S.epaules, 0],
+    [S.triceps, 0],
+    [S.abdos, 0],
+  ],
+};
+const FULL_B: SessionModel = {
+  name: 'Corps entier B',
+  slots: [
+    [S.charniere, 0],
+    [S.pousseV, 0],
+    [S.tirageH, 0],
+    [S.fente, 0],
+    [S.biceps, 0],
+    [S.mollets, 0],
+    [S.abdos, 1],
+  ],
+};
+const FULL_C: SessionModel = {
+  name: 'Corps entier C',
+  slots: [
+    [S.squat, 1],
+    [S.tirageV, 1],
+    [S.pousseH, 1],
+    [S.fessiers, 0],
+    [S.arriere, 0],
+    [S.triceps, 1],
+    [S.abdos, 2],
+  ],
+};
 const UPPER = (v: number, name: string): SessionModel => ({
   name,
-  slots: v ? [[S.pousseH, 1], [S.tirageV, 1], [S.pousseV, 1], [S.tirageH, 1], [S.arriere, 0], [S.triceps, 1], [S.biceps, 1]] : [[S.pousseH, 0], [S.tirageH, 0], [S.pousseV, 0], [S.tirageV, 0], [S.epaules, 0], [S.biceps, 0], [S.triceps, 0]],
+  slots: v
+    ? [
+        [S.pousseH, 1],
+        [S.tirageV, 1],
+        [S.pousseV, 1],
+        [S.tirageH, 1],
+        [S.arriere, 0],
+        [S.triceps, 1],
+        [S.biceps, 1],
+      ]
+    : [
+        [S.pousseH, 0],
+        [S.tirageH, 0],
+        [S.pousseV, 0],
+        [S.tirageV, 0],
+        [S.epaules, 0],
+        [S.biceps, 0],
+        [S.triceps, 0],
+      ],
 });
 const LOWER = (v: number, name: string): SessionModel => ({
   name,
-  slots: v ? [[S.charniere, 1], [S.squat, 1], [S.fessiers, 0], [S.quadri, 0], [S.ischios, 1], [S.mollets, 0], [S.abdos, 1]] : [[S.squat, 0], [S.charniere, 0], [S.fente, 0], [S.ischios, 0], [S.mollets, 0], [S.abdos, 0], [S.quadri, 0]],
+  slots: v
+    ? [
+        [S.charniere, 1],
+        [S.squat, 1],
+        [S.fessiers, 0],
+        [S.quadri, 0],
+        [S.ischios, 1],
+        [S.mollets, 0],
+        [S.abdos, 1],
+      ]
+    : [
+        [S.squat, 0],
+        [S.charniere, 0],
+        [S.fente, 0],
+        [S.ischios, 0],
+        [S.mollets, 0],
+        [S.abdos, 0],
+        [S.quadri, 0],
+      ],
 });
-const PUSH = (v: number, name: string): SessionModel => ({ name, slots: [[S.pousseH, v], [S.pousseV, v], [S.pousseH, v + 1], [S.epaules, v], [S.triceps, v], [S.pecs, v], [S.triceps, v + 1]] });
-const PULL = (v: number, name: string): SessionModel => ({ name, slots: [[S.tirageV, v], [S.tirageH, v], [S.tirageH, v + 1], [S.arriere, v], [S.biceps, v], [S.biceps, v + 1], [S.trapezes, v]] });
-const LEGS = (v: number, name: string): SessionModel => ({ name, slots: [[S.squat, v], [S.charniere, v], [S.fente, v], [S.quadri, v], [S.ischios, v], [S.mollets, v], [S.abdos, v]] });
+const PUSH = (v: number, name: string): SessionModel => ({
+  name,
+  slots: [
+    [S.pousseH, v],
+    [S.pousseV, v],
+    [S.pousseH, v + 1],
+    [S.epaules, v],
+    [S.triceps, v],
+    [S.pecs, v],
+    [S.triceps, v + 1],
+  ],
+});
+const PULL = (v: number, name: string): SessionModel => ({
+  name,
+  slots: [
+    [S.tirageV, v],
+    [S.tirageH, v],
+    [S.tirageH, v + 1],
+    [S.arriere, v],
+    [S.biceps, v],
+    [S.biceps, v + 1],
+    [S.trapezes, v],
+  ],
+});
+const LEGS = (v: number, name: string): SessionModel => ({
+  name,
+  slots: [
+    [S.squat, v],
+    [S.charniere, v],
+    [S.fente, v],
+    [S.quadri, v],
+    [S.ischios, v],
+    [S.mollets, v],
+    [S.abdos, v],
+  ],
+});
 
 export function splitFor(days: number): { label: string; sessions: SessionModel[] } {
   switch (Math.max(1, Math.min(6, days))) {
@@ -190,9 +295,15 @@ export function splitFor(days: number): { label: string; sessions: SessionModel[
     case 4:
       return { label: 'haut et bas du corps', sessions: [UPPER(0, 'Haut du corps A'), LOWER(0, 'Bas du corps A'), UPPER(1, 'Haut du corps B'), LOWER(1, 'Bas du corps B')] };
     case 5:
-      return { label: 'hybride haut, bas, poussée, tirage, jambes', sessions: [UPPER(0, 'Haut du corps'), LOWER(0, 'Bas du corps'), PUSH(1, 'Poussée'), PULL(1, 'Tirage'), LEGS(1, 'Jambes')] };
+      return {
+        label: 'hybride haut, bas, poussée, tirage, jambes',
+        sessions: [UPPER(0, 'Haut du corps'), LOWER(0, 'Bas du corps'), PUSH(1, 'Poussée'), PULL(1, 'Tirage'), LEGS(1, 'Jambes')],
+      };
     default:
-      return { label: 'poussée, tirage, jambes', sessions: [PUSH(0, 'Poussée A'), PULL(0, 'Tirage A'), LEGS(0, 'Jambes A'), PUSH(1, 'Poussée B'), PULL(1, 'Tirage B'), LEGS(1, 'Jambes B')] };
+      return {
+        label: 'poussée, tirage, jambes',
+        sessions: [PUSH(0, 'Poussée A'), PULL(0, 'Tirage A'), LEGS(0, 'Jambes A'), PUSH(1, 'Poussée B'), PULL(1, 'Tirage B'), LEGS(1, 'Jambes B')],
+      };
   }
 }
 
@@ -315,9 +426,14 @@ export function trainingPlan(a: PlanAnswers): TrainingPlan {
   });
 
   const warnings: string[] = [];
-  if (missing.has('tirage-v') || missing.has('tirage-h')) warnings.push('Aucun exercice de tirage pour le dos avec ton matériel : une barre de traction ou des haltères compléteraient le programme.');
-  if (missing.has('charniere') || missing.has('iso-ischios')) warnings.push('Peu d’exercices pour l’arrière des cuisses avec ton matériel : des haltères ou un kettlebell compléteraient le programme.');
-  if (a.zones.length) warnings.push('Zones à ménager : FORGE écarte les mouvements les plus exigeants pour elles. Ça ne remplace pas l’avis d’un professionnel de santé ; arrête un exercice qui fait mal.');
+  if (missing.has('tirage-v') || missing.has('tirage-h'))
+    warnings.push('Aucun exercice de tirage pour le dos avec ton matériel : une barre de traction ou des haltères compléteraient le programme.');
+  if (missing.has('charniere') || missing.has('iso-ischios'))
+    warnings.push('Peu d’exercices pour l’arrière des cuisses avec ton matériel : des haltères ou un kettlebell compléteraient le programme.');
+  if (a.zones.length)
+    warnings.push(
+      'Zones à ménager : FORGE écarte les mouvements les plus exigeants pour elles. Ça ne remplace pas l’avis d’un professionnel de santé ; arrête un exercice qui fait mal.',
+    );
 
   return {
     programName: `Plan FORGE, ${days.length} séance${days.length > 1 ? 's' : ''} par semaine`,

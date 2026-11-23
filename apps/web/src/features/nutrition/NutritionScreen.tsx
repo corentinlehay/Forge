@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { useNavigate, useSearchParams } from 'react-router';
+import { Link, useNavigate, useSearchParams } from 'react-router';
 import { repos, useFoodEntries, useFoods, useProfile, useToday, useWaterLogs, useWeighIns } from '../../db/hooks';
 import { DEFAULT_GAIN_RATE } from '../../db/repositories/profile';
 import type { FoodEntry, MealSlot } from '../../db/types';
@@ -127,6 +127,17 @@ export function NutritionScreen() {
           {targets ? 'Modifier les objectifs' : 'Définir mes objectifs'}
         </Button>
       </Card>
+
+      <nav aria-label="Kitchen" className="grid grid-cols-2 gap-2">
+        <Link to="/nutrition/recettes" viewTransition className="flex min-h-[72px] flex-col justify-between rounded-[18px] bg-anthracite p-3.5 active:scale-[0.99]">
+          <span className="text-[17px] font-semibold">Recettes</span>
+          <span className="text-[12px] text-cendre">Sportives et plaisir, planning, courses</span>
+        </Link>
+        <Link to="/nutrition/compose" viewTransition className="flex min-h-[72px] flex-col justify-between rounded-[18px] bg-anthracite p-3.5 active:scale-[0.99]">
+          <span className="text-[17px] font-semibold">Compose mon repas</span>
+          <span className="text-[12px] text-cendre">{remainingKcal !== null && date === today ? `Pour tes ${formatNumber(Math.max(0, remainingKcal), 0)} kcal restantes` : 'Selon ce qu’il te reste'}</span>
+        </Link>
+      </nav>
 
       <section aria-label="Hydratation" className="flex flex-col gap-3 rounded-[22px] bg-anthracite p-[18px]">
         <div className="flex items-center justify-between gap-3">

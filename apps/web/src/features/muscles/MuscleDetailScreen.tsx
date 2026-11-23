@@ -49,7 +49,12 @@ export function MuscleDetailScreen() {
       </Screen>
     );
   }
-  if (!data || !model) return <Screen withTabBar={false}><BackLink /></Screen>;
+  if (!data || !model)
+    return (
+      <Screen withTabBar={false}>
+        <BackLink />
+      </Screen>
+    );
   const { week, history, performances, primary, secondary } = model;
   const average4 = history.slice(-5, -1).reduce((s, h) => s + h.fractional, 0) / 4;
   const status = volumeStatus(average4);
@@ -126,12 +131,16 @@ export function MuscleDetailScreen() {
                   <span className="min-w-0 flex-1">
                     <span className="block text-[15px] leading-tight">{item.name}</span>
                     <span className="block text-[13px] text-cendre">
-                      {records.bestE1rm ? `1RM estimé ${kgText(Math.round(records.bestE1rm.valueKg * 10) / 10)} kg, ${formatDayShort(records.bestE1rm.date).toLocaleLowerCase('fr-FR')}` : 'Pas de séance sur un an'}
+                      {records.bestE1rm
+                        ? `1RM estimé ${kgText(Math.round(records.bestE1rm.valueKg * 10) / 10)} kg, ${formatDayShort(records.bestE1rm.date).toLocaleLowerCase('fr-FR')}`
+                        : 'Pas de séance sur un an'}
                     </span>
                   </span>
                   <span className="shrink-0 text-right text-[13px]">
                     <span className="block">{TREND_LABELS[trend.kind]}</span>
-                    <span className="block text-cendre">{sessions.length} séance{sessions.length > 1 ? 's' : ''}</span>
+                    <span className="block text-cendre">
+                      {sessions.length} séance{sessions.length > 1 ? 's' : ''}
+                    </span>
                   </span>
                 </Link>
               </li>
@@ -160,9 +169,7 @@ export function MuscleDetailScreen() {
           })}
         </ul>
         {secondary.length > 0 && (
-          <p className="mt-2 text-[13px] leading-snug text-cendre">
-            Sollicité aussi, en muscle secondaire, par : {secondary.map((e) => e.name).join(', ')}.
-          </p>
+          <p className="mt-2 text-[13px] leading-snug text-cendre">Sollicité aussi, en muscle secondaire, par : {secondary.map((e) => e.name).join(', ')}.</p>
         )}
       </section>
     </Screen>

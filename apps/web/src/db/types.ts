@@ -1,3 +1,4 @@
+import type { Aisle, FoodTag, Glyph, RecipeCategory } from '../data/recipes';
 /**
  * Modèle de données commun de FORGE (version 2 : socle, poids, nutrition, entraînement, bien-être).
  * Chaque enregistrement porte les champs nécessaires à une synchronisation future.
@@ -118,6 +119,11 @@ export interface FoodEntry extends SyncFields {
   unit?: 'g' | 'ml';
   /** Copie des valeurs pour 100 g au moment de l'ajout (le journal ne change pas si l'aliment est modifié). */
   per100?: Per100 | null;
+  /** Recette mangée (Kitchen) et nombre de portions. */
+  recipeKey?: string | null;
+  recipeServings?: number | null;
+  /** Coût estimé des portions mangées, si tous les prix des ingrédients sont connus. */
+  costEur?: number | null;
 }
 
 /** Une ligne d'un repas habituel. */
@@ -223,4 +229,79 @@ export interface CheckIn extends SyncFields {
   fatigue: Scale5;
   soreness: Scale5;
   note?: string;
+}
+
+/** Ingrédient d'une recette, avec une copie de ses valeurs pour 100 g. */
+export interface RecipeIngredient {
+  /** « ciqual:9119 », « off:<code-barres> », « perso:<id> » ou « libre:<nom> ». */
+  key: string;
+  name: string;
+  /** Quantité pour le nombre de portions de base. */
+  grams: number;
+  /** Valeurs pour 100 g (null : inconnues). */
+  per100: Per100 | null;
+  aisle: Aisle;
+  unit?: [string, string, number] | null;
+  ml?: boolean;
+  /** Allergènes et régimes connus (null : inconnus). */
+  tags?: FoodTag[] | null;
+}
+
+/** Recette perso (ou copie d'une recette FORGE). */
+export interface RecipeRecord extends SyncFields {
+  name: string;
+  description: string;
+  categories: RecipeCategory[];
+  prepMin: number;
+  cookMin: number;
+  servings: number;
+  difficulty: 1 | 2 | 3;
+  glyph: Glyph;
+  ingredients: RecipeIngredient[];
+  steps: string[];
+  storage: string;
+  /** Recette d'origine en cas de copie. */
+  origin?: string | null;
+}
+
+/** Photo personnelle d'une recette (FORGE ou perso), en JPEG réduit. */
+export interface RecipePhoto extends SyncFields {
+  recipeKey: string;
+  dataUrl: string;
+}
+
+/** Recette planifiée : reste distincte du journal tant qu'elle n'est pas marquée « mangée ». */
+export interface MealPlan extends SyncFields {
+  date: string;
+  meal: MealSlot;
+  recipeKey: string;
+  servings: number;
+  status: 'planned' | 'eaten';
+  foodEntryId?: string | null;
+}
+
+export interface ShoppingListItem {
+  key: string;
+  name: string;
+  grams: number;
+  ml: boolean;
+  aisle: Aisle;
+  unit?: [string, string, number] | null;
+  recipes: string[];
+  checked: boolean;
+}
+
+export interface ShoppingList extends SyncFields {
+  name: string;
+  items: ShoppingListItem[];
+  selections: { recipeKey: string; servings: number }[];
+}
+
+/** Prix saisi pour un ingrédient : montant payé pour une quantité. */
+export interface PriceRecord extends SyncFields {
+  key: string;
+  name: string;
+  amountEur: number;
+  quantity: number;
+  unit: 'g' | 'ml' | 'piece';
 }

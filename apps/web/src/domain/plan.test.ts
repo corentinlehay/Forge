@@ -96,7 +96,10 @@ describe('programme d’entraînement', () => {
   it('à la maison, n’utilise que le matériel disponible', () => {
     const home = trainingPlan({ ...base, place: 'maison', equipment: ['halteres', 'banc'] });
     for (const id of ids(home)) {
-      expect(TRAITS[id]!.needs.every((n) => ['halteres', 'banc', 'charge'].includes(n)), id).toBe(true);
+      expect(
+        TRAITS[id]!.needs.every((n) => ['halteres', 'banc', 'charge'].includes(n)),
+        id,
+      ).toBe(true);
     }
     const bare = trainingPlan({ ...base, place: 'maison', equipment: [] });
     for (const id of ids(bare)) expect(TRAITS[id]!.needs, id).toEqual([]);

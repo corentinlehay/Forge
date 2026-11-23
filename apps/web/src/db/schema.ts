@@ -1,6 +1,6 @@
 import Dexie, { type EntityTable } from 'dexie';
 import { activeDbName } from './dataMode';
-import type { CheckIn, Exercise, Food, FoodEntry, MealTemplate, MetaEntry, Profile, Program, WaterLog, WeighIn, Workout, WorkoutSet, WorkoutTemplate } from './types';
+import type { CheckIn, Exercise, Food, FoodEntry, MealPlan, MealTemplate, MetaEntry, PriceRecord, Profile, Program, RecipePhoto, RecipeRecord, ShoppingList, WaterLog, WeighIn, Workout, WorkoutSet, WorkoutTemplate } from './types';
 import { newId, nowIso } from '../lib/ids';
 
 /**
@@ -12,8 +12,9 @@ import { newId, nowIso } from '../lib/ids';
  * v2 : + journal alimentaire, exercices, programme, séances, séries, check-ins (tables ajoutées, rien de modifié).
  * v3 : + aliments (perso, Ciqual, Open Food Facts), repas habituels, hydratation (tables ajoutées, rien de modifié).
  * v4 : + programmes ; les séances existantes sont rattachées à un premier programme actif.
+ * v5 : + recettes perso, photos de recettes, planning des repas, listes de courses, prix des ingrédients (tables ajoutées).
  */
-export const SCHEMA_VERSION = 4;
+export const SCHEMA_VERSION = 5;
 
 export class ForgeDB extends Dexie {
   profile!: EntityTable<Profile, 'id'>;
@@ -29,6 +30,11 @@ export class ForgeDB extends Dexie {
   mealTemplates!: EntityTable<MealTemplate, 'id'>;
   waterLogs!: EntityTable<WaterLog, 'id'>;
   programs!: EntityTable<Program, 'id'>;
+  recipes!: EntityTable<RecipeRecord, 'id'>;
+  recipePhotos!: EntityTable<RecipePhoto, 'id'>;
+  mealPlans!: EntityTable<MealPlan, 'id'>;
+  shoppingLists!: EntityTable<ShoppingList, 'id'>;
+  prices!: EntityTable<PriceRecord, 'id'>;
 
   constructor(name = 'forge') {
     super(name);
@@ -63,6 +69,13 @@ export class ForgeDB extends Dexie {
           if (!t.programId) t.programId = id;
         });
       });
+    this.version(5).stores({
+      recipes: 'id, updatedAt',
+      recipePhotos: 'id, recipeKey, updatedAt',
+      mealPlans: 'id, date, updatedAt',
+      shoppingLists: 'id, updatedAt',
+      prices: 'id, key, updatedAt',
+    });
   }
 }
 

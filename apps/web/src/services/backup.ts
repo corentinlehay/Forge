@@ -76,7 +76,55 @@ const foodEntrySchema = z.object({
   grams: z.number().min(0).max(5000).nullable().optional(),
   unit: z.enum(['g', 'ml']).optional(),
   per100: per100Schema.nullable().optional(),
+  recipeKey: z.string().max(100).nullable().optional(),
+  recipeServings: z.number().min(0).max(50).nullable().optional(),
+  costEur: z.number().min(0).max(1000).nullable().optional(),
 });
+
+const aisle = z.enum(['fruits-legumes', 'viandes-poissons', 'cremerie', 'feculents', 'conserves', 'epicerie', 'surgeles']);
+const unitTuple = z.tuple([z.string().max(30), z.string().max(30), z.number().min(0.1).max(5000)]).nullable().optional();
+export const recipeIngredientSchema = z.object({
+  key: z.string().min(1).max(160),
+  name: z.string().min(1).max(160),
+  grams: z.number().min(0.1).max(20000),
+  per100: per100Schema.nullable(),
+  aisle,
+  unit: unitTuple,
+  ml: z.boolean().optional(),
+  tags: z.array(z.enum(['gluten', 'lait', 'oeuf', 'poisson', 'crustaces', 'arachide', 'fruits-a-coque', 'soja', 'moutarde', 'sesame', 'viande', 'porc'])).nullable().optional(),
+});
+const glyph = z.enum(['bol', 'pancake', 'poele', 'tartine', 'boite', 'wok', 'cocotte', 'assiette', 'salade', 'pizza', 'burger', 'wrap', 'quiche', 'pates', 'gratin', 'verre', 'billes', 'mug', 'verrine', 'gateau']);
+export const recipeFields = {
+  name: z.string().min(1).max(80),
+  description: z.string().max(400),
+  categories: z.array(z.enum(['petit-dejeuner', 'dejeuner', 'diner', 'collation', 'dessert', 'meal-prep', 'economique', 'plaisir'])).max(8),
+  prepMin: z.number().int().min(0).max(1440),
+  cookMin: z.number().int().min(0).max(1440),
+  servings: z.number().int().min(1).max(50),
+  difficulty: z.union([z.literal(1), z.literal(2), z.literal(3)]),
+  glyph,
+  ingredients: z.array(recipeIngredientSchema).min(1).max(60),
+  steps: z.array(z.string().max(600)).max(30),
+  storage: z.string().max(600),
+};
+const recipeSchema = z.object({ ...syncFields, ...recipeFields, origin: z.string().max(100).nullable().optional() });
+const recipePhotoSchema = z.object({ ...syncFields, recipeKey: z.string().min(1).max(100), dataUrl: z.string().startsWith('data:image/').max(1_500_000) });
+const mealPlanSchema = z.object({
+  ...syncFields,
+  date: dateKey,
+  meal: z.enum(['breakfast', 'lunch', 'dinner', 'snack']),
+  recipeKey: z.string().min(1).max(100),
+  servings: z.number().min(0.25).max(20),
+  status: z.enum(['planned', 'eaten']),
+  foodEntryId: z.string().nullable().optional(),
+});
+const shoppingListSchema = z.object({
+  ...syncFields,
+  name: z.string().min(1).max(80),
+  items: z.array(z.object({ key: z.string().max(160), name: z.string().max(160), grams: z.number().min(0).max(200000), ml: z.boolean(), aisle, unit: unitTuple, recipes: z.array(z.string().max(80)), checked: z.boolean() })).max(300),
+  selections: z.array(z.object({ recipeKey: z.string().max(100), servings: z.number().min(0.25).max(50) })),
+});
+const priceSchema = z.object({ ...syncFields, key: z.string().min(1).max(160), name: z.string().min(1).max(160), amountEur: z.number().min(0.01).max(1000), quantity: z.number().min(0.1).max(100000), unit: z.enum(['g', 'ml', 'piece']) });
 
 const foodSchema = z.object({
   ...syncFields,
@@ -201,6 +249,11 @@ export const backupSchema = z.object({
     mealTemplates: z.array(mealTemplateSchema).default([]),
     waterLogs: z.array(waterSchema).default([]),
     programs: z.array(programSchema).default([]),
+    recipes: z.array(recipeSchema).default([]),
+    recipePhotos: z.array(recipePhotoSchema).default([]),
+    mealPlans: z.array(mealPlanSchema).default([]),
+    shoppingLists: z.array(shoppingListSchema).default([]),
+    prices: z.array(priceSchema).default([]),
   }),
 });
 
@@ -228,6 +281,11 @@ const TABLES = [
   ['mealTemplates', 'id'],
   ['waterLogs', 'id'],
   ['programs', 'id'],
+  ['recipes', 'id'],
+  ['recipePhotos', 'id'],
+  ['mealPlans', 'id'],
+  ['shoppingLists', 'id'],
+  ['prices', 'id'],
 ] as const;
 
 type TableName = (typeof TABLES)[number][0];
