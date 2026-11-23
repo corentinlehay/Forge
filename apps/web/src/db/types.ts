@@ -40,6 +40,40 @@ export interface NutritionTargets {
   proteinG: number;
   carbsG: number;
   fatG: number;
+  /** Facultatif : fibres visées par jour. */
+  fiberG?: number;
+  /** Facultatif : boissons visées par jour, en millilitres. */
+  waterMl?: number;
+}
+
+/** Valeurs nutritionnelles pour 100 g (ou 100 ml). Fibres nulles = inconnues. */
+export interface Per100 {
+  kcal: number;
+  proteinG: number;
+  carbsG: number;
+  fatG: number;
+  fiberG: number | null;
+}
+
+export type FoodSource = 'ciqual' | 'off' | 'custom';
+export type FoodState = 'raw' | 'cooked';
+
+/** Un aliment connu de l'app : créé par toi, ou repris de Ciqual ou d'Open Food Facts à la première utilisation. */
+export interface Food extends SyncFields {
+  source: FoodSource;
+  /** Code Ciqual ou code-barres. */
+  sourceId?: string | null;
+  name: string;
+  brand?: string;
+  state?: FoodState | null;
+  unit: 'g' | 'ml';
+  per100: Per100;
+  /** Portion type, ex. 30 g pour « 1 portion ». */
+  servingG?: number | null;
+  servingLabel?: string;
+  favorite: boolean;
+  lastUsedAt?: string | null;
+  useCount: number;
 }
 
 export type WeighInContext = 'morning_fasted' | 'other';
@@ -74,6 +108,42 @@ export interface FoodEntry extends SyncFields {
   proteinG: number;
   carbsG: number;
   fatG: number;
+  /** Fibres en g ; absent ou null = inconnu. */
+  fiberG?: number | null;
+  /** Aliment d'origine et quantité pesée : permettent de modifier la quantité. */
+  foodId?: string | null;
+  grams?: number | null;
+  unit?: 'g' | 'ml';
+  /** Copie des valeurs pour 100 g au moment de l'ajout (le journal ne change pas si l'aliment est modifié). */
+  per100?: Per100 | null;
+}
+
+/** Une ligne d'un repas habituel. */
+export interface MealTemplateItem {
+  foodId?: string | null;
+  name: string;
+  quantity?: string;
+  grams?: number | null;
+  unit?: 'g' | 'ml';
+  per100?: Per100 | null;
+  kcal: number;
+  proteinG: number;
+  carbsG: number;
+  fatG: number;
+  fiberG?: number | null;
+}
+
+/** Repas habituel : un ensemble d'aliments à ajouter d'un geste. */
+export interface MealTemplate extends SyncFields {
+  name: string;
+  meal?: MealSlot | null;
+  items: MealTemplateItem[];
+}
+
+/** Une boisson enregistrée (eau, etc.), en millilitres. */
+export interface WaterLog extends SyncFields {
+  date: string;
+  ml: number;
 }
 
 export interface Exercise extends SyncFields {

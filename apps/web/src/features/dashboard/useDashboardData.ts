@@ -1,8 +1,8 @@
 import { useMemo } from 'react';
-import { useCheckIns, useExercises, useFoodEntries, useProfile, useTemplates, useToday, useWeighIns, useWorkouts, useWorkoutSets } from '../../db/hooks';
+import { useCheckIns, useExercises, useFoodEntries, useProfile, useTemplates, useToday, useWaterLogs, useWeighIns, useWorkouts, useWorkoutSets } from '../../db/hooks';
 import { DEFAULT_GAIN_RATE } from '../../db/repositories/profile';
 import { buildDailyBrief } from '../../domain/coach';
-import { dayNutrition } from '../../domain/nutrition';
+import { dayNutrition, waterForDay } from '../../domain/nutrition';
 import {
   completedWorkouts,
   findRecords,
@@ -33,8 +33,9 @@ export function useDashboardData() {
   const workouts = useWorkouts();
   const sets = useWorkoutSets();
   const checkIns = useCheckIns();
+  const water = useWaterLogs();
 
-  const loading = [profile, weighIns, food, exercises, templates, workouts, sets, checkIns].some((v) => v === undefined);
+  const loading = [profile, weighIns, food, exercises, templates, workouts, sets, checkIns, water].some((v) => v === undefined);
 
   return useMemo(() => {
     if (loading) return null;
@@ -50,6 +51,7 @@ export function useDashboardData() {
 
     // Nutrition
     const nutrition = dayNutrition(food!, today, profile!.nutritionTargets);
+    const waterMl = waterForDay(water!, today);
 
     // Entraînement
     const grouped = setsByWorkout(sets!);
@@ -99,6 +101,7 @@ export function useDashboardData() {
       weighedToday,
       weekAverage,
       nutrition,
+      waterMl,
       training: {
         plannedToday,
         inProgress,
@@ -115,7 +118,7 @@ export function useDashboardData() {
       brief,
       nameOf,
     };
-  }, [loading, today, profile, weighIns, food, exercises, templates, workouts, sets, checkIns]);
+  }, [loading, today, profile, weighIns, food, exercises, templates, workouts, sets, checkIns, water]);
 }
 
 export type DashboardData = NonNullable<ReturnType<typeof useDashboardData>>;

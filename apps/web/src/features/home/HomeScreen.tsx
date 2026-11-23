@@ -1,5 +1,5 @@
 import { Link } from 'react-router';
-import { countLabel, formatDayLong, formatDaysAgo, formatMeasuredKg, formatNumber, formatSignedKg } from '../../lib/format';
+import { countLabel, formatDayLong, formatLitres, formatDaysAgo, formatMeasuredKg, formatNumber, formatSignedKg } from '../../lib/format';
 import { MEAL_LABELS } from '../../domain/nutrition';
 import { recoveryLabel } from '../../domain/wellbeing';
 import { Icon } from '../../ui/Icon';
@@ -118,6 +118,16 @@ function NutritionCard({ data }: { data: DashboardData }) {
         <Meter label="Glucides" value={totals.carbsG} target={targets?.carbsG} />
         <Meter label="Lipides" value={totals.fatG} target={targets?.fatG} />
       </div>
+      <p className="flex flex-wrap gap-x-4 gap-y-1 border-t border-graphite pt-3 text-[13px]">
+        <span>
+          <span className="text-cendre">Fibres </span>
+          {formatNumber(totals.fiberG, 0)} g{targets?.fiberG ? <span className="text-cendre"> / {formatNumber(targets.fiberG, 0)}</span> : null}
+        </span>
+        <span>
+          <span className="text-cendre">Boissons </span>
+          {formatLitres(data.waterMl)}{targets?.waterMl ? <span className="text-cendre"> / {formatLitres(targets.waterMl)}</span> : null}
+        </span>
+      </p>
     </LinkCard>
   );
 }

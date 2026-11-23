@@ -1,5 +1,26 @@
 # Journal des versions
 
+## Nutrition 1 : ajout d'aliments (version de test, branche `nutrition-1`)
+
+### Fait
+- Base locale v3 : aliments (perso, Open Food Facts, Ciqual), repas habituels, boissons. Tables ajoutées sans rien modifier ; migration v2 vers v3 testée.
+- Écran « Ajouter » : recherche dans tes aliments (hors ligne) puis dans Open Food Facts (nom ou marque), onglets Récents, Favoris, Perso et Repas habituels.
+- Scanner de codes-barres : caméra arrière, moteur de lecture embarqué (fonctionne sans réseau), saisie manuelle du code en secours. Produit introuvable : création d'un aliment perso avec ce code, reconnu au scan suivant.
+- Quantités en grammes ou millilitres : pavé, portions rapides (portion du produit, 50 à 250 g), calcul en direct des calories, macros et fibres. Aucune ligne n'est enregistrée avant confirmation.
+- Modification de la quantité d'une ligne du journal, valeurs recalculées ; favoris ; historique d'usage.
+- Aliments perso à partir de l'étiquette (pour 100 g ou 100 ml, portion habituelle, cru ou cuit).
+- Journal : copier le repas de la veille, copier un repas d'un autre jour sur aujourd'hui, enregistrer un repas comme repas habituel et l'ajouter d'un geste.
+- Fibres (total minimum quand une valeur manque) et hydratation (+250, +500, +750 ml, détail et retrait), objectifs facultatifs avec repères sourcés. Fibres et boissons au tableau de bord.
+- Open Food Facts : 10 recherches et 15 fiches par minute au plus, jamais de recherche à chaque frappe ; messages clairs hors connexion ou en cas de limite.
+- 111 tests. Parcours vérifié au format iPhone : recherche Open Food Facts simulée, vrai code-barres lu par une caméra simulée, modification de quantité, produit introuvable vers aliment perso, repas habituel, boissons, mode hors ligne.
+
+### À vérifier sur ton iPhone
+- Recherche et scan avec le vrai Open Food Facts (impossible depuis mon environnement).
+- Autorisation de la caméra dans l'app installée.
+
+### En attente
+- Table Ciqual hors ligne : le domaine n'est pas encore accessible depuis mon environnement.
+
 ## Interface V1 et tableau de bord (version de test, branche `dashboard-v1`)
 
 ### Fait

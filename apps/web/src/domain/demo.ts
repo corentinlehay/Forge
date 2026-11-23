@@ -1,4 +1,4 @@
-import type { CheckIn, Exercise, FoodEntry, MealSlot, MetaEntry, Profile, Scale5, WeighIn, Workout, WorkoutSet, WorkoutTemplate } from '../db/types';
+import type { CheckIn, Exercise, Food, FoodEntry, MealSlot, MealTemplate, MetaEntry, Profile, Scale5, WaterLog, WeighIn, Workout, WorkoutSet, WorkoutTemplate } from '../db/types';
 import { addDays } from '../lib/dates';
 import { ONBOARDING_KEY } from './onboarding';
 import { isoWeekday } from './training';
@@ -84,8 +84,8 @@ const PROGRAM: { name: string; weekday: number; exercises: DemoExercise[] }[] = 
   },
 ];
 
-type Food = [name: string, quantity: string, kcal: number, p: number, c: number, f: number];
-const MEALS: Record<MealSlot, { hour: number; foods: Food[] }> = {
+type DemoFood = [name: string, quantity: string, kcal: number, p: number, c: number, f: number];
+const MEALS: Record<MealSlot, { hour: number; foods: DemoFood[] }> = {
   breakfast: {
     hour: 7,
     foods: [
@@ -131,6 +131,9 @@ export interface DemoTables {
   workouts: Workout[];
   workoutSets: WorkoutSet[];
   checkIns: CheckIn[];
+  foods: Food[];
+  mealTemplates: MealTemplate[];
+  waterLogs: WaterLog[];
 }
 
 function localIso(dateKey: string, hour: number, minute = 0): string {
@@ -251,5 +254,16 @@ export function generateDemoData(today: string, now: Date): DemoTables {
     { key: 'lastBackupAt', value: stamp, updatedAt: stamp },
   ];
 
-  return { profile: [profile], weighIns, meta, foodEntries, exercises: [...exercises.values()], workoutTemplates, workouts, workoutSets, checkIns };
+  // Boissons : 14 jours, aujourd'hui seulement ce qui est déjà passé.
+  const waterLogs: WaterLog[] = [];
+  for (let i = 13; i >= 0; i--) {
+    const date = addDays(today, -i);
+    for (const [h, ml] of [[8, 500], [11, 500], [14, 750], [17, 500], [20, 250]] as const) {
+      if (i === 0 && hour < h) continue;
+      if (rand() < 0.15) continue;
+      waterLogs.push({ ...sync('eau', localIso(date, h)), date, ml });
+    }
+  }
+
+  return { profile: [profile], weighIns, meta, foodEntries, exercises: [...exercises.values()], workoutTemplates, workouts, workoutSets, checkIns, foods: [], mealTemplates: [], waterLogs };
 }

@@ -5,8 +5,8 @@ import { getDb } from './schema';
 import { createMetaRepo } from './repositories/meta';
 import { createProfileRepo } from './repositories/profile';
 import { createWeighInRepo } from './repositories/weighIns';
-import { createCheckInRepo, createExerciseRepo, createFoodRepo, createSetRepo, createTemplateRepo, createWorkoutRepo } from './repositories/entities';
-import type { CheckIn, Exercise, FoodEntry, Profile, WeighIn, Workout, WorkoutSet, WorkoutTemplate } from './types';
+import { createCheckInRepo, createExerciseRepo, createFoodCatalogRepo, createFoodRepo, createMealTemplateRepo, createSetRepo, createTemplateRepo, createWaterRepo, createWorkoutRepo } from './repositories/entities';
+import type { CheckIn, Exercise, Food, FoodEntry, MealTemplate, Profile, WaterLog, WeighIn, Workout, WorkoutSet, WorkoutTemplate } from './types';
 
 /**
  * Lectures réactives : chaque écran se met à jour dès qu'une donnée change en base.
@@ -41,7 +41,28 @@ export const repos = {
   get checkIns() {
     return createCheckInRepo(getDb());
   },
+  get foods() {
+    return createFoodCatalogRepo(getDb());
+  },
+  get mealTemplates() {
+    return createMealTemplateRepo(getDb());
+  },
+  get water() {
+    return createWaterRepo(getDb());
+  },
 };
+
+export function useFoods(): Food[] | undefined {
+  return useLiveQuery(() => repos.foods.listActive(), []);
+}
+
+export function useMealTemplates(): MealTemplate[] | undefined {
+  return useLiveQuery(async () => (await repos.mealTemplates.listActive()).sort((a, b) => a.name.localeCompare(b.name, 'fr')), []);
+}
+
+export function useWaterLogs(): WaterLog[] | undefined {
+  return useLiveQuery(() => repos.water.listActive(), []);
+}
 
 export function useFoodEntries(): FoodEntry[] | undefined {
   return useLiveQuery(() => repos.food.listActive(), []);

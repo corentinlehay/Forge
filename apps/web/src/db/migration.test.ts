@@ -56,3 +56,32 @@ describe('saisies v2', () => {
     db.close();
   });
 });
+
+describe('migration v2 → v3', () => {
+  it('garde le journal et les séances, et ajoute aliments, repas habituels et hydratation', async () => {
+    const name = `migration3-${crypto.randomUUID()}`;
+    names.push(name);
+    const v2 = new Dexie(name);
+    v2.version(1).stores({ profile: 'id, updatedAt', weighIns: 'id, date, [date+time], updatedAt', meta: 'key' });
+    v2.version(2).stores({
+      foodEntries: 'id, date, updatedAt',
+      exercises: 'id, name, updatedAt',
+      workoutTemplates: 'id, updatedAt',
+      workouts: 'id, date, updatedAt',
+      workoutSets: 'id, workoutId, exerciseId, updatedAt',
+      checkIns: 'id, date, updatedAt',
+    });
+    await v2.table('foodEntries').put({ id: 'f', createdAt: 'a', updatedAt: 'a', deletedAt: null, date: '2026-11-23', meal: 'lunch', name: 'Riz', kcal: 390, proteinG: 8, carbsG: 85, fatG: 1 });
+    await v2.table('workouts').put({ id: 'w', createdAt: 'a', updatedAt: 'a', deletedAt: null, date: '2026-11-23', name: 'Upper A', exerciseIds: [], startedAt: 'a', endedAt: 'b' });
+    v2.close();
+
+    const db = new ForgeDB(name);
+    await db.open();
+    expect(db.verno).toBe(3);
+    expect((await db.foodEntries.get('f'))?.kcal).toBe(390);
+    expect(await db.workouts.count()).toBe(1);
+    expect(await db.foods.count()).toBe(0);
+    expect(await db.waterLogs.count()).toBe(0);
+    db.close();
+  });
+});

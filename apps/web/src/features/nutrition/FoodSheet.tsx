@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { repos, useFoodEntries } from '../../db/hooks';
 import { DataError } from '../../db/repositories/entities';
-import type { FoodEntry, MealSlot } from '../../db/types';
+import type { FoodEntry, MealSlot, NutritionTargets } from '../../db/types';
 import { kcalFromMacros, recentFoods } from '../../domain/nutrition';
 import { formatNumber, parseDecimal } from '../../lib/format';
 import { Button } from '../../ui/Button';
@@ -145,12 +145,14 @@ export function FoodForm({ date, meal: initialMeal, editing, onDone }: FoodFormP
   );
 }
 
-export function TargetsForm({ current, trendKg, onDone }: { current: { kcal: number; proteinG: number; carbsG: number; fatG: number } | undefined; trendKg: number | null; onDone: () => void }) {
+export function TargetsForm({ current, trendKg, onDone }: { current: NutritionTargets | undefined; trendKg: number | null; onDone: () => void }) {
   const toast = useToast();
   const [kcal, setKcal] = useState(toText(current?.kcal));
   const [protein, setProtein] = useState(toText(current?.proteinG));
   const [carbs, setCarbs] = useState(toText(current?.carbsG));
   const [fat, setFat] = useState(toText(current?.fatG));
+  const [fiber, setFiber] = useState(toText(current?.fiberG));
+  const [water, setWater] = useState(current?.waterMl ? toText(current.waterMl / 1000) : '');
   const [error, setError] = useState<string | null>(null);
   const values = [num(kcal), num(protein), num(carbs), num(fat)];
   const macrosKcal = kcalFromMacros(values[1] ?? 0, values[2] ?? 0, values[3] ?? 0);
@@ -158,12 +160,27 @@ export function TargetsForm({ current, trendKg, onDone }: { current: { kcal: num
   const save = async () => {
     setError(null);
     if (values.some((v) => v === null)) {
-      setError('Renseigne les quatre valeurs.');
+      setError('Renseigne calories, protéines, glucides et lipides.');
+      return;
+    }
+    if ((fiber.trim() && num(fiber) === null) || (water.trim() && num(water) === null)) {
+      setError('Vérifie les fibres et l’hydratation.');
       return;
     }
     const [k, p, c, f] = values as number[];
+    const fiberG = num(fiber);
+    const waterL = num(water);
     try {
-      await repos.profile.update({ nutritionTargets: { kcal: Math.round(k!), proteinG: p!, carbsG: c!, fatG: f! } });
+      await repos.profile.update({
+        nutritionTargets: {
+          kcal: Math.round(k!),
+          proteinG: p!,
+          carbsG: c!,
+          fatG: f!,
+          ...(fiberG !== null ? { fiberG } : {}),
+          ...(waterL !== null ? { waterMl: Math.round(waterL * 1000) } : {}),
+        },
+      });
       toast.show('Objectifs enregistrés');
       onDone();
     } catch (e) {
@@ -174,13 +191,17 @@ export function TargetsForm({ current, trendKg, onDone }: { current: { kcal: num
   return (
     <div className="flex flex-col gap-4 pb-1">
       <p className="text-[15px] leading-snug text-cendre">
-        Tes objectifs du jour. Le calcul automatique à partir de ton profil et de ton rythme de prise arrivera avec le module Nutrition complet.
+        Tes objectifs du jour. Le calcul adaptatif, qui propose des ajustements à partir de ta tendance de poids, arrivera avec la livraison « objectifs dynamiques ».
       </p>
       <Field label="Calories" value={kcal} onChange={(e) => setKcal(e.target.value)} inputMode="decimal" suffix="kcal" />
       <div className="grid grid-cols-3 gap-3">
         <Field label="Protéines" value={protein} onChange={(e) => setProtein(e.target.value)} inputMode="decimal" suffix="g" />
         <Field label="Glucides" value={carbs} onChange={(e) => setCarbs(e.target.value)} inputMode="decimal" suffix="g" />
         <Field label="Lipides" value={fat} onChange={(e) => setFat(e.target.value)} inputMode="decimal" suffix="g" />
+      </div>
+      <div className="grid grid-cols-2 gap-3">
+        <Field label="Fibres (facultatif)" value={fiber} onChange={(e) => setFiber(e.target.value)} inputMode="decimal" suffix="g" />
+        <Field label="Boissons (facultatif)" value={water} onChange={(e) => setWater(e.target.value)} inputMode="decimal" suffix="L" />
       </div>
       <ul className="flex flex-col gap-1 text-[13px] leading-snug text-cendre">
         {macrosKcal > 0 && <li>Tes macros représentent {formatNumber(macrosKcal, 0)} kcal.</li>}
@@ -189,6 +210,8 @@ export function TargetsForm({ current, trendKg, onDone }: { current: { kcal: num
             Repère protéines pour la prise de muscle : 1,6 à 2,2 g par kg, soit {formatNumber(1.6 * trendKg, 0)} à {formatNumber(2.2 * trendKg, 0)} g à {formatNumber(trendKg, 1)} kg (Morton et al., 2018).
           </li>
         )}
+        <li>Repère fibres pour un adulte : 30 g par jour (ANSES).</li>
+        <li>Repère eau pour un homme adulte : 2,5 L par jour au total, dont environ 80 % apportés par les boissons (EFSA, 2010).</li>
       </ul>
       {error && (
         <p className="text-[15px] text-braise" role="alert">

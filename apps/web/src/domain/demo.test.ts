@@ -8,7 +8,7 @@ describe('données de démonstration', () => {
   const data = generateDemoData('2026-11-23', now);
 
   it('respectent le format de sauvegarde (donc les règles de validation)', () => {
-    const parsed = backupSchema.safeParse({ format: BACKUP_FORMAT, version: BACKUP_VERSION, exportedAt: now.toISOString(), schemaVersion: 2, tables: data });
+    const parsed = backupSchema.safeParse({ format: BACKUP_FORMAT, version: BACKUP_VERSION, exportedAt: now.toISOString(), schemaVersion: 3, tables: data });
     expect(parsed.success).toBe(true);
   });
 

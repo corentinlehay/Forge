@@ -129,3 +129,10 @@ export function formatTime(time: string): string {
 export function countLabel(n: number, word: string): string {
   return `${formatNumber(n, 0)} ${word}${Math.abs(n) >= 2 ? 's' : ''}`;
 }
+
+const litresFormat = new Intl.NumberFormat(fr, { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+
+/** 1000 → « 1 L », 1250 → « 1,25 L » */
+export function formatLitres(ml: number): string {
+  return `${litresFormat.format(ml / 1000)} L`;
+}

@@ -22,7 +22,7 @@ describe('nutrition du jour', () => {
 
   it('additionne le jour et calcule le reste', () => {
     const day = dayNutrition(entries, '2026-11-23', { kcal: 3200, proteinG: 180, carbsG: 415, fatG: 90 });
-    expect(day.totals).toEqual({ kcal: 720, proteinG: 70, carbsG: 85, fatG: 8 });
+    expect(day.totals).toEqual({ kcal: 720, proteinG: 70, carbsG: 85, fatG: 8, fiberG: 0, fiberUnknown: 2 });
     expect(day.remainingKcal).toBe(2480);
     expect(day.progress?.kcal).toBeCloseTo(0.225, 3);
   });

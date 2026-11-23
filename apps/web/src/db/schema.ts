@@ -1,6 +1,6 @@
 import Dexie, { type EntityTable } from 'dexie';
 import { activeDbName } from './dataMode';
-import type { CheckIn, Exercise, FoodEntry, MetaEntry, Profile, WeighIn, Workout, WorkoutSet, WorkoutTemplate } from './types';
+import type { CheckIn, Exercise, Food, FoodEntry, MealTemplate, MetaEntry, Profile, WaterLog, WeighIn, Workout, WorkoutSet, WorkoutTemplate } from './types';
 
 /**
  * Base locale unique de FORGE (IndexedDB via Dexie).
@@ -9,8 +9,9 @@ import type { CheckIn, Exercise, FoodEntry, MetaEntry, Profile, WeighIn, Workout
  *
  * v1 : profil, pesées, réglages.
  * v2 : + journal alimentaire, exercices, programme, séances, séries, check-ins (tables ajoutées, rien de modifié).
+ * v3 : + aliments (perso, Ciqual, Open Food Facts), repas habituels, hydratation (tables ajoutées, rien de modifié).
  */
-export const SCHEMA_VERSION = 2;
+export const SCHEMA_VERSION = 3;
 
 export class ForgeDB extends Dexie {
   profile!: EntityTable<Profile, 'id'>;
@@ -22,6 +23,9 @@ export class ForgeDB extends Dexie {
   workouts!: EntityTable<Workout, 'id'>;
   workoutSets!: EntityTable<WorkoutSet, 'id'>;
   checkIns!: EntityTable<CheckIn, 'id'>;
+  foods!: EntityTable<Food, 'id'>;
+  mealTemplates!: EntityTable<MealTemplate, 'id'>;
+  waterLogs!: EntityTable<WaterLog, 'id'>;
 
   constructor(name = 'forge') {
     super(name);
@@ -37,6 +41,11 @@ export class ForgeDB extends Dexie {
       workouts: 'id, date, updatedAt',
       workoutSets: 'id, workoutId, exerciseId, updatedAt',
       checkIns: 'id, date, updatedAt',
+    });
+    this.version(3).stores({
+      foods: 'id, [source+sourceId], name, updatedAt',
+      mealTemplates: 'id, updatedAt',
+      waterLogs: 'id, date, updatedAt',
     });
   }
 }

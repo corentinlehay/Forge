@@ -15,16 +15,27 @@ export interface MacroTotals {
   proteinG: number;
   carbsG: number;
   fatG: number;
+  /** Fibres des aliments où elles sont connues. */
+  fiberG: number;
+  /** Nombre d'aliments sans valeur de fibres. */
+  fiberUnknown: number;
 }
 
 const round = (v: number) => Math.round(v);
 
-export function sumEntries(entries: readonly Pick<FoodEntry, 'kcal' | 'proteinG' | 'carbsG' | 'fatG'>[]): MacroTotals {
-  const t = entries.reduce(
-    (acc, e) => ({ kcal: acc.kcal + e.kcal, proteinG: acc.proteinG + e.proteinG, carbsG: acc.carbsG + e.carbsG, fatG: acc.fatG + e.fatG }),
-    { kcal: 0, proteinG: 0, carbsG: 0, fatG: 0 },
+export function sumEntries(entries: readonly Pick<FoodEntry, 'kcal' | 'proteinG' | 'carbsG' | 'fatG' | 'fiberG'>[]): MacroTotals {
+  const t = entries.reduce<Omit<MacroTotals, never>>(
+    (acc, e) => ({
+      kcal: acc.kcal + e.kcal,
+      proteinG: acc.proteinG + e.proteinG,
+      carbsG: acc.carbsG + e.carbsG,
+      fatG: acc.fatG + e.fatG,
+      fiberG: acc.fiberG + (e.fiberG ?? 0),
+      fiberUnknown: acc.fiberUnknown + (e.fiberG === undefined || e.fiberG === null ? 1 : 0),
+    }),
+    { kcal: 0, proteinG: 0, carbsG: 0, fatG: 0, fiberG: 0, fiberUnknown: 0 },
   );
-  return { kcal: round(t.kcal), proteinG: round(t.proteinG), carbsG: round(t.carbsG), fatG: round(t.fatG) };
+  return { kcal: round(t.kcal), proteinG: round(t.proteinG), carbsG: round(t.carbsG), fatG: round(t.fatG), fiberG: round(t.fiberG), fiberUnknown: t.fiberUnknown };
 }
 
 /** Calories apportées par les macros : 4 kcal/g pour protéines et glucides, 9 kcal/g pour les lipides. */
@@ -99,3 +110,11 @@ export function recentFoods(entries: readonly FoodEntry[], limit = 8): FoodEntry
   }
   return out;
 }
+
+/** Total des boissons du jour, en millilitres. */
+export function waterForDay(logs: readonly { date: string; ml: number; deletedAt?: string | null }[], date: string): number {
+  return logs.filter((l) => !l.deletedAt && l.date === date).reduce((s, l) => s + l.ml, 0);
+}
+
+/** Repère fibres pour un adulte : 30 g par jour (ANSES). */
+export const FIBER_REFERENCE_G = 30;

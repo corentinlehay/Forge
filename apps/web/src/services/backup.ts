@@ -48,6 +48,16 @@ const nutritionTargetsSchema = z.object({
   proteinG: z.number().min(0).max(1000),
   carbsG: z.number().min(0).max(1500),
   fatG: z.number().min(0).max(1000),
+  fiberG: z.number().min(0).max(300).optional(),
+  waterMl: z.number().min(0).max(10000).optional(),
+});
+
+const per100Schema = z.object({
+  kcal: z.number().min(0).max(900),
+  proteinG: z.number().min(0).max(100),
+  carbsG: z.number().min(0).max(100),
+  fatG: z.number().min(0).max(100),
+  fiberG: z.number().min(0).max(100).nullable(),
 });
 
 const foodEntrySchema = z.object({
@@ -60,7 +70,51 @@ const foodEntrySchema = z.object({
   proteinG: z.number().min(0).max(1000),
   carbsG: z.number().min(0).max(1000),
   fatG: z.number().min(0).max(1000),
+  fiberG: z.number().min(0).max(300).nullable().optional(),
+  foodId: z.string().nullable().optional(),
+  grams: z.number().min(0).max(5000).nullable().optional(),
+  unit: z.enum(['g', 'ml']).optional(),
+  per100: per100Schema.nullable().optional(),
 });
+
+const foodSchema = z.object({
+  ...syncFields,
+  source: z.enum(['ciqual', 'off', 'custom']),
+  sourceId: z.string().nullable().optional(),
+  name: z.string().min(1).max(160),
+  brand: z.string().max(80).optional(),
+  state: z.enum(['raw', 'cooked']).nullable().optional(),
+  unit: z.enum(['g', 'ml']),
+  per100: per100Schema,
+  servingG: z.number().min(0).max(2000).nullable().optional(),
+  servingLabel: z.string().max(80).optional(),
+  favorite: z.boolean(),
+  lastUsedAt: z.string().nullable().optional(),
+  useCount: z.number().int().min(0),
+});
+
+const mealTemplateSchema = z.object({
+  ...syncFields,
+  name: z.string().min(1).max(60),
+  meal: z.enum(['breakfast', 'lunch', 'dinner', 'snack']).nullable().optional(),
+  items: z.array(
+    z.object({
+      foodId: z.string().nullable().optional(),
+      name: z.string().min(1).max(160),
+      quantity: z.string().max(40).optional(),
+      grams: z.number().min(0).max(5000).nullable().optional(),
+      unit: z.enum(['g', 'ml']).optional(),
+      per100: per100Schema.nullable().optional(),
+      kcal: z.number().min(0).max(5000),
+      proteinG: z.number().min(0).max(1000),
+      carbsG: z.number().min(0).max(1000),
+      fatG: z.number().min(0).max(1000),
+      fiberG: z.number().min(0).max(300).nullable().optional(),
+    }),
+  ),
+});
+
+const waterSchema = z.object({ ...syncFields, date: dateKey, ml: z.number().int().min(1).max(3000) });
 
 const exerciseSchema = z.object({ ...syncFields, name: z.string().min(1).max(80) });
 
@@ -102,7 +156,7 @@ const checkInSchema = z.object({
   note: z.string().max(500).optional(),
 });
 
-/** Les sauvegardes v1 (avant nutrition et entraînement) restent importables : les tables absentes valent []. */
+/** Les sauvegardes plus anciennes restent importables : les tables absentes valent []. */
 export const backupSchema = z.object({
   format: z.literal(BACKUP_FORMAT),
   version: z.literal(BACKUP_VERSION),
@@ -118,6 +172,9 @@ export const backupSchema = z.object({
     workouts: z.array(workoutSchema).default([]),
     workoutSets: z.array(setSchema).default([]),
     checkIns: z.array(checkInSchema).default([]),
+    foods: z.array(foodSchema).default([]),
+    mealTemplates: z.array(mealTemplateSchema).default([]),
+    waterLogs: z.array(waterSchema).default([]),
   }),
 });
 
@@ -141,6 +198,9 @@ const TABLES = [
   ['workouts', 'id'],
   ['workoutSets', 'id'],
   ['checkIns', 'id'],
+  ['foods', 'id'],
+  ['mealTemplates', 'id'],
+  ['waterLogs', 'id'],
 ] as const;
 
 type TableName = (typeof TABLES)[number][0];

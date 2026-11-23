@@ -74,3 +74,12 @@ describe('heures', () => {
     expect(f.formatTime('00:05')).toBe('0 h 05');
   });
 });
+
+describe('litres', () => {
+  it('sans zéro inutile', async () => {
+    const f = await import('./format');
+    expect(f.formatLitres(1000)).toBe('1 L');
+    expect(f.formatLitres(1250)).toBe('1,25 L');
+    expect(f.formatLitres(0)).toBe('0 L');
+  });
+});

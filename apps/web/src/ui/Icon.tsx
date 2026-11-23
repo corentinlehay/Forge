@@ -32,6 +32,12 @@ const paths = {
   calendar: 'M4 6.5h16V20H4zM4 10.5h16M8.5 3.5v5M15.5 3.5v5',
   dots: 'M6 12h.01M12 12h.01M18 12h.01',
   info: 'M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18zM12 11v5.5M12 7.5v.1',
+  star: 'M12 3.5l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.9l-5.2 2.7 1-5.8-4.3-4.1 5.9-.9z',
+  search: 'M10.5 18a7.5 7.5 0 1 0 0-15 7.5 7.5 0 0 0 0 15zM16 16l5 5',
+  barcode: 'M4 6v12M7 6v12M10 6v12M14 6v12M16.5 6v12M20 6v12',
+  drop: 'M12 3s6 6.5 6 11a6 6 0 0 1-12 0c0-4.5 6-11 6-11z',
+  copy: 'M8 8h11v12H8zM5 16V4h11',
+  bolt2: 'M4 12h16',
 } as const;
 
 export type IconName = keyof typeof paths;

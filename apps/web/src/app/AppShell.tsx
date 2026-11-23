@@ -58,7 +58,7 @@ function ShellContent() {
   return (
     <div className="lg:pl-24">
       <Outlet />
-      {!pathname.startsWith('/reglages') && !pathname.startsWith('/training/seance') && <TabBar />}
+      {!['/reglages', '/training/seance', '/nutrition/ajouter'].some((p) => pathname.startsWith(p)) && <TabBar />}
     </div>
   );
 }
