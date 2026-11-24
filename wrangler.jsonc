@@ -18,8 +18,11 @@
   },
   // Séances audio de FORGE MIND (catalogue, fichiers découpés, couvertures). Le code d'administration est le secret ADMIN_CODE.
   "kv_namespaces": [{ "binding": "AUDIO", "id": "4892a4db27b247dd90839865db5db989" }],
-  // Versions de test (Worker Previews) : elles n'héritent pas des liaisons de production. Même catalogue audio que la production.
+  // Code de l'espace créateur : secret ADMIN_CODE du Secrets Store du compte (valeur saisie par Coz dans Cloudflare, jamais dans le code).
+  "secrets_store_secrets": [{ "binding": "ADMIN_CODE", "store_id": "21ab38f21ff84a2b8039be0363735b1b", "secret_name": "ADMIN_CODE" }],
+  // Versions de test (Worker Previews) : elles n'héritent pas des liaisons de production. Même catalogue audio et même code que la production.
   "previews": {
-    "kv_namespaces": [{ "binding": "AUDIO", "id": "4892a4db27b247dd90839865db5db989" }]
+    "kv_namespaces": [{ "binding": "AUDIO", "id": "4892a4db27b247dd90839865db5db989" }],
+    "secrets_store_secrets": [{ "binding": "ADMIN_CODE", "store_id": "21ab38f21ff84a2b8039be0363735b1b", "secret_name": "ADMIN_CODE" }]
   }
 }

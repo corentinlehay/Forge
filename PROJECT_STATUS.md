@@ -25,7 +25,7 @@ Base de données locale : version 8. Serveur : relais Open Food Facts et séance
 
 ## Reste à faire (prompt FORGE MIND et suite)
 
-1. **Code d'administration.** Créer le secret `ADMIN_CODE` dans Cloudflare pour ouvrir l'espace créateur (étape de ton côté).
+1. **Tes séances audio.** Le code d'administration est en place (Secrets Store du compte, secret `ADMIN_CODE`) : il reste à ajouter tes enregistrements depuis l'espace créateur.
 2. **Progression 2.** Mensurations (taille, poitrine, bras, cuisse), photos du corps protégées et comparaisons entre dates, suivi des douleurs sur silhouette sans diagnostic.
 3. **Bilans.** Analyses croisées entre modules (corrélation, jamais causalité), bilan hebdomadaire avec historique, calendrier global jour, semaine, mois, motivation discrète (records, régularité, badges) sans culpabilisation.
 4. **IA transversale.** Coach Claude avec le contexte de tous les modules, mémoire et préférences modifiables, recommandations limitées aux contenus qui existent, données transmises réduites au nécessaire, plafond de coût par utilisateur. Nécessite ta clé API dans les secrets Cloudflare.

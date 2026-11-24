@@ -14,8 +14,8 @@
 - Base locale v8 : état d'écoute et téléchargements (migration v7 vers v8 testée ; l'état d'écoute est dans la sauvegarde, pas les fichiers téléchargés).
 - 205 tests dans l'app, 14 pour le serveur. Parcours vérifié au format iPhone avec un vrai fichier de 10 min : code faux puis bon, envoi, publication, accueil Mind, Hypnose, fiche, lecture, +15 s, minuteur, mini-lecteur, historique après une minute, reprise à 3:20, téléchargement puis lecture hors connexion, dépublication, suppression.
 
-### À faire de ton côté
-- Créer le secret `ADMIN_CODE` dans Cloudflare (12 caractères au moins), puis me prévenir : la version de test suivante l'embarquera.
+### Code d'administration
+- La production ne contenant encore que des fichiers statiques, Cloudflare n'y accepte pas de secret : le code vient du Secrets Store du compte (secret `ADMIN_CODE`, portée Workers), relié à la production et aux versions de test.
 
 ### À vérifier sur ton iPhone
 - La lecture écran verrouillé et le minuteur d'arrêt pendant le verrouillage dépendent d'iOS.
