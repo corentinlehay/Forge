@@ -10,6 +10,8 @@ export const PULSE_SOURCES = {
   ressenti: 'Saw et al., 2016, British Journal of Sports Medicine 50 : 281-291',
   proteines: 'Morton et al., 2018, British Journal of Sports Medicine 52 : 376-384',
   douleurs: 'MSD Manuals (version grand public), Santé.fr, Haute Autorité de santé',
+  proteinesRepas: 'Schoenfeld et Aragon, 2018, Journal of the International Society of Sports Nutrition 15 : 10',
+  etirements: 'Herbert, de Noronha et Kamper, 2011, Cochrane Database of Systematic Reviews, CD004577',
 } as const;
 
 export type PulseSourceKey = keyof typeof PULSE_SOURCES;

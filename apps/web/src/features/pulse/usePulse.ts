@@ -4,7 +4,9 @@ import type { CheckIn, PulseDay } from '../../db/types';
 import { computePulse, pulseSnapshot, type PulseResult } from '../../domain/pulse/pulse';
 import { PULSE_SETTINGS_KEY, resolveSettings, type PulseSettings } from '../../domain/pulse/settings';
 import { addDays } from '../../lib/dates';
-import { useLifeData } from '../review/useLifeData';
+import { useLifeData, type LifeModel } from '../review/useLifeData';
+import { BUDGET_KEY, type BudgetSettings } from '../../domain/budget';
+import { resolveRoutines, ROUTINES_KEY, type RoutineStep, type RoutineId } from '../../domain/mind';
 
 export interface PulseModel {
   today: string;
@@ -13,6 +15,10 @@ export interface PulseModel {
   record: PulseDay | null;
   /** Check-in du jour, pour proposer de le compléter ou de le corriger. */
   checkIn: CheckIn | null;
+  /** Données de la personne (séances, pratiques Mind) pour la validation et le bilan. */
+  life: LifeModel;
+  /** Journal PULSE complet. */
+  journal: PulseDay[];
 }
 
 /**
@@ -28,9 +34,12 @@ export function usePulse(): PulseModel | null {
   const record = usePulseDay(today);
   const yesterday = usePulseDay(today ? addDays(today, -1) : '');
   const journal = usePulseDays();
+  const routines = useMeta<Partial<Record<RoutineId, RoutineStep[]>>>(ROUTINES_KEY);
+  const budget = useMeta<BudgetSettings>(BUDGET_KEY);
 
   const model = useMemo(() => {
-    if (!life || !profile || !exercises || stored === undefined || record === undefined || yesterday === undefined || !journal) return null;
+    if (!life || !profile || !exercises || stored === undefined || record === undefined || yesterday === undefined || !journal || routines === undefined || budget === undefined)
+      return null;
     const settings = resolveSettings(stored);
     const muscles = new Map(exercises.map((e) => [e.id, e.muscle ?? null]));
     const result = computePulse({
@@ -44,9 +53,11 @@ export function usePulse(): PulseModel | null {
       settings,
       yesterday,
       journal: journal.filter((d) => d.date < life.today),
+      routines: resolveRoutines(routines),
+      budget: budget ?? null,
     });
-    return { today: life.today, result, settings, record, checkIn: life.index.get(life.today)?.checkIn ?? null };
-  }, [life, profile, exercises, stored, record, yesterday, journal]);
+    return { today: life.today, result, settings, record, checkIn: life.index.get(life.today)?.checkIn ?? null, life, journal };
+  }, [life, profile, exercises, stored, record, yesterday, journal, routines, budget]);
 
   const snapshot = model ? JSON.stringify(pulseSnapshot(model.result)) : null;
   useEffect(() => {

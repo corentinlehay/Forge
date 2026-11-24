@@ -1,10 +1,14 @@
 import type { GainRate, PulseChoice, PulseDay, PulseLevel, PulseMode, TemplateExercise, WorkoutAdjustment, WorkoutTemplate } from '../../db/types';
 import { addDays } from '../../lib/dates';
+import type { BudgetSettings } from '../budget';
+import type { MindRoutine, RoutineId } from '../mind';
 import { formatHours, formatNumber, formatTime } from '../../lib/format';
 import type { DayIndex, LifeData } from '../lifeIndex';
 import { exerciseSessions, parseRepRange, suggestNext } from '../progression';
 import { templateForDay } from '../training';
+import { LIGHTEN } from './adjust';
 import { analyzeDay, type DayAnalysis } from './analysis';
+import { buildPlan, buildProposal, type PlanItem, type Proposal, type Reco } from './plan';
 import { keptRecently, readinessSeries, trendAt, type Trend } from './history';
 import { computeNutritionStatus, type NutritionStatus } from './nutrition';
 import { computeReadiness, recentMood, type HealthDay, type Readiness } from './readiness';
@@ -19,13 +23,7 @@ import { PULSE_SOURCES } from './sources';
  * « Garder la séance prévue »), puis des recommandations Training, Nutrition, Mind et Recovery.
  * Rien n'est appliqué sans validation.
  */
-export interface Reco {
-  id: string;
-  text: string;
-  reason?: string;
-  source?: string;
-  to?: string;
-}
+export type { Reco } from './plan';
 
 export type TrainingKind = 'none' | 'done' | 'as-planned' | 'no-record' | 'lighten' | 'replace' | 'suspended' | 'rest' | 'blocked';
 
@@ -37,6 +35,8 @@ export interface TrainingAdvice {
   adjustment: WorkoutAdjustment | null;
   actions: PulseChoice[];
   recos: Reco[];
+  /** Surcharge progressive suggérée (deux pistes au plus), les jours où le score le permet. */
+  hints: string[];
 }
 
 export interface PulseResult {
@@ -54,6 +54,12 @@ export interface PulseResult {
   nutritionRecos: Reco[];
   mindRecos: Reco[];
   recoveryRecos: Reco[];
+  /** Plan du jour par module (PULSE 1.2). */
+  plan: PlanItem[];
+  /** Proposition de séance en attente de validation, s'il y en a une. */
+  proposal: Proposal | null;
+  /** Scores des 14 derniers jours, aujourd'hui compris (recalculés). */
+  recent: { date: string; score: number | null }[];
 }
 
 export interface PulseInput {
@@ -68,15 +74,12 @@ export interface PulseInput {
   yesterday: PulseDay | null;
   /** Journal PULSE des jours précédents (choix passés). */
   journal?: readonly PulseDay[];
+  /** Routines Mind personnalisées (durées du plan). */
+  routines?: Record<RoutineId, MindRoutine>;
+  budget?: BudgetSettings | null;
 }
 
-export const LIGHTEN: WorkoutAdjustment = { source: 'pulse', setsDelta: -1, rirDelta: 2 };
-
-/** Objectifs d'une séance allégée : séries en moins (au moins une), répétitions en réserve en plus (5 au plus). */
-export function adjustTargets(targets: readonly TemplateExercise[], adjustment: WorkoutAdjustment | null | undefined): TemplateExercise[] {
-  if (!adjustment) return [...targets];
-  return targets.map((t) => ({ ...t, sets: Math.max(1, t.sets + adjustment.setsDelta), rir: Math.min(5, (t.rir ?? 1) + adjustment.rirDelta) }));
-}
+export { adjustTargets, LIGHTEN } from './adjust';
 
 const n0 = (v: number) => formatNumber(v, 0);
 
@@ -107,7 +110,7 @@ function trainingAdvice(input: PulseInput, mode: PulseMode | null, rules: RuleHi
       ? (data.templates.find((t) => t.id === input.yesterday!.plannedTemplateId && !t.deletedAt) ?? null)
       : null;
   const template = movedTemplate ?? templateForDay(data.templates, date);
-  const base = { template, moved: !!movedTemplate, adjustment: null, actions: [] as PulseChoice[] };
+  const base = { template, moved: !!movedTemplate, adjustment: null, actions: [] as PulseChoice[], hints: [] as string[] };
   const done = index.get(date)?.workouts ?? [];
   if (rules.some((r) => r.id === 'mineur')) return { ...base, kind: 'blocked', recos: [] };
   if (done.length) {
@@ -172,6 +175,7 @@ function trainingAdvice(input: PulseInput, mode: PulseMode | null, rules: RuleHi
       return {
         ...base,
         kind: 'as-planned',
+        hints,
         recos: [
           {
             id: 'telle-quelle',
@@ -345,7 +349,7 @@ export function computePulse(input: PulseInput): PulseResult {
   const series = readinessSeries({ index, health: input.health, settings }, addDays(date, -30), addDays(date, -1));
   const trend = trendAt(series, date, readiness.score);
   const analysis = analyzeDay({ date, index, readiness, trend, loadRatio: load.ratio, settings });
-  return {
+  const core = {
     date,
     readiness,
     nutrition,
@@ -359,6 +363,9 @@ export function computePulse(input: PulseInput): PulseResult {
     mindRecos: mindRecos(input, mode, rules, training, sleepHours),
     recoveryRecos: recoveryRecos(input, mode, rules, sleepHours),
   };
+  const plan = buildPlan(core, { date, index, data: input.data, settings, muscleOf: input.muscleOf, routines: input.routines, budget: input.budget });
+  const recent = [...series.slice(-13).map((p) => ({ date: p.date, score: p.score })), { date, score: readiness.score }];
+  return { ...core, plan, proposal: buildProposal(core), recent };
 }
 
 /** Ce que le journal PULSE garde du jour (sans le choix, enregistré à part). */
@@ -374,6 +381,7 @@ export function pulseSnapshot(r: PulseResult): Omit<PulseDay, 'id' | 'createdAt'
     nutritionScore: r.nutrition.score,
     rules: r.rules.map((h) => h.id),
     plannedTemplateId: r.training.template?.id ?? null,
+    plan: r.plan.map((p) => ({ id: p.id, module: p.module, title: p.title, to: p.to })),
     level: r.level,
     coverage: r.readiness.score === null ? null : r.readiness.coverage.present,
     trainingKind: r.training.kind,

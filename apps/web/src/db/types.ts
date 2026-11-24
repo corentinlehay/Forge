@@ -427,6 +427,40 @@ export type PulseConfidence = 'haute' | 'moyenne' | 'basse';
 export type NutritionKind = 'coherent' | 'sous' | 'au-dessus' | 'incomplet' | 'sans-objectif';
 /** Choix sur la séance proposée : version allégée, récupération active à la place, séance prévue gardée, ou déplacée à demain. */
 export type PulseChoice = 'alleger' | 'remplacer' | 'garder' | 'deplacer';
+/** Action sur une proposition PULSE : accepter, refuser (garder le prévu), modifier, reporter, ou annuler le choix précédent. */
+export type PulseAction = 'accepter' | 'refuser' | 'modifier' | 'reporter' | 'annuler';
+
+/** Une décision, gardée telle quelle : la trace de ce qui a été choisi, et quand. */
+export interface PulseDecision {
+  at: string;
+  action: PulseAction;
+  /** Choix en vigueur après la décision (null après une annulation). */
+  choice: PulseChoice | null;
+  adjustment?: WorkoutAdjustment | null;
+}
+
+/** Bilan du soir : chaque réponse est facultative. */
+export interface PulseReview {
+  at: string;
+  followed: 'oui' | 'partiel' | 'non' | null;
+  /** Clés de REVIEW_CHANGES : modifications faites dans la journée. */
+  changes: string[];
+  sessionFeel: Scale5 | null;
+  dayFeel: Scale5 | null;
+  useful: 'oui' | 'un-peu' | 'non' | null;
+  /** Identifiants des éléments du plan réalisés. */
+  done: string[];
+  note?: string;
+}
+
+/** Élément du plan du jour tel qu'il a été proposé (pour le bilan et l'historique). */
+export interface PulsePlanRef {
+  id: string;
+  module: string;
+  title: string;
+  to?: string | null;
+}
+
 /** Niveau de lecture du score (conventions d'interface réglables, pas des seuils médicaux). */
 export type PulseLevel = 'basse' | 'moderee' | 'satisfaisante' | 'elevee';
 
@@ -449,8 +483,15 @@ export interface PulseDay extends SyncFields {
   level?: PulseLevel | null;
   coverage?: number | null;
   trainingKind?: string | null;
+  /** À partir de PULSE 1.2 : plan du jour proposé. */
+  plan?: PulsePlanRef[];
   choice?: PulseChoice | null;
   choiceAt?: string | null;
+  /** Version allégée acceptée ou modifiée : Training l'applique au démarrage de la séance prévue. */
+  adjustment?: WorkoutAdjustment | null;
+  /** Toutes les décisions du jour, dans l'ordre, annulations comprises. */
+  decisions?: PulseDecision[];
+  review?: PulseReview | null;
 }
 
 export interface PainLog {

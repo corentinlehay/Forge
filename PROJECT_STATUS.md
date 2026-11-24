@@ -1,6 +1,6 @@
 # État du projet FORGE
 
-Mis à jour le 24 novembre 2026, PULSE 1.1 (fondations du cahier des charges) livré sur la branche `pulse-1`. Le détail de chaque livraison est dans docs/journal.md.
+Mis à jour le 24 novembre 2026, PULSE 1.2 (plan du jour, validation, bilan du soir) livré sur la branche `pulse-1-2`. Le détail de chaque livraison est dans docs/journal.md.
 
 ## En production (branche `main`)
 
@@ -22,6 +22,7 @@ Chaque branche contient les précédentes. La mise en production se fait d'un bl
 | `mind-2` | Séances audio (stockage Cloudflare KV), lecteur complet, hors connexion, catégorie Hypnose, espace créateur privé |
 | `progression-2` | Moyenne de poids sur 7 jours, mensurations, photos du corps, comparaison de dates, suivi des douleurs sur silhouette |
 | `bilans-1` | Bilan de la semaine avec notes et historique, calendrier jour, semaine, mois, analyses croisées sans causalité, badges et régularité |
+| `pulse-1-2` | PULSE 1.2 : plan du jour par module avec « Pourquoi ? », rubrique Sommeil, proposition à valider (accepter, garder, modifier, reporter, revenir en arrière), version allégée appliquée par Training, bilan du soir, historique des décisions et des bilans |
 | `pulse-1` | PULSE 1 et 1.1 : indicateur expliqué en 5 dimensions et lu en 4 niveaux, couverture, évolution sur 7 et 30 jours, analyse du jour, Nutrition Status séparé, règles de sécurité, proposition de séance qui garde toujours « Garder », check-in passable en 5 questions, historique par période, réglages |
 
 Base de données locale : version 11. Serveur : relais Open Food Facts et séances audio (Workers KV `forge-audio`). Chaque changement de schéma a son test de migration sans perte.
@@ -61,11 +62,16 @@ Document complet, avec l'architecture, les cinq scénarios et le plan : https://
     - fusion des sources contradictoires ;
     - documentation technique (`docs/pulse.md`) ;
     - les 7 cas de test du cahier.
-- **Reste pour V1 et V2 (PULSE 1.2) :**
-    - plan du jour avec objectif, durée, priorité et lien ;
-    - rubrique Sleep ;
-    - validation complète avec refus, modification et retour en arrière ;
-    - bilan du soir et ressenti après une recommandation.
+- **Fait en PULSE 1.2 (V2 du cahier) :**
+    - plan du jour avec objectif, justification, durée, priorité, lien et « Pourquoi ? » ;
+    - rubrique Sommeil avec heure de coucher indicative ;
+    - validation complète : accepter, refuser, modifier, reporter, expliquer, trace, retour en arrière ;
+    - bilan du soir et ressenti selon le choix.
+- **Reste du cahier après PULSE 1.2 :**
+    - connecteurs (V3) ;
+    - apprentissage personnel (V4) ;
+    - couche IA pour formuler les recommandations et répondre à « Pourquoi ? » en langage naturel ;
+    - séance audio recommandée dans le plan, une fois ton catalogue audio en place.
 - **Connecteurs réellement opérationnels :** aucun, en dehors de la saisie manuelle et des données FORGE.
 
 **Pile vérifiée avant PULSE 1 :** les dix versions de test sont intégrées dans bilans-1, et `npm run check` passe. Elles ne sont pas en production : on attend « mets en production ».
@@ -79,20 +85,20 @@ Document complet, avec l'architecture, les cinq scénarios et le plan : https://
 
 ## Reste à faire
 
-1. **Valider PULSE 1.1 sur ton iPhone** (version de test `pulse-1`).
-2. **PULSE 1.2 : plan et validation.** Plan du jour avec objectif, durée, priorité et lien, rubrique Sleep, validation complète avec retour en arrière, bilan du soir.
-3. **Mise en production de la pile actuelle** (onze versions de test, de nutrition-1 à pulse-1), sur ton « mets en production », pour ne pas empiler davantage.
-4. **Tes séances audio.** Le code d'administration est en place (Secrets Store du compte, secret `ADMIN_CODE`) : il reste à ajouter tes enregistrements depuis l'espace créateur.
-5. **PULSE 2 : connecteurs.** Raccourci Apple Santé prêt à installer, bouton « Importer depuis Santé », registre de connecteurs, provenance, dédoublonnage, données contradictoires. Seulement après ta validation explicite.
-6. **PULSE 3 : apprentissage personnel.** Préférences apprises, consultables et modifiables, analyse des résultats des recommandations, semaine de décharge proposée, notification du matin en option.
-7. **IA transversale (dont la couche IA de PULSE et le « Pourquoi ? »).** Coach Claude avec le contexte de tous les modules, explication du score sans décision ni levée de garde-fou, mémoire et préférences modifiables, recommandations limitées aux contenus qui existent, données transmises réduites au nécessaire, plafond de coût par utilisateur. Nécessite ta clé API dans les secrets Cloudflare.
-8. **Compte et paiement.** Modèle à décider, compte léger, prestataire de paiement, pages légales ; avec la décision app native ou API Oura et WHOOP.
+1. **Valider PULSE 1.1 et 1.2 sur ton iPhone** (versions de test `pulse-1` et `pulse-1-2`).
+2. **Mise en production de la pile actuelle** (douze versions de test, de nutrition-1 à pulse-1-2), sur ton « mets en production », pour ne pas empiler davantage.
+3. **Tes séances audio.** Le code d'administration est en place (Secrets Store du compte, secret `ADMIN_CODE`) : il reste à ajouter tes enregistrements depuis l'espace créateur.
+4. **PULSE 2 : connecteurs.** Raccourci Apple Santé prêt à installer, bouton « Importer depuis Santé », registre de connecteurs, provenance, dédoublonnage, données contradictoires. Seulement après ta validation explicite.
+5. **PULSE 3 : apprentissage personnel.** Préférences apprises, consultables et modifiables, analyse des résultats des recommandations, semaine de décharge proposée, notification du matin en option.
+6. **IA transversale (dont la couche IA de PULSE et le « Pourquoi ? »).** Coach Claude avec le contexte de tous les modules, explication du score sans décision ni levée de garde-fou, mémoire et préférences modifiables, recommandations limitées aux contenus qui existent, données transmises réduites au nécessaire, plafond de coût par utilisateur. Nécessite ta clé API dans les secrets Cloudflare.
+7. **Compte et paiement.** Modèle à décider, compte léger, prestataire de paiement, pages légales ; avec la décision app native ou API Oura et WHOOP.
 
 ## Problèmes et limites techniques connus
 
 - **PULSE sans montre pour l'instant.** La composante Physiologie attend l'import Apple Santé (PULSE 2) : la confiance reste au plus « moyenne », et son poids est réparti sur les autres composantes. La fusion de plusieurs appareils est prête et testée, mais aucune source n'est encore branchée.
 - **Historique PULSE recalculé.** Les scores passés sont recalculés avec les réglages actuels : changer un réglage change aussi l'historique. Le score affiché chaque jour reste visible dans la vue Jour.
-- **Séance déplacée.** Elle est reproposée le lendemain dans PULSE, mais le programme et le calendrier ne changent pas.
+- **Séance déplacée.** Elle est reproposée le lendemain dans PULSE, mais le programme, le calendrier et la séance du jour de l'accueil et de Training ne changent pas.
+- **Bilan du soir.** Il demande que PULSE ait été ouvert ce jour-là (pour connaître le plan proposé). Il s'ouvre à partir de 17 h et reste possible le lendemain.
 - **Apple Santé et Apple Watch.** Une app web n'a aucun accès à Apple Santé : import par Raccourci iOS (PULSE 2) ou app native à décider. Pas de calcul en arrière-plan : le score PULSE se calculera à l'ouverture.
 - **Photos du corps.** Gardées sur l'iPhone seulement, hors sauvegarde (vie privée et poids du fichier) : les enregistrer dans Photos pour en garder une copie.
 - **Données sur un seul appareil.** Tout est stocké sur l'iPhone (IndexedDB). Pas de synchronisation entre appareils : la sauvegarde manuelle (fichier) est la seule copie. Un compte ou une synchronisation viendra avec le paiement.
@@ -101,5 +107,5 @@ Document complet, avec l'architecture, les cinq scénarios et le plan : https://
 - **Audio en arrière-plan.** iOS limite la lecture en arrière-plan des apps web installées ; la lecture écran verrouillé et le minuteur d'arrêt pendant le verrouillage sont à vérifier sur ton iPhone.
 - **Stockage audio limité.** KV gratuit : 1 Go (une quarantaine de séances de 20 min) et 1 000 écritures par jour (un fichier de 50 Mo en utilise environ 30). Au-delà, passer à R2 (carte bancaire demandée par Cloudflare, gratuit jusqu'à 10 Go).
 - **Calcul serveur limité.** L'offre gratuite de Cloudflare accorde 10 ms de calcul par requête : les fichiers sont envoyés par morceaux de 2 Mio pour rester dessous.
-- **Production en retard.** Onze versions de test attendent une validation : plus l'écart grandit, plus la mise en production sera grosse. La mise à jour depuis la production garde les données (testé à chaque livraison).
+- **Production en retard.** Douze versions de test attendent une validation : plus l'écart grandit, plus la mise en production sera grosse. La mise à jour depuis la production garde les données (testé à chaque livraison).
 - **Mise en forme du code.** Pas de configuration Prettier dans le dépôt ; quelques anciens fichiers ne suivent pas le format du reste.

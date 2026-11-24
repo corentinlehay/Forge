@@ -252,6 +252,8 @@ const templateSchema = z.object({
   programId: z.string().nullable().optional(),
 });
 
+const adjustmentSchema = z.object({ source: z.literal('pulse'), setsDelta: z.number().int().min(-5).max(0), rirDelta: z.number().int().min(0).max(5) });
+
 const workoutSchema = z.object({
   ...syncFields,
   date: dateKey,
@@ -262,10 +264,7 @@ const workoutSchema = z.object({
   endedAt: z.string().nullable().optional(),
   note: z.string().max(2000).optional(),
   exerciseNotes: z.record(z.string(), z.string().max(1000)).optional(),
-  adjustment: z
-    .object({ source: z.literal('pulse'), setsDelta: z.number().int().min(-5).max(0), rirDelta: z.number().int().min(0).max(5) })
-    .nullable()
-    .optional(),
+  adjustment: adjustmentSchema.nullable().optional(),
 });
 
 const setSchema = z.object({
@@ -347,6 +346,35 @@ const pulseDaySchema = z.object({
   trainingKind: z.string().max(20).nullable().optional(),
   choice: z.enum(['alleger', 'remplacer', 'garder', 'deplacer']).nullable().optional(),
   choiceAt: z.string().nullable().optional(),
+  plan: z
+    .array(z.object({ id: z.string().max(40), module: z.string().max(20), title: z.string().max(200), to: z.string().max(120).nullable().optional() }))
+    .max(40)
+    .optional(),
+  adjustment: adjustmentSchema.nullable().optional(),
+  decisions: z
+    .array(
+      z.object({
+        at: z.string().max(40),
+        action: z.enum(['accepter', 'refuser', 'modifier', 'reporter', 'annuler']),
+        choice: z.enum(['alleger', 'remplacer', 'garder', 'deplacer']).nullable(),
+        adjustment: adjustmentSchema.nullable().optional(),
+      }),
+    )
+    .max(100)
+    .optional(),
+  review: z
+    .object({
+      at: z.string().max(40),
+      followed: z.enum(['oui', 'partiel', 'non']).nullable(),
+      changes: z.array(z.string().max(30)).max(10),
+      sessionFeel: scale.nullable(),
+      dayFeel: scale.nullable(),
+      useful: z.enum(['oui', 'un-peu', 'non']).nullable(),
+      done: z.array(z.string().max(40)).max(40),
+      note: z.string().max(500).optional(),
+    })
+    .nullable()
+    .optional(),
 });
 const audioStateSchema = z.object({
   id: z.string().min(1).max(40),

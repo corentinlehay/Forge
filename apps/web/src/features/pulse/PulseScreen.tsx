@@ -1,30 +1,22 @@
-import { useState } from 'react';
-import { Link, useNavigate } from 'react-router';
-import { repos } from '../../db/hooks';
-import type { PulseChoice } from '../../db/types';
+import { Link } from 'react-router';
 import { ANALYSIS_LABELS, freshnessText, scoreText } from '../../domain/pulse/analysis';
-import { pulseSnapshot, type PulseResult, type Reco } from '../../domain/pulse/pulse';
+import type { PulseResult } from '../../domain/pulse/pulse';
 import type { ComponentResult } from '../../domain/pulse/readiness';
 import { LEVEL_LABELS, levelRange } from '../../domain/pulse/settings';
-import { formatDayLong, formatDayMonth } from '../../lib/format';
+import { formatDayLong, formatDayMonth, formatDayShort } from '../../lib/format';
+import { BarChart } from '../../ui/BarChart';
 import { Button } from '../../ui/Button';
-import { Icon } from '../../ui/Icon';
+import { Icon, type IconName } from '../../ui/Icon';
 import { Ring } from '../../ui/Ring';
 import { Card, Screen } from '../../ui/Screen';
 import { StatusChip } from '../../ui/StatusChip';
-import { useToast } from '../../ui/Toast';
 import { useHistoryBack } from '../mind/mindShared';
-import { startWorkout } from '../training/workoutActions';
 import { useCheckInSheet } from '../wellbeing/CheckInSheet';
-import { ANALYSIS_ORDER, CONFIDENCE_LABELS, LEVEL_LINES, levelChip, MODE_LABELS, modeChip, nutritionChip, PULSE_DISCLAIMER, signed } from './pulseShared';
-import { usePulse } from './usePulse';
-
-const CHOICE_TEXT: Record<PulseChoice, string> = {
-  alleger: 'Tu as choisi la version allégée.',
-  remplacer: 'Tu as choisi la récupération active à la place de la séance.',
-  garder: 'Tu as gardé la séance prévue.',
-  deplacer: 'Tu as déplacé la séance à demain : PULSE te la proposera demain.',
-};
+import { PlanSection } from './PlanSection';
+import { ProposalCard } from './ProposalCard';
+import { ReviewSection } from './ReviewSection';
+import { ANALYSIS_ORDER, CONFIDENCE_LABELS, LEVEL_LINES, levelChip, nutritionChip, PULSE_DISCLAIMER, signed } from './pulseShared';
+import { usePulse, type PulseModel } from './usePulse';
 
 export function PulseBack({ fallback = '/' }: { fallback?: string }) {
   const back = useHistoryBack(fallback);
@@ -64,18 +56,17 @@ export function PulseScreen() {
   );
 }
 
-type Model = NonNullable<ReturnType<typeof usePulse>>;
+type Model = PulseModel;
 
 function PulseBody({ model }: { model: Model }) {
   const r = model.result;
   const alerts = r.rules.filter((h) => h.level !== 'nutrition');
   const sources = [
-    ...new Set(
-      [r.training.recos, r.nutritionRecos, r.mindRecos, r.recoveryRecos]
-        .flat()
-        .flatMap((x) => (x.source ? [x.source] : []))
-        .concat(alerts.flatMap((a) => (a.source ? [a.source] : []))),
-    ),
+    ...new Set([
+      ...r.plan.flatMap((x) => (x.source ? [x.source] : [])),
+      ...alerts.flatMap((a) => (a.source ? [a.source] : [])),
+      ...(r.proposal?.source ? [r.proposal.source] : []),
+    ]),
   ];
   return (
     <>
@@ -94,12 +85,12 @@ function PulseBody({ model }: { model: Model }) {
           )}
         </section>
       ))}
+      <QuickLinks />
       <DimensionsSection model={model} />
       <AnalysisSection result={r} />
-      <TrainingSection model={model} />
-      <RecoSection title="Nutrition" recos={r.nutritionRecos} />
-      <RecoSection title="Mind" recos={r.mindRecos} />
-      <RecoSection title="Récupération" recos={r.recoveryRecos} />
+      <PlanSection plan={r.plan} />
+      <ProposalCard model={model} />
+      <ReviewSection model={model} hour={new Date().getHours()} />
       <NutritionCard result={r} />
       <section aria-label="À propos de PULSE" className="flex flex-col gap-2 text-[12px] leading-snug text-cendre">
         <p>{PULSE_DISCLAIMER}</p>
@@ -112,6 +103,24 @@ function PulseBody({ model }: { model: Model }) {
         )}
       </section>
     </>
+  );
+}
+
+function QuickLinks() {
+  const links: [string, string, IconName][] = [
+    ['/training', 'Training', 'training'],
+    ['/nutrition', 'Nutrition', 'nutrition'],
+    ['/mind', 'Mind', 'mind'],
+  ];
+  return (
+    <nav aria-label="Accès rapides" className="grid grid-cols-3 gap-2">
+      {links.map(([to, label, icon]) => (
+        <Link key={to} to={to} viewTransition className="flex min-h-11 items-center justify-center gap-1.5 rounded-[14px] bg-anthracite px-2 py-2.5 text-[14px] active:opacity-80">
+          <Icon name={icon} size={18} className="text-cendre" />
+          {label}
+        </Link>
+      ))}
+    </nav>
   );
 }
 
@@ -181,6 +190,18 @@ function ScoreCard({ model }: { model: Model }) {
       <p className="text-[12px] leading-snug text-cendre">
         {t.mean7 === null ? 'Les moyennes apparaissent après 3 jours de scores sur 7, et 7 sur 30. ' : 'Écart du jour par rapport à hier et à tes moyennes, le jour exclu. '}
       </p>
+      {r.recent.filter((p) => p.score !== null).length >= 2 && (
+        <BarChart
+          title="Indicateur PULSE, 14 derniers jours"
+          height={72}
+          bars={r.recent.map((p, i) => ({
+            key: p.date,
+            label: i % 3 === (r.recent.length - 1) % 3 ? String(Number(p.date.slice(8, 10))) : '',
+            value: p.score ?? 0,
+            detail: `${formatDayShort(p.date)} : ${p.score === null ? 'pas de score' : `${p.score}/100`}`,
+          }))}
+        />
+      )}
       <p className="text-[13px] leading-snug">
         Couverture : {rd.coverage.present} dimension{rd.coverage.present > 1 ? 's' : ''} sur {rd.coverage.total}. {CONFIDENCE_LABELS[rd.confidence]}.
       </p>
@@ -200,11 +221,11 @@ function sourceText(c: ComponentResult, today: string): string {
 function DimensionsSection({ model }: { model: Model }) {
   const rd = model.result.readiness;
   return (
-    <section aria-label="Les cinq dimensions" className="flex flex-col gap-2">
+    <Card label="Les cinq dimensions">
       <h2 className="text-[17px] font-semibold">Les cinq dimensions</h2>
-      <ul className="flex flex-col gap-2">
+      <ul className="flex flex-col divide-y divide-graphite">
         {rd.components.map((c) => (
-          <li key={c.key} className="flex flex-col gap-1.5 rounded-[16px] bg-anthracite p-3.5">
+          <li key={c.key} className="flex flex-col gap-1 py-2.5 first:pt-0 last:pb-0">
             <div className="flex items-baseline justify-between gap-3">
               <span className="text-[15px] font-semibold">{c.label}</span>
               <span className="text-[15px] tabular-nums">{c.baseWeight === 0 ? 'ignorée' : c.score === null ? 'pas de donnée' : `${c.score}/100`}</span>
@@ -222,7 +243,7 @@ function DimensionsSection({ model }: { model: Model }) {
                   : `${sourceText(c, model.today)}. Compte pour ${c.weight} % du score.`}
             </p>
             {c.score !== null && c.lines.length > 0 && (
-              <details className="group">
+              <details>
                 <summary className="cursor-pointer py-1 text-[13px] text-cendre underline underline-offset-2">Comment c’est calculé</summary>
                 <div className="flex flex-col gap-1 pt-1">
                   {c.lines.map((l) => (
@@ -236,7 +257,7 @@ function DimensionsSection({ model }: { model: Model }) {
           </li>
         ))}
       </ul>
-    </section>
+    </Card>
   );
 }
 
@@ -281,114 +302,6 @@ function AnalysisSection({ result: r }: { result: PulseResult }) {
         </dl>
         {a.items.some((i) => i.kind === 'hypothese') && <p className="text-[12px] leading-snug text-cendre">Les hypothèses sont des pistes, pas des causes établies.</p>}
       </div>
-    </section>
-  );
-}
-
-function RecoList({ recos }: { recos: Reco[] }) {
-  return (
-    <ul className="flex flex-col gap-2">
-      {recos.map((x) => {
-        const body = (
-          <>
-            <span className="flex min-w-0 flex-1 flex-col gap-1">
-              <span className="text-[15px] leading-snug">{x.text}</span>
-              {x.reason && <span className="text-[13px] leading-snug text-cendre">{x.reason}</span>}
-              {x.source && <span className="text-[12px] text-cendre">Source : {x.source}</span>}
-            </span>
-            {x.to && <Icon name="chevron" size={16} className="mt-1 shrink-0 text-cendre" />}
-          </>
-        );
-        return (
-          <li key={x.id}>
-            {x.to ? (
-              <Link to={x.to} viewTransition className="flex items-start gap-2.5 rounded-[16px] bg-anthracite p-3.5 active:opacity-80">
-                {body}
-              </Link>
-            ) : (
-              <div className="flex items-start gap-2.5 rounded-[16px] bg-anthracite p-3.5">{body}</div>
-            )}
-          </li>
-        );
-      })}
-    </ul>
-  );
-}
-
-function RecoSection({ title, recos }: { title: string; recos: Reco[] }) {
-  if (!recos.length) return null;
-  return (
-    <section aria-label={title} className="flex flex-col gap-2">
-      <h2 className="text-[17px] font-semibold">{title}</h2>
-      <RecoList recos={recos} />
-    </section>
-  );
-}
-
-function TrainingSection({ model }: { model: Model }) {
-  const r = model.result;
-  const t = r.training;
-  const toast = useToast();
-  const navigate = useNavigate();
-  const [busy, setBusy] = useState(false);
-  if (t.kind === 'blocked') return null;
-
-  async function choose(choice: PulseChoice) {
-    setBusy(true);
-    try {
-      await repos.pulseDays.saveSnapshot(pulseSnapshot(r));
-      await repos.pulseDays.choose(r.date, choice);
-      if (choice === 'alleger' && t.template) {
-        const id = await startWorkout(t.template, new Date(), t.adjustment);
-        navigate(`/training/seance/${id}`, { viewTransition: true });
-        return;
-      }
-      toast.show(choice === 'garder' ? 'Séance prévue gardée' : choice === 'remplacer' ? 'Récupération active choisie' : 'Séance déplacée à demain');
-    } catch {
-      toast.show('Choix non enregistré. Réessaie.');
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  const choice = model.record?.choice ?? null;
-  const proposal = r.mode && t.template && !['done', 'rest', 'suspended', 'none'].includes(t.kind) ? r.mode : null;
-  const capped = r.readiness.modeFromScore && r.mode && r.readiness.modeFromScore !== r.mode ? r.readiness.modeFromScore : null;
-  return (
-    <section aria-label="Ta séance" className="flex flex-col gap-2">
-      <div className="flex items-center justify-between gap-3">
-        <h2 className="text-[17px] font-semibold">Ta séance</h2>
-        {proposal && <StatusChip icon={modeChip(proposal).icon} tone={modeChip(proposal).tone} label={MODE_LABELS[proposal]} />}
-      </div>
-      {capped && <p className="text-[13px] leading-snug text-cendre">Le score seul proposerait « {MODE_LABELS[capped]} » : une règle de sécurité ou de tendance passe avant.</p>}
-      <RecoList recos={t.recos} />
-      {t.actions.length > 0 && (
-        <div className="flex flex-col gap-2">
-          {choice && <p className="text-[13px] text-cendre">{CHOICE_TEXT[choice]}</p>}
-          {t.actions.includes('alleger') && (
-            <Button disabled={busy} onClick={() => void choose('alleger')}>
-              Démarrer la version allégée
-            </Button>
-          )}
-          {t.actions.includes('remplacer') && (
-            <Button disabled={busy || choice === 'remplacer'} onClick={() => void choose('remplacer')}>
-              Faire la récupération active
-            </Button>
-          )}
-          <div className="flex flex-wrap gap-2">
-            {t.actions.includes('garder') && (
-              <Button variant="quiet" disabled={busy || choice === 'garder'} onClick={() => void choose('garder')}>
-                Garder la séance prévue
-              </Button>
-            )}
-            {t.actions.includes('deplacer') && (
-              <Button variant="quiet" disabled={busy || choice === 'deplacer'} onClick={() => void choose('deplacer')}>
-                Déplacer à demain
-              </Button>
-            )}
-          </div>
-        </div>
-      )}
     </section>
   );
 }

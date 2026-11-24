@@ -16,7 +16,8 @@ export function PulseCard() {
   const model = usePulse();
   const { openCheckIn } = useCheckInSheet();
   if (!model) return null;
-  const { readiness, level, training, nutrition, rules, trend } = model.result;
+  const { readiness, level, nutrition, rules, trend, plan, proposal } = model.result;
+  const pending = proposal && !model.record?.choice ? proposal : null;
   const alert = rules.find((r) => r.level === 'securite' || r.level === 'tendance');
 
   if (readiness.score === null || !level) {
@@ -39,7 +40,7 @@ export function PulseCard() {
   const chip = levelChip(level);
   const nChip = nutritionChip(nutrition.kind);
   const shown = scoreText(readiness.score, readiness.confidence);
-  const first = training.recos[0]?.text;
+  const first = plan[0]?.title;
   const evolution =
     trend.vs7 !== null
       ? trend.vs7 === 0
@@ -62,7 +63,14 @@ export function PulseCard() {
           <StatusChip icon={nChip.icon} tone={nChip.tone} label={NUTRITION_SHORT[nutrition.kind]} />
         </div>
       </div>
-      {alert ? (
+      {pending ? (
+        <p className="flex items-start gap-2 text-[15px] leading-snug">
+          <Icon name="info" size={18} className="mt-0.5 shrink-0 text-citron" />
+          {pending.kind === 'lighten'
+            ? `Version allégée de ${pending.templateName} proposée, à valider`
+            : `Récupération active proposée à la place de ${pending.templateName}, à valider`}
+        </p>
+      ) : alert ? (
         <p className="flex items-start gap-2 text-[15px] leading-snug">
           <Icon name="warning" size={18} className="mt-0.5 shrink-0 text-braise" />
           {alert.title}

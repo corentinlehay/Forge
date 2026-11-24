@@ -130,6 +130,43 @@ export function acceptance(journal: readonly PulseDay[], from: string, to: strin
   return { proposals: days.length, accepted, kept, unanswered: days.length - answered, rate: answered ? accepted / answered : null };
 }
 
+export interface ReviewStats {
+  count: number;
+  followed: { oui: number; partiel: number; non: number };
+  useful: { oui: number; 'un-peu': number; non: number };
+  avgDay: number | null;
+  avgSession: number | null;
+  /** Ressenti de la journée selon ton choix sur la proposition ; null sous FEEL_MIN bilans de chaque côté. */
+  dayAfterAccepted: number | null;
+  dayAfterKept: number | null;
+  acceptedReviews: number;
+  keptReviews: number;
+}
+
+/** Bilans nécessaires de chaque côté avant de comparer le ressenti selon ton choix. */
+export const FEEL_MIN = 3;
+
+export function reviewStats(journal: readonly PulseDay[], from: string, to: string): ReviewStats {
+  const days = journal.filter((d) => !d.deletedAt && d.date >= from && d.date <= to && d.review);
+  const reviews = days.map((d) => d.review!);
+  const count = <K extends string>(key: (r: NonNullable<PulseDay['review']>) => K | null, value: K) => reviews.filter((r) => key(r) === value).length;
+  const r1 = (v: number | null) => (v === null ? null : Math.round(v * 10) / 10);
+  const accepted = days.filter((d) => d.choice && ACCEPTED.includes(d.choice)).map((d) => d.review!.dayFeel);
+  const kept = days.filter((d) => d.choice === 'garder').map((d) => d.review!.dayFeel);
+  const enough = countOf(accepted) >= FEEL_MIN && countOf(kept) >= FEEL_MIN;
+  return {
+    count: reviews.length,
+    followed: { oui: count((r) => r.followed, 'oui'), partiel: count((r) => r.followed, 'partiel'), non: count((r) => r.followed, 'non') },
+    useful: { oui: count((r) => r.useful, 'oui'), 'un-peu': count((r) => r.useful, 'un-peu'), non: count((r) => r.useful, 'non') },
+    avgDay: r1(mean(reviews.map((r) => r.dayFeel))),
+    avgSession: r1(mean(reviews.map((r) => r.sessionFeel))),
+    dayAfterAccepted: enough ? r1(mean(accepted)) : null,
+    dayAfterKept: enough ? r1(mean(kept)) : null,
+    acceptedReviews: countOf(accepted),
+    keptReviews: countOf(kept),
+  };
+}
+
 export interface PeriodSummary {
   from: string;
   to: string;
@@ -143,6 +180,7 @@ export interface PeriodSummary {
   stressDays: number;
   setsPerWeek: number;
   acceptance: Acceptance;
+  reviews: ReviewStats;
 }
 
 export function periodSummary(series: readonly SeriesPoint[], journal: readonly PulseDay[], from: string, to: string): PeriodSummary {
@@ -162,6 +200,7 @@ export function periodSummary(series: readonly SeriesPoint[], journal: readonly 
     stressDays: countOf(points.map((p) => p.stress)),
     setsPerWeek: points.length ? Math.round((sets / points.length) * 7) : 0,
     acceptance: acceptance(journal, from, to),
+    reviews: reviewStats(journal, from, to),
   };
 }
 

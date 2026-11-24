@@ -1,6 +1,6 @@
 # FORGE PULSE : documentation technique
 
-Version des règles : **2** (PULSE 1.1). Le journal PULSE garde la version utilisée chaque jour (`engineVersion`).
+Version des règles : **2** (PULSE 1.1, complétée par PULSE 1.2 : plan du jour, validation, bilan du soir). Le journal PULSE garde la version utilisée chaque jour (`engineVersion`).
 
 Toutes les valeurs ci-dessous sont des choix de conception, réglables dans Réglages PULSE. Ce ne sont pas des seuils validés médicalement, et PULSE ne donne jamais d'avis médical.
 
@@ -14,9 +14,12 @@ Toutes les valeurs ci-dessous sont des choix de conception, réglables dans Rég
 | Règles | `domain/pulse/rules.ts` | Sécurité, tendance et nutrition. Elles passent avant le score. |
 | Historique | `domain/pulse/history.ts` | Série des scores recalculés, évolution, résumé d'une période, taux d'acceptation. |
 | Analyse | `domain/pulse/analysis.ts` | Principaux facteurs et analyse du jour (observé, déclaré, estimé, hypothèse, manquant). |
+| Plan | `domain/pulse/plan.ts` | Plan du jour par module, heure de coucher indicative, proposition à valider avec situation, modification et impact. |
+| Ajustements | `domain/pulse/adjust.ts` | Version allégée : objectifs ajustés, volume, description. |
+| Décisions | `domain/pulse/decisions.ts` | Ce qu'on peut annuler, bilan du soir prérempli, libellés des décisions. |
 | Moteur | `domain/pulse/pulse.ts` | `computePulse` assemble le tout. `pulseSnapshot` donne la ligne du journal. |
 | Données | `db/` | Table `pulseDays` (journal), réglage `pulseSettings` dans `meta`. Tout est dans la sauvegarde. |
-| Écrans | `features/pulse/` | Carte de l'accueil, écran PULSE, historique, réglages. |
+| Écrans | `features/pulse/` | Carte de l'accueil, écran PULSE (plan, À valider, bilans), historique, réglages. `pulseActions.ts` écrit les décisions et les bilans. |
 
 Le moteur est fait de fonctions pures : il reçoit les données d'une personne et une date, et rend toujours le même résultat pour les mêmes données. Il ne garde aucun état et ne lit rien hors de ses paramètres. Il est donc prêt pour plusieurs utilisateurs et pour une synchronisation, sans rien changer.
 
@@ -79,7 +82,7 @@ La proposition est séparée du niveau de lecture. Elle a ses propres seuils, r�
 | 40 à 54 | Version allégée : une série de moins par exercice (une au moins), 2 répétitions en réserve de plus (5 au plus), aucune hausse de charge proposée | Démarrer la version allégée, Garder la séance prévue, Déplacer à demain |
 | moins de 40 | Récupération active : 30 min d'activité facile et 10 min de mobilité | Faire la récupération active, Garder la séance prévue, Déplacer à demain |
 
-« Garder la séance prévue » reste toujours proposé quand le score suggère d'alléger ou de remplacer. Seules les règles de sécurité retirent la séance : douleur dans la poitrine, ou douleur avec signe d'alerte qui sollicite la zone. Même dans ces cas, rien n'est bloqué dans Training.
+« Garder la séance prévue » reste toujours proposé quand le score suggère d'alléger ou de remplacer. Le détail de la validation est plus bas, dans « À valider ». Seules les règles de sécurité retirent la séance : douleur dans la poitrine, ou douleur avec signe d'alerte qui sollicite la zone. Même dans ces cas, rien n'est bloqué dans Training.
 
 Après trois « Garder » en 7 jours, PULSE ne change ni le score ni la proposition : il suggère d'ajuster les seuils dans les réglages.
 
@@ -98,6 +101,63 @@ Après trois « Garder » en 7 jours, PULSE ne change ni le score ni la proposit
 | Apport très bas | Sous 75 % de l'objectif 3 jours ou plus | Revenir à l'objectif |
 | Poids déjà bas | IMC sous 18,5 avec un objectif de perte | Aucun déficit |
 
+## Plan du jour (PULSE 1.2)
+
+Le plan range les recommandations en cinq modules : Training, Nutrition, Mind, Sommeil, Récupération. Chaque élément donne :
+
+- un objectif et une justification ;
+- une durée ou une quantité indicative ;
+- une priorité (haute, moyenne, basse) et un lien vers le module ;
+- un « Pourquoi ? » qui liste les données réellement utilisées (score, facteurs, check-in, objectifs, réglages, règles) et la source.
+
+| Module | Ce qu'il peut contenir |
+|---|---|
+| Training | La séance prévue et la proposition : telle quelle avec la surcharge progressive, sans record, version allégée ou récupération active. Le volume (séries) et l'intensité (répétitions en réserve) sont indiqués. Si une douleur avec signe d'alerte suspend la séance, le plan liste jusqu'à 3 exercices de tes séances qui ne sollicitent pas la zone. Il peut aussi proposer d'alléger les séances suivantes, ou d'ajuster les seuils. |
+| Nutrition | Objectif du jour (calories et protéines), répartition indicative des protéines sur 4 repas, repas prévus au planning ou « Compose mon repas », budget en vigueur, retour à l'objectif si l'apport est très bas. Les objectifs ne sont jamais modifiés. |
+| Mind | Respiration ou cohérence cardiaque selon le stress, recentrage, préparation mentale avant la séance, décompression après la séance. Seulement des exercices et routines qui existent, avec la durée de tes routines. |
+| Sommeil | Heure de coucher indicative : ton réveil habituel (médiane d'au moins 3 réveils notés sur 14 jours) moins ton sommeil visé, et 30 minutes plus tôt après une nuit courte. Sans réveils notés, PULSE le demande au lieu d'inventer une heure. S'y ajoutent le rituel du soir, la relaxation, la sieste courte et l'heure limite de caféine. |
+| Récupération | Repos, journal de la douleur, retour au calme, mobilité douce les jours sans séance, étirements doux pour le confort (ils n'évitent pas les courbatures). Ni mobilité ni étirements avec une douleur dans la poitrine ou avec signe d'alerte. |
+
+Au plus 4 éléments par module, rangés par priorité. Rien n'est appliqué depuis le plan.
+
+## À valider (PULSE 1.2)
+
+Une proposition de séance (version allégée ou récupération active) s'affiche avec :
+
+- la situation actuelle ;
+- la modification proposée ;
+- la justification ;
+- l'impact attendu : volume, intensité, aucune hausse de charge, programme inchangé ;
+- « Pourquoi me proposes-tu cela ? », avec les données utilisées.
+
+Actions :
+
+- **Accepter** : la version allégée est retenue pour la séance du jour. Training l'applique quand la séance prévue démarre, d'où qu'elle démarre (accueil, Training ou PULSE). La récupération active est simplement enregistrée.
+- **Garder la séance prévue** (refuser).
+- **Modifier** : 0 à 2 séries de moins par exercice, 0 à 3 répétitions en réserve de plus, avec l'impact recalculé avant d'enregistrer.
+- **Reporter à demain** : PULSE repropose la séance le lendemain ; le programme et le calendrier ne changent pas.
+
+Chaque décision est gardée avec son heure (`decisions` dans le journal), annulations comprises. Le programme n'est jamais modifié : l'ancienne configuration reste donc intacte. **Revenir sur ce choix** est possible le jour même tant que la séance prévue n'est pas terminée ; une séance allégée en cours retrouve alors ses objectifs prévus. La séance elle-même propose aussi « Revenir à la séance prévue ».
+
+## Bilan du soir (PULSE 1.2)
+
+- À partir de 17 h pour la journée, et le lendemain pour la veille. Il demande que PULSE ait été ouvert ce jour-là, pour connaître le plan proposé.
+- Questions, toutes facultatives :
+    - as-tu suivi le plan (oui, en partie, non) ;
+    - quelles modifications as-tu faites ;
+    - comment s'est passée ta séance, seulement si une séance est terminée ;
+    - comment as-tu vécu ta journée ;
+    - les recommandations t'ont-elles été utiles ;
+    - ce que tu as fait du plan ;
+    - un mot libre.
+- Ce que FORGE sait déjà est prérempli : la modification qui correspond à ton choix, la séance terminée et les pratiques Mind faites.
+- Le journal garde les recommandations proposées (`plan`), les décisions, ce qui a été fait et les résultats déclarés (`review`). L'historique en tire :
+    - le nombre de bilans ;
+    - le plan suivi ;
+    - l'utilité des recommandations ;
+    - le ressenti moyen de la journée et des séances ;
+    - le ressenti selon ton choix, avec au moins 3 bilans de chaque côté et sans en tirer de cause.
+
 ## Check-in
 
 - Cinq questions : la nuit (durée, et en option coucher, réveil, réveils et qualité), l'énergie, le stress, l'état physique (fatigue et courbatures) et une douleur inhabituelle.
@@ -115,8 +175,9 @@ Après trois « Garder » en 7 jours, PULSE ne change ni le score ni la proposit
 ## Ce qui n'est pas encore là
 
 - **Connecteurs (PULSE 2)** : aucune source de mesure n'est branchée. La dimension Physiologie reste vide et la confiance plafonne à « moyenne ».
-- **Plan du jour, validation avec retour en arrière, bilan du soir (PULSE 1.2)** : le ressenti après une recommandation viendra avec le bilan du soir.
-- **Apprentissage personnel (PULSE 3)** et **couche IA** : PULSE n'apprend rien de tes choix pour l'instant.
+- **Couche IA** : le « Pourquoi ? » est déterministe (les données réellement utilisées). La formulation par l'IA viendra avec la clé API dans les secrets Cloudflare.
+- **Séance reportée** : elle est reproposée dans PULSE le lendemain, mais la séance du jour de l'accueil et de Training reste celle du programme.
+- **Apprentissage personnel (PULSE 3)** : les décisions et les bilans sont enregistrés, mais PULSE n'en apprend encore rien.
 
 ## Tests
 
@@ -131,6 +192,7 @@ Après trois « Garder » en 7 jours, PULSE ne change ni le score ni la proposit
     - douleur inhabituelle ;
     - propositions refusées ;
     - deux appareils contradictoires ;
+- le plan du jour, la proposition à valider, les règles d'annulation et le bilan du soir ;
 - les tests des données manquantes, des réglages, des niveaux, de l'évolution, de l'analyse, de la sécurité, de la version allégée et du journal.
 
-`services/backup.test.ts` vérifie qu'un check-in incomplet et le journal v2 passent par la sauvegarde sans perte.
+`db/pulseDays.test.ts` vérifie la trace des décisions, les annulations et le bilan. `services/backup.test.ts` vérifie qu'un check-in incomplet et le journal v2 passent par la sauvegarde sans perte.

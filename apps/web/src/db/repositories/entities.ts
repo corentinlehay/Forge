@@ -17,12 +17,15 @@ import type {
   Program,
   RecipePhoto,
   RecipeRecord,
+  PulseAction,
   PulseChoice,
   PulseDay,
+  PulseReview,
   ShoppingList,
   SyncFields,
   TargetChange,
   WaterLog,
+  WorkoutAdjustment,
   WeekNote,
   Workout,
   WorkoutSet,
@@ -411,17 +414,39 @@ export function createPulseDayRepo(db: ForgeDB) {
   return {
     ...base,
     byDate,
-    async saveSnapshot(snapshot: Omit<PulseDay, keyof SyncFields | 'choice' | 'choiceAt'>, now: Date = new Date()): Promise<PulseDay> {
+    async saveSnapshot(snapshot: Omit<PulseDay, keyof SyncFields | 'choice' | 'choiceAt' | 'adjustment' | 'decisions' | 'review'>, now: Date = new Date()): Promise<PulseDay> {
       const existing = await byDate(snapshot.date);
       if (!existing) return base.add({ ...snapshot, choice: null, choiceAt: null } as Input<PulseDay>, now);
       const keys = Object.keys(snapshot) as (keyof typeof snapshot)[];
       const same = keys.every((k) => JSON.stringify(existing[k] ?? null) === JSON.stringify(snapshot[k] ?? null));
       return same ? existing : base.update(existing.id, snapshot, now);
     },
-    async choose(date: string, choice: PulseChoice, now: Date = new Date()): Promise<PulseDay> {
+    /** Enregistre une décision sur la proposition du jour et garde la trace de toutes les précédentes. */
+    async decide(date: string, action: Exclude<PulseAction, 'annuler'>, choice: PulseChoice, adjustment: WorkoutAdjustment | null = null, now: Date = new Date()): Promise<PulseDay> {
       const existing = await byDate(date);
       if (!existing) throw new DataError('Le résultat PULSE du jour n’est pas encore enregistré.');
-      return base.update(existing.id, { choice, choiceAt: now.toISOString() }, now);
+      if (adjustment) check(adjustment.setsDelta <= 0 && adjustment.setsDelta >= -5 && adjustment.rirDelta >= 0 && adjustment.rirDelta <= 5, 'Ajustement hors limites.');
+      const at = now.toISOString();
+      const kept = choice === 'alleger' ? adjustment : null;
+      return base.update(existing.id, { choice, choiceAt: at, adjustment: kept, decisions: [...(existing.decisions ?? []), { at, action, choice, adjustment: kept }] }, now);
+    },
+    /** Garde la compatibilité : un choix direct vaut acceptation, refus ou report. */
+    async choose(date: string, choice: PulseChoice, now: Date = new Date()): Promise<PulseDay> {
+      const action = choice === 'garder' ? 'refuser' : choice === 'deplacer' ? 'reporter' : 'accepter';
+      return this.decide(date, action, choice, null, now);
+    },
+    /** Annule le choix en vigueur : la proposition redevient en attente ; la trace reste. */
+    async undo(date: string, now: Date = new Date()): Promise<PulseDay> {
+      const existing = await byDate(date);
+      if (!existing?.choice) throw new DataError('Aucun choix à annuler.');
+      const at = now.toISOString();
+      return base.update(existing.id, { choice: null, choiceAt: null, adjustment: null, decisions: [...(existing.decisions ?? []), { at, action: 'annuler', choice: null }] }, now);
+    },
+    async saveReview(date: string, review: Omit<PulseReview, 'at'>, now: Date = new Date()): Promise<PulseDay> {
+      const existing = await byDate(date);
+      if (!existing) throw new DataError('Pas de journal PULSE ce jour-là.');
+      check(review.note === undefined || review.note.length <= 500, 'Note trop longue (500 caractères maximum).');
+      return base.update(existing.id, { review: { ...review, at: now.toISOString() } }, now);
     },
   };
 }

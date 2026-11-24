@@ -12,6 +12,9 @@ import { DEFAULT_PULSE_SETTINGS, levelFor, levelRange, resolveSettings, type Pul
 import { acceptance, keptRecently, proposalOf, readinessSeries, trendAt } from './history';
 import { scoreText } from './analysis';
 import { checkInSummary, recoveryScore } from '../wellbeing';
+import { bedtimeFor, usualWake } from './plan';
+import { canRevert, decisionText, reviewDefaults, reviewSummary } from './decisions';
+import { reviewStats } from './history';
 
 /**
  * Les cinq scénarios de référence de l'audit PULSE, rejoués par le moteur.
@@ -75,6 +78,7 @@ function scenario(
     settings?: PulseSettings;
     yesterday?: PulseDay | null;
     journal?: PulseDay[];
+    budget?: { dailyEur: number | null; weeklyEur: number | null };
   },
 ): PulseResult {
   const data: LifeData = {
@@ -106,6 +110,7 @@ function scenario(
     settings: parts.settings ?? DEFAULT_PULSE_SETTINGS,
     yesterday: parts.yesterday ?? null,
     journal: parts.journal ?? [],
+    budget: parts.budget ?? null,
   };
   return computePulse(input);
 }
@@ -671,5 +676,245 @@ describe('évolution et analyse du jour', () => {
     expect(proposalOf({ ...old, mode: 'recuperation' })).toBe('replace');
     expect(proposalOf({ ...old, plannedTemplateId: null })).toBeNull();
     expect(proposalOf({ ...old, trainingKind: 'as-planned' })).toBe('as-planned');
+  });
+});
+
+/* ---------- PULSE 1.2 ---------- */
+
+const emptyLife: LifeData = {
+  workouts: [],
+  sets: [],
+  templates: [],
+  foodEntries: [],
+  waterLogs: [],
+  targets: null,
+  targetChanges: [],
+  weighIns: [],
+  measurements: [],
+  checkIns: [],
+  moodLogs: [],
+  mindSessions: [],
+  pains: [],
+  mealPlans: [],
+  exerciseName: () => '',
+  recipeName: () => '',
+};
+const planOf = (r: PulseResult, module: string) => r.plan.filter((p) => p.module === module);
+const ids = (r: PulseResult, module: string) => planOf(r, module).map((p) => p.id);
+
+describe('plan du jour', () => {
+  it('donne à chaque élément un objectif, une justification, une priorité et les données utilisées', () => {
+    const all = [
+      scenario({
+        ...training(25),
+        templates: [push],
+        checkIns: [checkIn(D, 8, 4, 4, 2, 2)],
+        moodLogs: [mood(D, 4, 2)],
+        targets: { kcal: 2800, proteinG: 180, carbsG: 300, fatG: 80 },
+      }),
+      scenario({ ...training(25), templates: [legs], checkIns: [checkIn(D, 5.25, 2, 2, 4, 2, '01:30')], moodLogs: [mood(addDays(D, -1), 3, 4)] }),
+      scenario({ templates: [push], checkIns: [checkIn(D, 8, null, 4, 2, 2)] }),
+    ];
+    for (const r of all) {
+      expect(r.plan.length).toBeGreaterThan(3);
+      for (const p of r.plan) {
+        expect(p.goal, p.id).not.toBe('');
+        expect(p.reason, p.id).not.toBe('');
+        expect(['haute', 'moyenne', 'basse']).toContain(p.priority);
+        expect(p.basis.length, p.id).toBeGreaterThan(0);
+        if (p.to?.startsWith('/mind/exercice/')) expect(MIND_EXERCISE_BY_ID.has(p.to.split('/').at(-1)!)).toBe(true);
+      }
+    }
+  });
+
+  it('jour Feu vert : séance telle quelle avec la surcharge, objectifs nutritionnels inchangés, décompression et étirements', () => {
+    const r = scenario({
+      ...training(25),
+      templates: [push],
+      health: watch({ hrv: 62, rhr: 54 }),
+      checkIns: [checkIn(D, 7 + 50 / 60, 4, 4, 2, 2)],
+      moodLogs: [mood(D, 4, 2)],
+      targets: { kcal: 2800, proteinG: 180, carbsG: 300, fatG: 80 },
+      foodEntries: [1, 2, 3].map((k) => meal(addDays(D, -k), 2780, 176)),
+    });
+    expect(planOf(r, 'training')[0]).toMatchObject({
+      id: 'telle-quelle',
+      title: 'Séance Push A',
+      detail: 'Surcharge progressive : Développé couché : 82,5 kg (+2,5).',
+      amount: '3 séries, 2 répétitions en réserve',
+      priority: 'moyenne',
+    });
+    expect(planOf(r, 'nutrition').find((p) => p.id === 'objectif-jour')?.amount).toBe('2\u202f800 kcal et 180 g de protéines');
+    expect(planOf(r, 'nutrition').find((p) => p.id === 'repartition')).toMatchObject({
+      amount: 'environ 45 g par repas, sur 4 repas',
+      source: expect.stringMatching(/Schoenfeld/),
+    });
+    expect(ids(r, 'mind')).toContain('apres');
+    expect(planOf(r, 'recuperation').find((p) => p.id === 'etirements')?.source).toMatch(/Cochrane/);
+    expect(r.proposal).toBeNull();
+  });
+
+  it('version allégée : en attente de validation, avec la situation, la proposition et l’impact', () => {
+    const r = scenario({ ...training(25), templates: [legs], checkIns: [checkIn(D, 5.25, 2, 2, 4, 2, '01:30')], moodLogs: [mood(addDays(D, -1), 3, 4)] });
+    expect(planOf(r, 'training')[0]).toMatchObject({ id: 'allegee', pending: true, priority: 'haute', amount: '3 séries, 3 répétitions en réserve (au lieu de 4)' });
+    expect(r.proposal).toMatchObject({
+      kind: 'lighten',
+      templateId: 'legs',
+      situation: 'Séance Jambes prévue : 4 séries, 1 répétition en réserve.',
+      proposed: 'Version allégée : 3 séries, 3 répétitions en réserve (1 série de moins par exercice, 2 répétitions en réserve de plus), pas de record visé.',
+      adjustment: LIGHTEN,
+    });
+    expect(r.proposal?.impact[0]).toBe('Volume : 4 séries → 3 (−25 %).');
+    expect(r.proposal?.impact.at(-1)).toBe('Programme inchangé : ta prochaine séance Jambes reprend les objectifs habituels.');
+    expect(r.proposal?.basis[0]).toMatch(/^Indicateur 45\/100, disponibilité modérée/);
+    expect(planOf(r, 'sommeil')[0]).toMatchObject({ id: 'coucher', title: 'Coucher 30 minutes plus tôt', priority: 'haute' });
+    expect(ids(r, 'sommeil')).toEqual(expect.arrayContaining(['sieste', 'cafeine', 'soir']));
+  });
+
+  it('récupération active : proposition sans ajustement, décharge suggérée', () => {
+    const recent = [
+      { date: addDays(D, -2), hrv: 44, rhr: 59 },
+      { date: addDays(D, -1), hrv: 43, rhr: 60 },
+    ];
+    const r = scenario({
+      ...training(46),
+      templates: [legs],
+      health: watch({ hrv: 41, rhr: 61 }, recent),
+      checkIns: [checkIn(D, 7 + 5 / 60, 3, 3, 4, 4)],
+      moodLogs: [mood(D, 3, 3)],
+    });
+    expect(r.proposal).toMatchObject({ kind: 'replace', adjustment: null });
+    expect(ids(r, 'training')).toEqual(['remplacer', 'decharge']);
+    expect(ids(r, 'sommeil')).toContain('jacobson');
+  });
+
+  it('douleur avec signe d’alerte : séance suspendue, exercices tirés de tes séances, ni étirements ni mobilité', () => {
+    const knee: Pain = {
+      ...sync('genou'),
+      zone: 'genou-d',
+      startedOn: addDays(D, -1),
+      resolvedOn: null,
+      activities: [],
+      logs: [{ date: addDays(D, -1), intensity: 6, flags: ['gonflement'] }],
+    };
+    const r = scenario({ ...training(25), templates: [legs, push], pains: [knee], checkIns: [checkIn(D, 8, 4, 4, 2, 2)] });
+    expect(ids(r, 'training')).toEqual(['suspendue', 'alternatives']);
+    expect(planOf(r, 'training')[1]?.detail).toBe('Tirés de tes séances : Développé couché.');
+    expect(ids(r, 'recuperation')).not.toContain('etirements');
+    expect(r.proposal).toBeNull();
+  });
+
+  it('propose un coucher à partir du réveil habituel, jamais inventé', () => {
+    const nights = [0, 1, 2, 3].map((k) => ({ ...checkIn(addDays(D, -k), 7.5, null, 4, 2, 2), wakeTime: '06:45' }));
+    const r = scenario({ checkIns: nights });
+    expect(planOf(r, 'sommeil')[0]).toMatchObject({ id: 'coucher', title: 'Coucher vers 23 h 45' });
+    expect(planOf(r, 'sommeil')[0]?.basis.at(-1)).toBe('Réveil habituel : 6 h 45 (médiane de 4 réveils notés sur 14 jours).');
+    expect(bedtimeFor(6 * 60 + 45, 7, 30)).toBe('23:15');
+    const few = scenario({ checkIns: nights.slice(0, 2) });
+    expect(planOf(few, 'sommeil')[0]).toMatchObject({ id: 'coucher', title: 'Horaire de coucher indicatif', priority: 'basse' });
+    expect(usualWake(buildDayIndex({ ...emptyLife, checkIns: nights }), D)).toEqual({ minutes: 405, count: 4 });
+  });
+
+  it('ajoute le planning du jour et le budget, sans rien changer aux objectifs', () => {
+    const plan = { ...sync('mp'), date: D, meal: 'lunch' as const, recipeKey: 'r1', servings: 1, status: 'planned' as const };
+    const r = scenario({
+      checkIns: [checkIn(D, 8, null, 4, 2, 2)],
+      targets: { kcal: 2500, proteinG: 150, carbsG: 250, fatG: 70 },
+      mealPlans: [plan],
+      budget: { dailyEur: 12, weeklyEur: null },
+    });
+    expect(planOf(r, 'nutrition').find((p) => p.id === 'planning')?.detail).toBe('Déjeuner : Recette');
+    expect(planOf(r, 'nutrition').find((p) => p.id === 'budget')?.amount).toBe('12 € par jour');
+  });
+
+  it('ne propose ni séance ni nutrition avant 18 ans', () => {
+    const r = scenario({ templates: [push], birthDate: '2010-01-01', checkIns: [checkIn(D, 8, null, 4, 2, 2)] });
+    expect(ids(r, 'training')).toEqual([]);
+    expect(ids(r, 'nutrition')).toEqual([]);
+  });
+
+  it('garde le plan proposé dans le journal', () => {
+    const r = scenario({ templates: [push], checkIns: [checkIn(D, 8, null, 4, 2, 2)] });
+    expect(pulseSnapshot(r).plan?.map((p) => p.id)).toEqual(r.plan.map((p) => p.id));
+    expect(r.recent).toHaveLength(14);
+    expect(r.recent.at(-1)).toEqual({ date: D, score: r.readiness.score });
+  });
+});
+
+describe('décisions et bilan du soir', () => {
+  const record = (over: Partial<PulseDay> = {}): PulseDay => ({
+    ...sync('j'),
+    date: D,
+    engineVersion: 2,
+    readiness: 45,
+    confidence: 'moyenne',
+    mode: 'allege',
+    components: [],
+    nutritionKind: 'sans-objectif',
+    nutritionScore: null,
+    rules: [],
+    plannedTemplateId: 'legs',
+    trainingKind: 'lighten',
+    choice: 'alleger',
+    adjustment: LIGHTEN,
+    plan: [
+      { id: 'allegee', module: 'training', title: 'Séance Jambes, version allégée proposée', to: '/training' },
+      { id: 'apres', module: 'mind', title: 'Décompression', to: '/mind/routine/apres' },
+      { id: 'soir', module: 'sommeil', title: 'Rituel du soir', to: '/mind/routine/soir' },
+    ],
+    ...over,
+  });
+  const workout = (over: Partial<Workout>): Workout => ({
+    ...sync('w'),
+    date: D,
+    name: 'Jambes',
+    templateId: 'legs',
+    exerciseIds: ['squat'],
+    startedAt: `${D}T18:00:00.000Z`,
+    endedAt: null,
+    ...over,
+  });
+
+  it('permet de revenir en arrière tant que la séance n’est pas terminée, le jour même', () => {
+    expect(canRevert(record({ choice: null }), [], D)).toMatchObject({ ok: false });
+    expect(canRevert(record(), [], addDays(D, 1))).toMatchObject({ ok: false, reason: 'Un choix ne s’annule que le jour même.' });
+    expect(canRevert(record(), [], D)).toEqual({ ok: true });
+    expect(canRevert(record(), [workout({ adjustment: LIGHTEN })], D)).toEqual({ ok: true, workoutId: 'w' });
+    expect(canRevert(record(), [workout({ endedAt: `${D}T19:00:00.000Z` })], D)).toMatchObject({
+      ok: false,
+      reason: 'La séance est terminée : ce choix ne peut plus être annulé.',
+    });
+  });
+
+  it('préremplit le bilan avec le choix du jour et ce qui a été fait', () => {
+    const session = { ...sync('s'), date: D, time: '19:10', kind: 'routine' as const, ref: 'apres', title: 'Après', durationSec: 300, completed: true };
+    const d = reviewDefaults(record(), [workout({ endedAt: `${D}T19:00:00.000Z` })], [session]);
+    expect(d.changes).toEqual(['allegee']);
+    expect(d.done).toEqual(['allegee', 'apres']);
+    expect(d.followed).toBeNull();
+  });
+
+  it('résume une décision et un bilan en une ligne', () => {
+    expect(decisionText({ at: '', action: 'modifier', choice: 'alleger', adjustment: { source: 'pulse', setsDelta: 0, rirDelta: 1 } })).toBe(
+      'Modifié : version allégée (1 répétition en réserve de plus)',
+    );
+    expect(decisionText({ at: '', action: 'reporter', choice: 'deplacer' })).toBe('Reporté à demain');
+    expect(reviewSummary({ at: '', followed: 'partiel', changes: [], sessionFeel: 4, dayFeel: 3, useful: 'un-peu', done: [] })).toBe(
+      'Plan suivi : en partie, séance 4/5, journée 3/5, recommandations utiles : un peu',
+    );
+  });
+
+  it('compare le ressenti selon le choix seulement avec assez de bilans, sans en tirer de cause', () => {
+    const day = (k: number, choice: PulseDay['choice'], dayFeel: number) =>
+      record({
+        ...sync(`d${k}`),
+        date: addDays(D, -k),
+        choice,
+        review: { at: '', followed: 'oui', changes: [], sessionFeel: null, dayFeel: s5(dayFeel), useful: 'oui', done: [] },
+      });
+    const journal = [day(1, 'alleger', 4), day(2, 'remplacer', 4), day(3, 'deplacer', 5), day(4, 'garder', 3), day(5, 'garder', 3), day(6, 'garder', 2)];
+    const st = reviewStats(journal, addDays(D, -7), D);
+    expect(st).toMatchObject({ count: 6, avgDay: 3.5, dayAfterAccepted: 4.3, dayAfterKept: 2.7, followed: { oui: 6, partiel: 0, non: 0 } });
+    expect(reviewStats(journal.slice(0, 5), addDays(D, -7), D).dayAfterKept).toBeNull();
   });
 });

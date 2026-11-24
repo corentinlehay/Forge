@@ -1,5 +1,43 @@
 # Journal des versions
 
+## PULSE 1.2 : plan du jour, validation, bilan du soir (version de test, branche `pulse-1-2`)
+
+### Fait
+- **Plan du jour** en cinq modules : Training, Nutrition, Mind, Sommeil, Récupération.
+    - Chaque élément a un objectif, une justification, une durée ou une quantité, une priorité et un lien vers le module.
+    - Son « Pourquoi ? » liste les données réellement utilisées et la source.
+- **Training :** volume en séries et intensité en répétitions en réserve, surcharge progressive les bons jours. Si une douleur avec signe d'alerte suspend la séance, le plan propose des exercices tirés de tes séances qui ne sollicitent pas la zone.
+- **Nutrition :** objectif du jour sans aucun changement automatique, répartition indicative des protéines sur 4 repas (Schoenfeld et Aragon 2018), repas prévus au planning ou « Compose mon repas », budget en vigueur.
+- **Mind :** respiration selon le stress, préparation mentale avant la séance, décompression après. Les durées viennent de tes routines.
+- **Sommeil :** nouvelle rubrique avec une heure de coucher indicative, calculée depuis ton réveil habituel (3 réveils notés au moins). Sans réveils notés, elle est demandée et jamais inventée. S'y ajoutent le rituel du soir, la relaxation, la sieste et l'heure limite de caféine.
+- **Récupération :** mobilité douce, étirements pour le confort seulement (Cochrane 2011 : ils n'évitent pas les courbatures), repos, journal de la douleur.
+- **À valider :** situation actuelle, modification proposée, justification, impact attendu (volume, intensité, programme inchangé), « Pourquoi me proposes-tu cela ? ».
+    - Actions : Accepter, Garder la séance prévue, Modifier (séries et répétitions en réserve, impact recalculé), Reporter à demain.
+    - Une fois le choix fait, la proposition se replie et un bouton démarre la séance.
+- **Une version allégée acceptée est appliquée par Training** quand la séance prévue démarre, depuis l'accueil, Training ou PULSE. Le programme n'est jamais modifié.
+- **Retour en arrière :**
+    - « Revenir sur ce choix » le jour même, tant que la séance n'est pas terminée ;
+    - « Revenir à la séance prévue » depuis la séance en cours ;
+    - chaque décision et chaque annulation restent tracées avec leur heure.
+- **Bilan du soir**, à partir de 17 h, et bilan de la veille le lendemain : plan suivi, modifications, séance, journée, utilité des recommandations, ce qui a été fait, un mot libre. Toutes les réponses sont facultatives, et ce qui est déjà connu est prérempli (choix du jour, séance terminée, pratiques Mind).
+- **Historique :**
+    - décisions, plan proposé et bilan dans la vue Jour ;
+    - carte « Bilans du soir » par période : plan suivi, utilité, ressenti moyen ;
+    - ressenti selon ton choix, avec 3 bilans au moins de chaque côté et sans en tirer de cause.
+- **Écran PULSE dans l'ordre du cahier :**
+    - score avec la courbe des 14 derniers jours (barres à toucher), alertes, accès rapides Training, Nutrition et Mind ;
+    - dimensions regroupées, analyse, plan du jour ;
+    - À valider, bilans, Nutrition Status.
+- La carte de l'accueil signale une proposition à valider.
+- Aucun changement de schéma : champs facultatifs dans le journal PULSE (`plan`, `adjustment`, `decisions`, `review`), compris dans la sauvegarde.
+- 296 tests (+16), dont la trace des décisions, les annulations, le plan, la proposition et le bilan.
+- Parcours vérifié au format iPhone, en démo :
+    - plan du jour, proposition, « Pourquoi ? » ;
+    - modification, annulation, acceptation ;
+    - séance démarrée depuis l'accueil avec la version allégée appliquée, puis retour à la séance prévue ;
+    - report, historique du jour ;
+    - bilan du soir (navigateur réglé sur un fuseau où il est 20 h) et sa trace dans l'historique.
+
 ## PULSE 1.1 : fondations du cahier des charges (version de test, branche `pulse-1`)
 
 ### Fait

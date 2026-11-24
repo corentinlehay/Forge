@@ -2,11 +2,13 @@ import { useMemo, useState } from 'react';
 import { useMeta, usePulseDays } from '../../db/hooks';
 import type { PulseComponentKey, PulseDay } from '../../db/types';
 import { scoreText } from '../../domain/pulse/analysis';
+import { decisionText, FEEL_MIN_TEXT, REVIEW_CHANGE_LABELS, reviewSummary } from '../../domain/pulse/decisions';
+import { toLocalTimeKey } from '../../lib/dates';
 import { periodSummary, proposalOf, readinessSeries, type PeriodSummary, type SeriesPoint } from '../../domain/pulse/history';
 import { COMPONENT_LABELS, COMPONENT_ORDER, LEVEL_LABELS, levelFor, PULSE_SETTINGS_KEY, resolveSettings, type PulseSettings } from '../../domain/pulse/settings';
 import { checkInSummary } from '../../domain/wellbeing';
 import { addDays } from '../../lib/dates';
-import { formatDayLong, formatDayMonth, formatDayShort, formatHours, formatNumber } from '../../lib/format';
+import { formatDayLong, formatDayMonth, formatDayShort, formatHours, formatNumber, formatTime } from '../../lib/format';
 import { BarChart } from '../../ui/BarChart';
 import { Field } from '../../ui/Field';
 import { Icon } from '../../ui/Icon';
@@ -181,6 +183,43 @@ function DayView({ date, point, record, life, settings }: { date: string; point:
               {record.choice ? `, ${CHOICE_SHORT[record.choice]}` : proposal === 'lighten' || proposal === 'replace' ? ', sans réponse' : ''}.
             </p>
             {record.rules.length > 0 && <p className="text-[13px] leading-snug">Règles : {record.rules.map((id) => RULE_LABELS[id] ?? id).join(', ')}.</p>}
+            {(record.decisions ?? []).length > 0 && (
+              <div className="flex flex-col gap-0.5">
+                <p className="text-[12px] text-cendre">Décisions</p>
+                <ol className="flex flex-col gap-0.5 text-[13px] leading-snug">
+                  {record.decisions!.map((d) => (
+                    <li key={d.at + d.action}>
+                      {formatTime(toLocalTimeKey(new Date(d.at)))} : {decisionText(d)}
+                    </li>
+                  ))}
+                </ol>
+              </div>
+            )}
+            {record.plan && record.plan.length > 0 && (
+              <p className="text-[13px] leading-snug">
+                Plan proposé : {record.plan.length} élément{record.plan.length > 1 ? 's' : ''}
+                {record.review ? `, ${record.review.done.length} noté${record.review.done.length > 1 ? 's' : ''} comme fait${record.review.done.length > 1 ? 's' : ''}` : ''}.
+              </p>
+            )}
+            {record.review ? (
+              <div className="flex flex-col gap-0.5">
+                <p className="text-[12px] text-cendre">Bilan du soir</p>
+                <p className="text-[13px] leading-snug">{reviewSummary(record.review)}.</p>
+                {record.review.changes.length > 0 && (
+                  <p className="text-[13px] leading-snug">
+                    Modifications :{' '}
+                    {record.review.changes
+                      .map((c) => REVIEW_CHANGE_LABELS.get(c) ?? c)
+                      .join(', ')
+                      .toLocaleLowerCase('fr-FR')}
+                    .
+                  </p>
+                )}
+                {record.review.note && <p className="text-[13px] leading-snug text-cendre">« {record.review.note} »</p>}
+              </div>
+            ) : (
+              <p className="text-[13px] leading-snug text-cendre">Pas de bilan du soir ce jour-là.</p>
+            )}
           </>
         ) : (
           <p className="text-[13px] leading-snug text-cendre">PULSE n’a pas été ouvert ce jour-là.</p>
@@ -234,6 +273,7 @@ function PeriodView({ series, journal, range, previous }: { series: SeriesPoint[
       </Card>
       <ComparisonCard now={now} before={before} />
       <AcceptanceCard now={now} before={before} />
+      <ReviewsCard now={now} />
     </>
   );
 }
@@ -334,6 +374,44 @@ function AcceptanceCard({ now, before }: { now: PeriodSummary; before: PeriodSum
       <p className="text-[12px] leading-snug text-cendre">
         Accepter, c’est choisir la version allégée, la récupération active ou le report. Garder la séance prévue reste toujours possible.
       </p>
+    </Card>
+  );
+}
+
+function ReviewsCard({ now }: { now: PeriodSummary }) {
+  const v = now.reviews;
+  return (
+    <Card label="Bilans du soir">
+      <h2 className="text-[17px] font-semibold">Bilans du soir</h2>
+      {v.count === 0 ? (
+        <p className="text-[15px] leading-snug">Aucun bilan sur cette période. Le bilan se fait dans PULSE à partir de 17 h, ou le lendemain.</p>
+      ) : (
+        <>
+          <p className="text-[15px] leading-snug">
+            {v.count} bilan{v.count > 1 ? 's' : ''}. Plan suivi : oui {v.followed.oui}, en partie {v.followed.partiel}, non {v.followed.non}. Recommandations utiles : oui{' '}
+            {v.useful.oui}, un peu {v.useful['un-peu']}, non {v.useful.non}.
+          </p>
+          {(v.avgDay !== null || v.avgSession !== null) && (
+            <p className="text-[13px] leading-snug">
+              {[
+                v.avgDay !== null ? `Journées vécues à ${formatNumber(v.avgDay, 1)}/5 en moyenne` : null,
+                v.avgSession !== null ? `séances à ${formatNumber(v.avgSession, 1)}/5` : null,
+              ]
+                .filter(Boolean)
+                .join(', ')}
+              .
+            </p>
+          )}
+          {v.dayAfterAccepted !== null && v.dayAfterKept !== null ? (
+            <p className="text-[13px] leading-snug">
+              Les jours où tu as accepté une proposition, journée à {formatNumber(v.dayAfterAccepted, 1)}/5 ({v.acceptedReviews} bilans) ; les jours où tu as gardé la séance
+              prévue, {formatNumber(v.dayAfterKept, 1)}/5 ({v.keptReviews} bilans). Un écart observé, pas une preuve de cause.
+            </p>
+          ) : (
+            <p className="text-[12px] leading-snug text-cendre">{FEEL_MIN_TEXT}</p>
+          )}
+        </>
+      )}
     </Card>
   );
 }

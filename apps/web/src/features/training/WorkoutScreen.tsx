@@ -5,7 +5,9 @@ import { repos, useAllTemplates, useExercises, useWorkouts, useWorkoutSets } fro
 import type { TemplateExercise, Workout, WorkoutSet } from '../../db/types';
 import { buildCatalog, catalogItem, type CatalogItem } from '../../domain/exerciseCatalog';
 import { exerciseSessions, holdLoad, parseRepRange, suggestNext, type Suggestion } from '../../domain/progression';
-import { adjustTargets } from '../../domain/pulse/pulse';
+import { adjustTargets, describeAdjustment } from '../../domain/pulse/adjust';
+import { revertChoice } from '../pulse/pulseActions';
+import { toLocalDateKey } from '../../lib/dates';
 import { bestE1rm, e1rm, lastPerformance, workoutStats } from '../../domain/training';
 import { formatClock, formatRest, moveItem, nextSet, restFor } from '../../domain/workoutFlow';
 import { nowIso } from '../../lib/ids';
@@ -193,9 +195,25 @@ function LiveWorkout({ workout, workouts, sets, targets }: { workout: Workout; w
       </dl>
 
       {workout.adjustment && (
-        <p className="rounded-[18px] border-l-2 border-brume bg-anthracite p-3.5 text-[15px] leading-snug">
-          Version allégée proposée par PULSE : {-workout.adjustment.setsDelta} série{-workout.adjustment.setsDelta > 1 ? 's' : ''} de moins par exercice, {workout.adjustment.rirDelta} répétitions en réserve de plus, pas de record visé.
-        </p>
+        <div className="flex flex-col gap-2 rounded-[18px] border-l-2 border-brume bg-anthracite p-3.5">
+          <p className="text-[15px] leading-snug">Version allégée acceptée dans PULSE : {describeAdjustment(workout.adjustment) ?? 'objectifs prévus'}, pas de record visé.</p>
+          {!ended && (
+            <button
+              type="button"
+              className="self-start py-1 text-[13px] text-cendre underline underline-offset-2"
+              onClick={() => {
+                void (async () => {
+                  const today = toLocalDateKey(new Date());
+                  const res = workout.date === today ? await revertChoice(workout.date, today) : { ok: false };
+                  if (!res.ok) await repos.workouts.update(workout.id, { adjustment: null });
+                  toast.show('Séance prévue rétablie');
+                })();
+              }}
+            >
+              Revenir à la séance prévue
+            </button>
+          )}
+        </div>
       )}
 
       {order.length === 0 && <p className="text-[15px] text-cendre">Ajoute un premier exercice pour commencer.</p>}
