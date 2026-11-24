@@ -15,6 +15,7 @@ import type {
   Program,
   Scale5,
   WaterLog,
+  WeekNote,
   WeighIn,
   Workout,
   WorkoutSet,
@@ -25,7 +26,7 @@ import { addDays } from '../lib/dates';
 import { ONBOARDING_KEY } from './onboarding';
 import { BUDGET_KEY } from './budget';
 import { DEFAULT_ROUTINES, routineSeconds } from './mind';
-import { isoWeekday } from './training';
+import { isoWeekday, weekStart } from './training';
 
 /**
  * Jeu de données de démonstration, entièrement fictif, généré autour d'aujourd'hui.
@@ -299,6 +300,7 @@ export interface DemoTables {
   audioStates: [];
   measurements: Measurement[];
   pains: Pain[];
+  weekNotes: WeekNote[];
 }
 
 function localIso(dateKey: string, hour: number, minute = 0): string {
@@ -541,6 +543,18 @@ export function generateDemoData(today: string, now: Date): DemoTables {
     },
   ];
 
+  // Bilans : un regard noté sur la semaine dernière, dont l'intention s'affiche dans la semaine en cours.
+  const lastWeek = addDays(weekStart(today), -7);
+  const weekNotes: WeekNote[] = [
+    {
+      ...sync('semaine', localIso(addDays(lastWeek, 6), 20, 0)),
+      weekStart: lastWeek,
+      wentWell: 'Les quatre séances faites, et les records au développé couché.',
+      toAdjust: 'Coucher trop tard en semaine, le stress du travail remonte le soir.',
+      intention: 'Éteindre les écrans à 22 h 30 et faire la cohérence cardiaque avant de dormir.',
+    },
+  ];
+
   // FORGE MIND : journal émotionnel et pratiques sur 3 semaines (générateur séparé : le reste de la démo ne bouge pas).
   const trainingDays = new Set(workouts.map((w) => w.date));
   const moodLogs: MoodLog[] = [];
@@ -648,5 +662,6 @@ export function generateDemoData(today: string, now: Date): DemoTables {
     audioStates: [],
     measurements,
     pains,
+    weekNotes,
   };
 }

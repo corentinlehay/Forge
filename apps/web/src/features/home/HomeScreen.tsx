@@ -17,6 +17,7 @@ import { statusView } from '../weight/weightStatus';
 import { SessionHero } from '../training/SessionHero';
 import { CoachButton } from '../../ui/CoachButton';
 import { BackupReminder } from './BackupReminder';
+import { WeekCard } from '../review/WeekCard';
 
 const kcal = (v: number) => `${formatNumber(v, 0)} kcal`;
 
@@ -88,6 +89,7 @@ function Dashboard({ data }: { data: DashboardData }) {
         <WeekTile data={data} />
       </div>
       <TrainingCard data={data} />
+      <WeekCard />
       <CoachCard data={data} />
       <BackupReminder />
     </>

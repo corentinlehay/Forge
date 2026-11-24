@@ -1,5 +1,17 @@
 # Journal des versions
 
+## Bilans 1 : bilan de la semaine, calendrier, analyses croisées, badges (version de test, branche `bilans-1`)
+
+### Fait
+- Nouvel espace Bilans (Progression, ligne « Bilans et calendrier », ou carte « Ta semaine » de l'accueil), en quatre vues.
+- Semaine : jours actifs, ce qui a avancé (records, séances, sommeil, pratiques Mind, protéines, humeur, douleur qui baisse, nouveaux badges), au plus trois pistes pour la suite (douleur avec signe d'alerte, sommeil sous 7 h avec sa source AASM et SRS, stress élevé, protéines ou calories loin de l'objectif en vigueur à cette date, semaine nettement plus légère que le programme, peu de pesées) et les chiffres de la semaine comparés à la précédente. Aucune remarque sur une semaine en cours non terminée, aucun reproche sur une semaine vide.
+- Ton regard sur la semaine : ce qui a marché, ce que tu veux ajuster, ton intention ; l'intention s'affiche en tête de la semaine suivante. Historique de toutes les semaines depuis ta première donnée, avec flèches et liste.
+- Calendrier jour, semaine et mois sur les quatre espaces (Training, Nutrition, Corps et récup, Mind), chaque élément menant à sa fiche. Les séances du programme et les repas du planning à venir apparaissent comme prévus ; un jour passé sans séance n'est jamais signalé. Couleurs des repères vérifiées (contraste, daltonismes) et toujours à la même place, avec légende.
+- Analyses : sur 60 jours, deux groupes de jours comparés (sommeil et humeur, sommeil et stress, stress et nuit suivante, séance et humeur, séance et stress, pratique Mind et stress, sommeil et volume de séance, tension avant et après les pratiques, chaque douleur le lendemain d'une séance). Affichées seulement avec assez de jours de chaque côté et un écart net ; présentées comme des coïncidences, jamais comme des causes. Les liens sans différence et ceux en attente de données sont listés à part.
+- Badges : 33 paliers cumulés (séances, records, tonnes, jours de repas, pesées, mensurations, check-ins, pratiques, minutes, journal, semaines actives), datés, qui ne se perdent jamais ; prochaine étape par famille ; régularité sur 12 semaines sans série à tenir ; records des 90 derniers jours.
+- Base locale v10 : notes de semaine (migration v9 vers v10 testée, comprises dans la sauvegarde). La démo contient une note sur la semaine dernière.
+- 231 tests. Parcours vérifié au format iPhone, en démo et sur un compte vide.
+
 ## Progression 2 : corps, photos, comparaisons et douleurs (version de test, branche `progression-2`)
 
 ### Fait

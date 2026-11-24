@@ -398,6 +398,14 @@ export interface BodyPhoto extends SyncFields {
 }
 
 /** Entrée du journal d'une douleur : intensité de 0 à 10 et signes remarqués ce jour-là. */
+/** Regard personnel sur une semaine (lundi) : ce qui a marché, ce qui est à ajuster, l'intention pour la suivante. */
+export interface WeekNote extends SyncFields {
+  weekStart: string;
+  wentWell?: string;
+  toAdjust?: string;
+  intention?: string;
+}
+
 export interface PainLog {
   date: string;
   intensity: number;

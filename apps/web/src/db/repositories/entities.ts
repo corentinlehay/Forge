@@ -1,6 +1,6 @@
 import type { EntityTable, Table } from 'dexie';
 import type { ForgeDB } from '../schema';
-import type { BodyPhoto, CheckIn, Exercise, Food, FoodEntry, MealPlan, MealTemplate, Measurement, MindSession, MoodLog, Pain, Per100, PriceRecord, Program, RecipePhoto, RecipeRecord, ShoppingList, SyncFields, TargetChange, WaterLog, Workout, WorkoutSet, WorkoutTemplate } from '../types';
+import type { BodyPhoto, CheckIn, Exercise, Food, FoodEntry, MealPlan, MealTemplate, Measurement, MindSession, MoodLog, Pain, Per100, PriceRecord, Program, RecipePhoto, RecipeRecord, ShoppingList, SyncFields, TargetChange, WaterLog, WeekNote, Workout, WorkoutSet, WorkoutTemplate } from '../types';
 import type { LibraryExercise } from '../../data/exerciseLibrary';
 import { isDateKey, isTimeKey } from '../../lib/dates';
 import { newId, nowIso } from '../../lib/ids';
@@ -362,6 +362,24 @@ export function createBodyPhotoRepo(db: ForgeDB) {
     if (i.pose !== undefined) check(['face', 'profil', 'dos'].includes(i.pose), 'Pose invalide.');
     if (i.dataUrl !== undefined) check(i.dataUrl.startsWith('data:image/') && i.dataUrl.length <= 3_000_000, 'Image invalide ou trop lourde.');
   });
+}
+
+/** Notes de semaine : une par semaine ; une nouvelle saisie remplace la précédente. */
+export function createWeekNoteRepo(db: ForgeDB) {
+  const base = entityRepo<WeekNote>(db.weekNotes, (i) => {
+    if (i.weekStart !== undefined) check(isDateKey(i.weekStart), 'Semaine invalide.');
+    for (const k of ['wentWell', 'toAdjust', 'intention'] as const) {
+      const v = i[k];
+      if (v !== undefined) check(v.length <= 600, 'Texte trop long (600 caractères maximum).');
+    }
+  });
+  return {
+    ...base,
+    async save(weekStart: string, fields: Pick<WeekNote, 'wentWell' | 'toAdjust' | 'intention'>, now: Date = new Date()): Promise<WeekNote> {
+      const existing = (await base.listActive()).find((n) => n.weekStart === weekStart);
+      return existing ? base.update(existing.id, fields, now) : base.add({ weekStart, ...fields } as Input<WeekNote>, now);
+    },
+  };
 }
 
 export function createPainRepo(db: ForgeDB) {

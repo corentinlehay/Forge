@@ -53,6 +53,13 @@ export function ProgressionScreen() {
           <CoachButton />
         </div>
       </div>
+      <Link to="/progression/bilans" viewTransition className="flex min-h-12 items-center justify-between gap-3 rounded-[14px] bg-anthracite px-4 active:opacity-80">
+        <span className="flex items-center gap-2.5 text-[15px] font-semibold">
+          <Icon name="calendar" size={20} className="text-citron" />
+          Bilans et calendrier
+        </span>
+        <Icon name="chevron" size={16} className="text-cendre" />
+      </Link>
       <Segmented label="Vue" options={views} value={view} onChange={(v) => setParams(v === 'corps' ? {} : { vue: v }, { replace: true })} />
       {view === 'corps' && <BodyPanel />}
       {view === 'douleurs' && <PainsPanel />}

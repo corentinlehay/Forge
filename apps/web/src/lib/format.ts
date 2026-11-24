@@ -136,3 +136,9 @@ const litresFormat = new Intl.NumberFormat(fr, { minimumFractionDigits: 0, maxim
 export function formatLitres(ml: number): string {
   return `${litresFormat.format(ml / 1000)} L`;
 }
+
+/** 7.25 → « 7 h 15 » (minutes arrondies, jamais « 6 h 60 »). */
+export function formatHours(hours: number): string {
+  const total = Math.round(hours * 60);
+  return `${Math.floor(total / 60)} h ${String(total % 60).padStart(2, '0')}`;
+}

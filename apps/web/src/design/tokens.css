@@ -18,6 +18,12 @@
   /* FORGE MIND : un bleu brume, plus apaisant que le citron. */
   --color-brume: #aebcf5;
   --color-brume-voile: #1e2233;
+  /* Calendrier : un repère par espace, toujours à la même place et nommé dans la légende.
+     Palette vérifiée sur Anthracite (lumière, saturation, daltonismes, contraste 3:1). */
+  --color-mod-training: #87a100;
+  --color-mod-nutrition: #ae5c00;
+  --color-mod-corps: #9a4c95;
+  --color-mod-mind: #1f99c7;
 
   --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", Arial, sans-serif;
   --font-display: "Archivo Variable", -apple-system, BlinkMacSystemFont, sans-serif;

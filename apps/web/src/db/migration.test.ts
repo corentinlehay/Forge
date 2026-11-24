@@ -1,7 +1,7 @@
 import Dexie from 'dexie';
 import { afterEach, describe, expect, it } from 'vitest';
 import { ForgeDB, SCHEMA_VERSION } from './schema';
-import { createCheckInRepo, createExerciseRepo, createFoodRepo, createSetRepo, DataError } from './repositories/entities';
+import { createCheckInRepo, createExerciseRepo, createFoodRepo, createSetRepo, createWeekNoteRepo, DataError } from './repositories/entities';
 
 const names: string[] = [];
 afterEach(async () => {
@@ -311,6 +311,62 @@ describe('migration v8 → v9', () => {
     expect(await db.measurements.count()).toBe(0);
     expect(await db.bodyPhotos.count()).toBe(0);
     expect(await db.pains.count()).toBe(0);
+    db.close();
+  });
+});
+
+describe('migration v9 → v10', () => {
+  it('ajoute les notes de semaine sans toucher aux douleurs ni aux pesées', async () => {
+    const name = `migration10-${crypto.randomUUID()}`;
+    names.push(name);
+    const v9 = new Dexie(name);
+    v9.version(1).stores({ profile: 'id, updatedAt', weighIns: 'id, date, [date+time], updatedAt', meta: 'key' });
+    v9.version(2).stores({
+      foodEntries: 'id, date, updatedAt',
+      exercises: 'id, name, updatedAt',
+      workoutTemplates: 'id, updatedAt',
+      workouts: 'id, date, updatedAt',
+      workoutSets: 'id, workoutId, exerciseId, updatedAt',
+      checkIns: 'id, date, updatedAt',
+    });
+    v9.version(3).stores({ foods: 'id, [source+sourceId], name, updatedAt', mealTemplates: 'id, updatedAt', waterLogs: 'id, date, updatedAt' });
+    v9.version(4).stores({ programs: 'id, updatedAt' });
+    v9.version(5).stores({
+      recipes: 'id, updatedAt',
+      recipePhotos: 'id, recipeKey, updatedAt',
+      mealPlans: 'id, date, updatedAt',
+      shoppingLists: 'id, updatedAt',
+      prices: 'id, key, updatedAt',
+    });
+    v9.version(6).stores({ targetChanges: 'id, date, updatedAt' });
+    v9.version(7).stores({ moodLogs: 'id, date, updatedAt', mindSessions: 'id, date, updatedAt' });
+    v9.version(8).stores({ audioStates: 'id, updatedAt', audioDownloads: 'id' });
+    v9.version(9).stores({ measurements: 'id, date, updatedAt', bodyPhotos: 'id, date, updatedAt', pains: 'id, updatedAt' });
+    await v9.table('weighIns').put({ id: 'w1', createdAt: 'a', updatedAt: 'a', deletedAt: null, date: '2026-11-20', time: '07:00', weightKg: 82.4 });
+    await v9.table('pains').put({ id: 'p1', createdAt: 'a', updatedAt: 'a', deletedAt: null, zone: 'bas-dos', startedOn: '2026-11-19', resolvedOn: null, activities: [], logs: [{ date: '2026-11-19', intensity: 5 }] });
+    v9.close();
+    const db = new ForgeDB(name);
+    await db.open();
+    expect(db.verno).toBe(SCHEMA_VERSION);
+    expect((await db.weighIns.get('w1'))?.weightKg).toBe(82.4);
+    expect((await db.pains.get('p1'))?.logs).toHaveLength(1);
+    expect(await db.weekNotes.count()).toBe(0);
+    db.close();
+  });
+});
+
+describe('notes de semaine', () => {
+  it('gardent une seule note par semaine et refusent un texte trop long', async () => {
+    const name = `weeknotes-${crypto.randomUUID()}`;
+    names.push(name);
+    const db = new ForgeDB(name);
+    const notes = createWeekNoteRepo(db);
+    await notes.save('2026-11-16', { wentWell: 'Quatre séances' });
+    await notes.save('2026-11-16', { wentWell: 'Quatre séances', intention: 'Dormir plus tôt' });
+    const list = await notes.listActive();
+    expect(list).toHaveLength(1);
+    expect(list[0]?.intention).toBe('Dormir plus tôt');
+    await expect(notes.save('2026-11-23', { toAdjust: 'x'.repeat(601) })).rejects.toBeInstanceOf(DataError);
     db.close();
   });
 });

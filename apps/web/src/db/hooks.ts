@@ -5,8 +5,8 @@ import { getDb } from './schema';
 import { createMetaRepo } from './repositories/meta';
 import { createProfileRepo } from './repositories/profile';
 import { createWeighInRepo } from './repositories/weighIns';
-import { createMindSessionRepo, createMeasurementRepo, createBodyPhotoRepo, createPainRepo, createMoodLogRepo, createCheckInRepo, createExerciseRepo, createFoodCatalogRepo, createFoodRepo, createMealPlanRepo, createMealTemplateRepo, createPriceRepo, createProgramRepo, createRecipePhotoRepo, createRecipeRepo, createSetRepo, createShoppingListRepo, createTemplateRepo, createWaterRepo, createWorkoutRepo, createTargetChangeRepo } from './repositories/entities';
-import type { AudioState, BodyPhoto, Measurement, MindSession, MoodLog, Pain, TargetChange, CheckIn, Exercise, Food, FoodEntry, MealPlan, MealTemplate, PriceRecord, Profile, Program, RecipePhoto, RecipeRecord, ShoppingList, WaterLog, WeighIn, Workout, WorkoutSet, WorkoutTemplate } from './types';
+import { createMindSessionRepo, createWeekNoteRepo, createMeasurementRepo, createBodyPhotoRepo, createPainRepo, createMoodLogRepo, createCheckInRepo, createExerciseRepo, createFoodCatalogRepo, createFoodRepo, createMealPlanRepo, createMealTemplateRepo, createPriceRepo, createProgramRepo, createRecipePhotoRepo, createRecipeRepo, createSetRepo, createShoppingListRepo, createTemplateRepo, createWaterRepo, createWorkoutRepo, createTargetChangeRepo } from './repositories/entities';
+import type { AudioState, BodyPhoto, WeekNote, Measurement, MindSession, MoodLog, Pain, TargetChange, CheckIn, Exercise, Food, FoodEntry, MealPlan, MealTemplate, PriceRecord, Profile, Program, RecipePhoto, RecipeRecord, ShoppingList, WaterLog, WeighIn, Workout, WorkoutSet, WorkoutTemplate } from './types';
 import { programTemplates } from '../domain/training';
 
 /**
@@ -87,7 +87,15 @@ export const repos = {
   get pains() {
     return createPainRepo(getDb());
   },
+  get weekNotes() {
+    return createWeekNoteRepo(getDb());
+  },
 };
+
+/** Notes de semaine des bilans, la plus récente d'abord. */
+export function useWeekNotes(): WeekNote[] | undefined {
+  return useLiveQuery(async () => (await repos.weekNotes.listActive()).sort((a, b) => b.weekStart.localeCompare(a.weekStart)), []);
+}
 
 /** Mensurations, de la plus ancienne à la plus récente. */
 export function useMeasurements(): Measurement[] | undefined {
