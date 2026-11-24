@@ -13,12 +13,14 @@ import { Segmented } from '../../ui/Segmented';
 import { useCheckInSheet } from '../wellbeing/CheckInSheet';
 import { useWeighInSheet } from '../weight/WeighInSheet';
 import { CoachButton } from '../../ui/CoachButton';
-import { WeightPanel } from '../weight/WeightScreen';
+import { BodyPanel } from '../body/BodyScreens';
+import { PainsPanel } from '../body/PainScreens';
 
-type View = 'poids' | 'entrainement' | 'bien-etre';
+type View = 'corps' | 'entrainement' | 'douleurs' | 'bien-etre';
 const views = [
-  { value: 'poids', label: 'Poids' },
-  { value: 'entrainement', label: 'Entraînement' },
+  { value: 'corps', label: 'Corps' },
+  { value: 'entrainement', label: 'Training' },
+  { value: 'douleurs', label: 'Douleurs' },
   { value: 'bien-etre', label: 'Bien-être' },
 ] as const;
 
@@ -28,7 +30,8 @@ const kg = (v: number) => formatNumber(v, v % 1 ? 1 : 0);
 export function ProgressionScreen() {
   const [params, setParams] = useSearchParams();
   const raw = params.get('vue');
-  const view: View = raw === 'entrainement' || raw === 'bien-etre' ? raw : 'poids';
+  // « poids » : ancien nom de la vue Corps, gardé pour les liens existants.
+  const view: View = raw === 'entrainement' || raw === 'bien-etre' || raw === 'douleurs' ? raw : 'corps';
   const { openNew } = useWeighInSheet();
   const { openCheckIn } = useCheckInSheet();
 
@@ -37,8 +40,8 @@ export function ProgressionScreen() {
       <div className="flex items-center justify-between gap-3">
         <h1 className="font-metal text-[40px]">Progression</h1>
         <div className="flex items-center gap-2">
-          {view === 'poids' && (
-            <Button size="small" onClick={openNew}>
+          {view === 'corps' && (
+            <Button size="small" className="whitespace-nowrap" onClick={openNew}>
               Se peser
             </Button>
           )}
@@ -50,8 +53,9 @@ export function ProgressionScreen() {
           <CoachButton />
         </div>
       </div>
-      <Segmented label="Vue" options={views} value={view} onChange={(v) => setParams(v === 'poids' ? {} : { vue: v }, { replace: true })} />
-      {view === 'poids' && <WeightPanel />}
+      <Segmented label="Vue" options={views} value={view} onChange={(v) => setParams(v === 'corps' ? {} : { vue: v }, { replace: true })} />
+      {view === 'corps' && <BodyPanel />}
+      {view === 'douleurs' && <PainsPanel />}
       {view === 'entrainement' && <TrainingPanel />}
       {view === 'bien-etre' && <WellbeingPanel />}
     </Screen>

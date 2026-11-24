@@ -21,6 +21,8 @@ import { ExerciseScreen, RoutineScreen } from '../features/mind/PracticeScreens'
 import { RoutineEditor } from '../features/mind/RoutineEditor';
 import { AudioDetailScreen, AudioLibraryScreen, HypnosisScreen } from '../features/audio/AudioScreens';
 import { CreatorEditor, CreatorScreen } from '../features/audio/CreatorScreen';
+import { CompareScreen, MeasurementsScreen, PhotosScreen } from '../features/body/BodyScreens';
+import { PainDetailScreen } from '../features/body/PainScreens';
 import { KitchenScreen } from '../features/kitchen/KitchenScreen';
 import { RecipeScreen } from '../features/kitchen/RecipeScreen';
 import { RecipeEditor } from '../features/kitchen/RecipeEditor';
@@ -60,6 +62,10 @@ export const router = createBrowserRouter([
       { path: 'nutrition', element: <NutritionScreen /> },
       { path: 'nutrition/ajouter', element: <AddFoodScreen /> },
       { path: 'progression', element: <ProgressionScreen /> },
+      { path: 'progression/mensurations', element: <MeasurementsScreen /> },
+      { path: 'progression/photos', element: <PhotosScreen /> },
+      { path: 'progression/comparer', element: <CompareScreen /> },
+      { path: 'progression/douleur/:id', element: <PainDetailScreen /> },
       { path: 'mind', element: <MindScreen /> },
       { path: 'mind/journal', element: <JournalScreen /> },
       { path: 'mind/sommeil', element: <SleepScreen /> },

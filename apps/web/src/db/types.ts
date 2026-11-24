@@ -373,3 +373,45 @@ export interface AudioDownload {
   blob: Blob;
   savedAt: string;
 }
+
+/** Mensurations en centimètres : chaque mesure est facultative. */
+export interface Measurement extends SyncFields {
+  date: string;
+  waistCm?: number | null;
+  chestCm?: number | null;
+  armCm?: number | null;
+  thighCm?: number | null;
+  hipsCm?: number | null;
+  note?: string;
+}
+
+export type PhotoPose = 'face' | 'profil' | 'dos';
+
+/** Photo du corps, gardée sur l'appareil seulement (ni envoyée, ni dans la sauvegarde). */
+export interface BodyPhoto extends SyncFields {
+  date: string;
+  pose: PhotoPose;
+  /** Image JPEG réduite à 1 080 px, en data URL. */
+  dataUrl: string;
+  width: number;
+  height: number;
+}
+
+/** Entrée du journal d'une douleur : intensité de 0 à 10 et signes remarqués ce jour-là. */
+export interface PainLog {
+  date: string;
+  intensity: number;
+  /** Clés de PAIN_FLAGS. */
+  flags?: string[];
+  note?: string;
+}
+
+/** Douleur suivie : zone sur la silhouette, début, fin éventuelle, activités associées, journal d'intensité. */
+export interface Pain extends SyncFields {
+  zone: string;
+  startedOn: string;
+  resolvedOn: string | null;
+  activities: string[];
+  note?: string;
+  logs: PainLog[];
+}

@@ -1,7 +1,9 @@
 import type {
   CheckIn,
+  Measurement,
   MindSession,
   MoodLog,
+  Pain,
   Exercise,
   Food,
   PriceRecord,
@@ -295,6 +297,8 @@ export interface DemoTables {
   moodLogs: MoodLog[];
   mindSessions: MindSession[];
   audioStates: [];
+  measurements: Measurement[];
+  pains: Pain[];
 }
 
 function localIso(dateKey: string, hour: number, minute = 0): string {
@@ -490,6 +494,53 @@ export function generateDemoData(today: string, now: Date): DemoTables {
     });
   }
 
+  // Mensurations toutes les deux semaines sur 12 semaines (prise de masse : bras et cuisse montent, taille presque stable).
+  const measurements: Measurement[] = [];
+  for (let k = 0; k <= 6; k++) {
+    const date = addDays(today, -84 + k * 14);
+    measurements.push({
+      ...sync('mesure', localIso(date, 7, 30)),
+      date,
+      waistCm: Math.round((84 + k * 0.25 + (k % 2) * 0.3) * 10) / 10,
+      chestCm: Math.round((102 + k * 0.5) * 10) / 10,
+      armCm: Math.round((36 + k * 0.3) * 10) / 10,
+      thighCm: Math.round((58 + k * 0.4) * 10) / 10,
+      ...(k === 0 ? { note: 'Première mesure, ruban souple, le matin à jeun.' } : {}),
+    });
+  }
+
+  // Douleurs : une passée au genou, une en cours au bas du dos qui s'améliore.
+  const pains: Pain[] = [
+    {
+      ...sync('douleur-genou', localIso(addDays(today, -40), 20, 0)),
+      zone: 'genou-g',
+      startedOn: addDays(today, -40),
+      resolvedOn: addDays(today, -29),
+      activities: ['Course'],
+      note: 'Après une sortie longue.',
+      logs: [
+        { date: addDays(today, -40), intensity: 5 },
+        { date: addDays(today, -37), intensity: 4 },
+        { date: addDays(today, -33), intensity: 2 },
+        { date: addDays(today, -29), intensity: 0 },
+      ],
+    },
+    {
+      ...sync('douleur-dos', localIso(addDays(today, -5), 19, 0)),
+      zone: 'bas-dos',
+      startedOn: addDays(today, -5),
+      resolvedOn: null,
+      activities: ['Musculation', 'Travail assis'],
+      note: 'Gêne apparue après le soulevé de terre.',
+      logs: [
+        { date: addDays(today, -5), intensity: 5 },
+        { date: addDays(today, -4), intensity: 4 },
+        { date: addDays(today, -2), intensity: 3 },
+        { date: addDays(today, -1), intensity: 2 },
+      ],
+    },
+  ];
+
   // FORGE MIND : journal émotionnel et pratiques sur 3 semaines (générateur séparé : le reste de la démo ne bouge pas).
   const trainingDays = new Set(workouts.map((w) => w.date));
   const moodLogs: MoodLog[] = [];
@@ -595,5 +646,7 @@ export function generateDemoData(today: string, now: Date): DemoTables {
     moodLogs,
     mindSessions,
     audioStates: [],
+    measurements,
+    pains,
   };
 }

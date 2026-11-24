@@ -253,6 +253,28 @@ const moodLogSchema = z.object({
   emotions: z.array(z.string().max(40)).max(12).optional(),
   note: z.string().max(1000).optional(),
 });
+const cm = z.number().min(15).max(200);
+const measurementSchema = z.object({
+  ...syncFields,
+  date: dateKey,
+  waistCm: cm.nullable().optional(),
+  chestCm: cm.nullable().optional(),
+  armCm: cm.nullable().optional(),
+  thighCm: cm.nullable().optional(),
+  hipsCm: cm.nullable().optional(),
+  note: z.string().max(300).optional(),
+});
+const painSchema = z.object({
+  ...syncFields,
+  zone: z.string().min(1).max(40),
+  startedOn: dateKey,
+  resolvedOn: dateKey.nullable(),
+  activities: z.array(z.string().min(1).max(40)).max(10),
+  note: z.string().max(1000).optional(),
+  logs: z
+    .array(z.object({ date: dateKey, intensity: z.number().int().min(0).max(10), flags: z.array(z.string().max(30)).max(10).optional(), note: z.string().max(500).optional() }))
+    .max(400),
+});
 const audioStateSchema = z.object({
   id: z.string().min(1).max(40),
   position: z.number().min(0).max(4 * 3600),
@@ -303,6 +325,8 @@ export const backupSchema = z.object({
     moodLogs: z.array(moodLogSchema).default([]),
     mindSessions: z.array(mindSessionSchema).default([]),
     audioStates: z.array(audioStateSchema).default([]),
+    measurements: z.array(measurementSchema).default([]),
+    pains: z.array(painSchema).default([]),
   }),
 });
 
@@ -339,6 +363,8 @@ const TABLES = [
   ['moodLogs', 'id'],
   ['mindSessions', 'id'],
   ['audioStates', 'id'],
+  ['measurements', 'id'],
+  ['pains', 'id'],
 ] as const;
 
 type TableName = (typeof TABLES)[number][0];

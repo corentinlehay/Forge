@@ -185,16 +185,14 @@ describe('migration v5 → v6', () => {
       shoppingLists: 'id, updatedAt',
       prices: 'id, key, updatedAt',
     });
-    await v5
-      .table('profile')
-      .put({
-        id: 'me',
-        createdAt: 'a',
-        updatedAt: 'a',
-        deletedAt: null,
-        gainRate: { lowPctPerWeek: 0.25, highPctPerWeek: 0.5 },
-        nutritionTargets: { kcal: 2800, proteinG: 145, carbsG: 375, fatG: 80 },
-      });
+    await v5.table('profile').put({
+      id: 'me',
+      createdAt: 'a',
+      updatedAt: 'a',
+      deletedAt: null,
+      gainRate: { lowPctPerWeek: 0.25, highPctPerWeek: 0.5 },
+      nutritionTargets: { kcal: 2800, proteinG: 145, carbsG: 375, fatG: 80 },
+    });
     v5.close();
     const db = new ForgeDB(name);
     await db.open();
@@ -274,6 +272,45 @@ describe('migration v7 → v8', () => {
     expect((await db.moodLogs.get('m1'))?.stress).toBe(2);
     expect(await db.audioStates.count()).toBe(0);
     expect(await db.audioDownloads.count()).toBe(0);
+    db.close();
+  });
+});
+
+describe('migration v8 → v9', () => {
+  it('ajoute mensurations, photos et douleurs sans toucher aux pesées', async () => {
+    const name = `migration9-${crypto.randomUUID()}`;
+    names.push(name);
+    const v8 = new Dexie(name);
+    v8.version(1).stores({ profile: 'id, updatedAt', weighIns: 'id, date, [date+time], updatedAt', meta: 'key' });
+    v8.version(2).stores({
+      foodEntries: 'id, date, updatedAt',
+      exercises: 'id, name, updatedAt',
+      workoutTemplates: 'id, updatedAt',
+      workouts: 'id, date, updatedAt',
+      workoutSets: 'id, workoutId, exerciseId, updatedAt',
+      checkIns: 'id, date, updatedAt',
+    });
+    v8.version(3).stores({ foods: 'id, [source+sourceId], name, updatedAt', mealTemplates: 'id, updatedAt', waterLogs: 'id, date, updatedAt' });
+    v8.version(4).stores({ programs: 'id, updatedAt' });
+    v8.version(5).stores({
+      recipes: 'id, updatedAt',
+      recipePhotos: 'id, recipeKey, updatedAt',
+      mealPlans: 'id, date, updatedAt',
+      shoppingLists: 'id, updatedAt',
+      prices: 'id, key, updatedAt',
+    });
+    v8.version(6).stores({ targetChanges: 'id, date, updatedAt' });
+    v8.version(7).stores({ moodLogs: 'id, date, updatedAt', mindSessions: 'id, date, updatedAt' });
+    v8.version(8).stores({ audioStates: 'id, updatedAt', audioDownloads: 'id' });
+    await v8.table('weighIns').put({ id: 'w1', createdAt: 'a', updatedAt: 'a', deletedAt: null, date: '2026-11-20', time: '07:00', weightKg: 82.4 });
+    v8.close();
+    const db = new ForgeDB(name);
+    await db.open();
+    expect(db.verno).toBe(SCHEMA_VERSION);
+    expect((await db.weighIns.get('w1'))?.weightKg).toBe(82.4);
+    expect(await db.measurements.count()).toBe(0);
+    expect(await db.bodyPhotos.count()).toBe(0);
+    expect(await db.pains.count()).toBe(0);
     db.close();
   });
 });

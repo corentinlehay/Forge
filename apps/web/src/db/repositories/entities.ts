@@ -1,6 +1,6 @@
 import type { EntityTable, Table } from 'dexie';
 import type { ForgeDB } from '../schema';
-import type { MindSession, MoodLog, TargetChange, CheckIn, Exercise, Food, FoodEntry, MealPlan, MealTemplate, Per100, PriceRecord, Program, RecipePhoto, RecipeRecord, ShoppingList, SyncFields, WaterLog, Workout, WorkoutSet, WorkoutTemplate } from '../types';
+import type { BodyPhoto, CheckIn, Exercise, Food, FoodEntry, MealPlan, MealTemplate, Measurement, MindSession, MoodLog, Pain, Per100, PriceRecord, Program, RecipePhoto, RecipeRecord, ShoppingList, SyncFields, TargetChange, WaterLog, Workout, WorkoutSet, WorkoutTemplate } from '../types';
 import type { LibraryExercise } from '../../data/exerciseLibrary';
 import { isDateKey, isTimeKey } from '../../lib/dates';
 import { newId, nowIso } from '../../lib/ids';
@@ -335,4 +335,49 @@ export function createPriceRepo(db: ForgeDB) {
 
 export function createTargetChangeRepo(db: ForgeDB) {
   return entityRepo<TargetChange>(db.targetChanges, () => undefined);
+}
+
+const MEASURE_RANGE: Record<'waistCm' | 'chestCm' | 'armCm' | 'thighCm' | 'hipsCm', [number, number]> = {
+  waistCm: [40, 200],
+  chestCm: [50, 200],
+  armCm: [15, 70],
+  thighCm: [25, 110],
+  hipsCm: [50, 200],
+};
+
+export function createMeasurementRepo(db: ForgeDB) {
+  return entityRepo<Measurement>(db.measurements, (i) => {
+    if (i.date !== undefined) check(isDateKey(i.date), 'Date invalide.');
+    for (const [k, [min, max]] of Object.entries(MEASURE_RANGE) as [keyof typeof MEASURE_RANGE, [number, number]][]) {
+      const v = i[k];
+      if (v !== undefined && v !== null) check(Number.isFinite(v) && between(v, min, max), `Mesure hors limites (${min} à ${max} cm).`);
+    }
+    if (i.note !== undefined) check(i.note.length <= 300, 'Note trop longue (300 caractères maximum).');
+  });
+}
+
+export function createBodyPhotoRepo(db: ForgeDB) {
+  return entityRepo<BodyPhoto>(db.bodyPhotos, (i) => {
+    if (i.date !== undefined) check(isDateKey(i.date), 'Date invalide.');
+    if (i.pose !== undefined) check(['face', 'profil', 'dos'].includes(i.pose), 'Pose invalide.');
+    if (i.dataUrl !== undefined) check(i.dataUrl.startsWith('data:image/') && i.dataUrl.length <= 3_000_000, 'Image invalide ou trop lourde.');
+  });
+}
+
+export function createPainRepo(db: ForgeDB) {
+  return entityRepo<Pain>(db.pains, (i) => {
+    if (i.zone !== undefined) check(i.zone.length > 0 && i.zone.length <= 40, 'Zone invalide.');
+    if (i.startedOn !== undefined) check(isDateKey(i.startedOn), 'Date de début invalide.');
+    if (i.resolvedOn !== undefined && i.resolvedOn !== null) check(isDateKey(i.resolvedOn), 'Date de fin invalide.');
+    if (i.activities !== undefined) check(i.activities.length <= 10 && i.activities.every((a) => a.length > 0 && a.length <= 40), 'Activités : 10 au plus, 40 caractères chacune.');
+    if (i.note !== undefined) check(i.note.length <= 1000, 'Commentaire trop long (1 000 caractères maximum).');
+    if (i.logs !== undefined) {
+      check(i.logs.length <= 400, 'Journal trop long.');
+      for (const l of i.logs) {
+        check(isDateKey(l.date), 'Date invalide.');
+        check(Number.isInteger(l.intensity) && between(l.intensity, 0, 10), 'Intensité de 0 à 10.');
+        if (l.note !== undefined) check(l.note.length <= 500, 'Note trop longue (500 caractères maximum).');
+      }
+    }
+  });
 }

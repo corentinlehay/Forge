@@ -5,8 +5,8 @@ import { getDb } from './schema';
 import { createMetaRepo } from './repositories/meta';
 import { createProfileRepo } from './repositories/profile';
 import { createWeighInRepo } from './repositories/weighIns';
-import { createMindSessionRepo, createMoodLogRepo, createCheckInRepo, createExerciseRepo, createFoodCatalogRepo, createFoodRepo, createMealPlanRepo, createMealTemplateRepo, createPriceRepo, createProgramRepo, createRecipePhotoRepo, createRecipeRepo, createSetRepo, createShoppingListRepo, createTemplateRepo, createWaterRepo, createWorkoutRepo, createTargetChangeRepo } from './repositories/entities';
-import type { AudioState, MindSession, MoodLog, TargetChange, CheckIn, Exercise, Food, FoodEntry, MealPlan, MealTemplate, PriceRecord, Profile, Program, RecipePhoto, RecipeRecord, ShoppingList, WaterLog, WeighIn, Workout, WorkoutSet, WorkoutTemplate } from './types';
+import { createMindSessionRepo, createMeasurementRepo, createBodyPhotoRepo, createPainRepo, createMoodLogRepo, createCheckInRepo, createExerciseRepo, createFoodCatalogRepo, createFoodRepo, createMealPlanRepo, createMealTemplateRepo, createPriceRepo, createProgramRepo, createRecipePhotoRepo, createRecipeRepo, createSetRepo, createShoppingListRepo, createTemplateRepo, createWaterRepo, createWorkoutRepo, createTargetChangeRepo } from './repositories/entities';
+import type { AudioState, BodyPhoto, Measurement, MindSession, MoodLog, Pain, TargetChange, CheckIn, Exercise, Food, FoodEntry, MealPlan, MealTemplate, PriceRecord, Profile, Program, RecipePhoto, RecipeRecord, ShoppingList, WaterLog, WeighIn, Workout, WorkoutSet, WorkoutTemplate } from './types';
 import { programTemplates } from '../domain/training';
 
 /**
@@ -78,7 +78,31 @@ export const repos = {
   get mindSessions() {
     return createMindSessionRepo(getDb());
   },
+  get measurements() {
+    return createMeasurementRepo(getDb());
+  },
+  get bodyPhotos() {
+    return createBodyPhotoRepo(getDb());
+  },
+  get pains() {
+    return createPainRepo(getDb());
+  },
 };
+
+/** Mensurations, de la plus ancienne à la plus récente. */
+export function useMeasurements(): Measurement[] | undefined {
+  return useLiveQuery(async () => (await repos.measurements.listActive()).sort((a, b) => a.date.localeCompare(b.date) || a.createdAt.localeCompare(b.createdAt)), []);
+}
+
+/** Photos du corps, de la plus récente à la plus ancienne. */
+export function useBodyPhotos(): BodyPhoto[] | undefined {
+  return useLiveQuery(async () => (await repos.bodyPhotos.listActive()).sort((a, b) => b.date.localeCompare(a.date) || b.createdAt.localeCompare(a.createdAt)), []);
+}
+
+/** Douleurs suivies, la plus récemment commencée d'abord. */
+export function usePains(): Pain[] | undefined {
+  return useLiveQuery(async () => (await repos.pains.listActive()).sort((a, b) => b.startedOn.localeCompare(a.startedOn)), []);
+}
 
 /** Journal émotionnel, du plus ancien au plus récent. */
 export function useMoodLogs(): MoodLog[] | undefined {

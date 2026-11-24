@@ -1,5 +1,19 @@
 # Journal des versions
 
+## Progression 2 : corps, photos, comparaisons et douleurs (version de test, branche `progression-2`)
+
+### Fait
+- Progression s'organise en quatre vues : Corps, Training, Douleurs, Bien-être (l'ancien lien vers la vue Poids ouvre Corps).
+- Corps : la courbe de poids existante, plus la moyenne des pesées des 7 derniers jours.
+- Mensurations (taille, poitrine, bras, cuisse, hanches, en cm, toutes facultatives) : dernière valeur et écart depuis la première, courbe par mesure, historique modifiable, conseils pour mesurer pareil à chaque fois. Une nouvelle saisie le même jour complète la fiche du jour.
+- Photos du corps de face, de profil et de dos, réduites à 1 080 px et gardées sur l'iPhone seulement (ni envoyées, ni dans la sauvegarde) ; floutées par défaut, à afficher d'un geste ; « Enregistrer dans Photos » pour en garder une copie ; suppression.
+- Comparer deux dates : photos côte à côte pour la même pose, poids moyen sur 7 jours à chaque date, mensurations et écarts. Rappel : les photos ne mesurent ni le muscle ni la graisse.
+- Douleurs : silhouette de face et de dos à toucher (36 zones, droite et gauche), intensité de 0 à 10, date de début, activités associées, commentaire, journal jour par jour, courbe d'évolution, tendance, « Elle est passée » ou « Elle est revenue », historique des douleurs passées.
+- Jamais de diagnostic. Alertes sourcées (MSD Manuals grand public, Santé.fr, HAS) : signes à surveiller (gonflement, fièvre, engourdissement, impossible de prendre appui, après un choc) → avis médical dans la journée ; intensité 7 ou plus ; douleur la nuit ou au repos ; plus de 14 jours sans amélioration nette → médecin ou kiné ; poitrine → rappel d'appeler le 15 ou le 112 si la douleur est brutale, serre ou irradie.
+- Base locale v9 : mensurations, photos, douleurs (migration v8 vers v9 testée). Mensurations et douleurs sont dans la sauvegarde, pas les photos.
+- Démo : mensurations toutes les deux semaines sur 12 semaines, une douleur au genou passée et une au bas du dos qui diminue.
+- 213 tests. Parcours vérifié au format iPhone : moyenne 7 jours, saisie de mensurations, courbe, ajout de photos floutées puis affichées, comparaison, nouvelle douleur avec alertes, note du jour, fin de la douleur, vue de dos, alerte poitrine.
+
 ## Mind 2 : séances audio, lecteur, Hypnose et espace créateur (version de test, branche `mind-2`)
 
 ### Fait

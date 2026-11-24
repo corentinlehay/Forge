@@ -58,7 +58,7 @@ function ShellContent() {
   if (step === null) return <div className="min-h-dvh bg-noir" aria-busy="true" />;
   if (step !== 'done') return <OnboardingFlow step={step} />;
 
-  const withTabBar = !['/reglages', '/training/', '/nutrition/', '/mind/', '/coach'].some((p) => pathname.startsWith(p));
+  const withTabBar = !['/reglages', '/training/', '/nutrition/', '/mind/', '/progression/', '/coach'].some((p) => pathname.startsWith(p));
   return (
     <div className="lg:pl-24">
       <Outlet />
