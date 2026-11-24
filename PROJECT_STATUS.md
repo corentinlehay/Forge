@@ -56,7 +56,7 @@ Document complet, avec l'architecture, les cinq scénarios et le plan : https://
 ## Reste à faire
 
 1. **Tester PULSE 1** sur la version de test (`pulse-1`). PULSE 2 ne commence qu'après ta validation explicite.
-2. **Mise en production de la pile actuelle**, recommandée avant PULSE 1 pour ne pas empiler davantage.
+2. **Mise en production de la pile actuelle** (onze versions de test, de nutrition-1 à pulse-1), sur ton « mets en production », pour ne pas empiler davantage.
 3. **Tes séances audio.** Le code d'administration est en place (Secrets Store du compte, secret `ADMIN_CODE`) : il reste à ajouter tes enregistrements depuis l'espace créateur.
 4. **PULSE 2 : Apple Santé par Raccourci.** Raccourci prêt à installer, bouton « Importer depuis Santé », composante Physiologie après 14 jours de données.
 5. **PULSE 3 : PULSE dans les Bilans.** Score dans le bilan et le calendrier, semaine de décharge proposée, réglage de la sensibilité, notification du matin en option.
