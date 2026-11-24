@@ -1,6 +1,6 @@
 import { useEffect, useMemo } from 'react';
-import { repos, useExercises, useMeta, useProfile, usePulseDay } from '../../db/hooks';
-import type { PulseDay } from '../../db/types';
+import { repos, useExercises, useMeta, useProfile, usePulseDay, usePulseDays } from '../../db/hooks';
+import type { CheckIn, PulseDay } from '../../db/types';
 import { computePulse, pulseSnapshot, type PulseResult } from '../../domain/pulse/pulse';
 import { PULSE_SETTINGS_KEY, resolveSettings, type PulseSettings } from '../../domain/pulse/settings';
 import { addDays } from '../../lib/dates';
@@ -11,6 +11,8 @@ export interface PulseModel {
   result: PulseResult;
   settings: PulseSettings;
   record: PulseDay | null;
+  /** Check-in du jour, pour proposer de le compléter ou de le corriger. */
+  checkIn: CheckIn | null;
 }
 
 /**
@@ -25,9 +27,10 @@ export function usePulse(): PulseModel | null {
   const today = life?.today ?? '';
   const record = usePulseDay(today);
   const yesterday = usePulseDay(today ? addDays(today, -1) : '');
+  const journal = usePulseDays();
 
   const model = useMemo(() => {
-    if (!life || !profile || !exercises || stored === undefined || record === undefined || yesterday === undefined) return null;
+    if (!life || !profile || !exercises || stored === undefined || record === undefined || yesterday === undefined || !journal) return null;
     const settings = resolveSettings(stored);
     const muscles = new Map(exercises.map((e) => [e.id, e.muscle ?? null]));
     const result = computePulse({
@@ -40,9 +43,10 @@ export function usePulse(): PulseModel | null {
       muscleOf: (id) => muscles.get(id) ?? null,
       settings,
       yesterday,
+      journal: journal.filter((d) => d.date < life.today),
     });
-    return { today: life.today, result, settings, record };
-  }, [life, profile, exercises, stored, record, yesterday]);
+    return { today: life.today, result, settings, record, checkIn: life.index.get(life.today)?.checkIn ?? null };
+  }, [life, profile, exercises, stored, record, yesterday, journal]);
 
   const snapshot = model ? JSON.stringify(pulseSnapshot(model.result)) : null;
   useEffect(() => {

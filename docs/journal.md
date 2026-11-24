@@ -1,5 +1,41 @@
 # Journal des versions
 
+## PULSE 1.1 : fondations du cahier des charges (version de test, branche `pulse-1`)
+
+### Fait
+- Lecture du score en 4 niveaux réglables : disponibilité basse (0 à 39), modérée (40 à 59), satisfaisante (60 à 79), élevée (80 à 100). Ce sont des conventions d'interface, présentées comme telles.
+- Proposition de séance séparée du score, avec ses propres seuils. Elle garde toujours « Garder la séance prévue » quand elle suggère d'alléger ou de remplacer. Nouveau choix « Faire la récupération active ». Le score ne décide jamais seul d'annuler une séance ; seules les règles de sécurité retirent une séance, et rien n'est bloqué dans Training.
+- Couverture affichée (« 4 dimensions sur 5 »), confiance, et score arrondi à 5 avec « ≈ » quand la confiance est basse.
+- Fraîcheur de chaque dimension (aujourd'hui, hier, dernière séance) et sa nature (déclarée, mesurée, calculée).
+- Évolution : hier, moyenne sur 7 jours et sur 30 jours, le jour exclu. Les scores passés sont recalculés à partir des données de chaque jour.
+- Analyse du jour : une phrase de synthèse, les principaux facteurs (trois au plus) et le détail par nature : observé, déclaré, estimé, hypothèse (toujours au conditionnel), manquant.
+- Plusieurs appareils : une seule valeur par jour et par mesure, la source la plus régulière retenue, l'écart signalé et la confiance abaissée. Prêt pour PULSE 2.
+- Check-in unifié en cinq questions : nuit, énergie, stress, état physique, douleur inhabituelle.
+    - Chaque question peut être passée, et un second appui efface une réponse.
+    - Ce qui existe déjà est prérempli (stress du journal Mind, douleurs suivies).
+    - « Plus tard » ferme sans rien enregistrer, et le check-in se complète ensuite depuis PULSE.
+    - Le stress va dans le journal Mind du jour : une seule donnée, comptée une fois.
+- Nouvelle règle « Douleur inhabituelle signalée » : au plus la version allégée, invitation à situer la douleur, sans rien deviner de la zone.
+- Écran Historique PULSE : jour, semaine, mois ou période choisie (180 jours au plus), comparée à la période précédente.
+    - On y voit l'indicateur, les cinq dimensions, le sommeil moyen, le stress moyen et les séries par semaine.
+    - On y voit aussi les propositions et le taux d'acceptation.
+    - Chaque comparaison décrit un écart, sans en donner la cause.
+- Après trois « Garder » en 7 jours, PULSE suggère d'ajuster les seuils, sans changer ni le score ni la proposition.
+- Écrans réorganisés dans l'ordre du cahier : score et évolution, couverture, cinq dimensions, analyse, séance, nutrition, Mind, récupération, Nutrition Status.
+- Réglages : niveaux de lecture ajoutés, « Modes du jour » devenus « Proposition de séance ».
+- Version de règles 2 enregistrée dans le journal, avec le niveau, la couverture et la proposition du jour. Les lignes de PULSE 1 restent lisibles.
+- Aucun changement de schéma de la base (champs facultatifs seulement). La sauvegarde accepte les nouveaux champs, testée aller et retour.
+- Documentation technique du calcul : `docs/pulse.md`.
+- Correction trouvée au parcours : le check-in s'ouvrait parfois avant le chargement des réponses déjà enregistrées. Il attend maintenant ces réponses et ne peut plus les effacer par erreur.
+- 280 tests, dont les 7 cas du cahier et les 5 scénarios de référence inchangés.
+- Parcours vérifié au format iPhone, en démo et sur un compte vide :
+    - carte de l'accueil et écran PULSE ;
+    - check-in corrigé, avec une question passée, le stress et une douleur signalée ;
+    - alerte et version allégée proposée, puis choix « Garder » enregistré ;
+    - historique par semaine, mois, période et jour ;
+    - réglages des niveaux ;
+    - compte vide avec une seule réponse : score « ≈ 75 », 1 dimension sur 5, confiance basse.
+
 ## PULSE 1 : moteur de décision sur les données FORGE (version de test, branche `pulse-1`)
 
 ### Fait

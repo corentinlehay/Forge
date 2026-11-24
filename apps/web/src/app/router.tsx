@@ -24,6 +24,7 @@ import { CreatorEditor, CreatorScreen } from '../features/audio/CreatorScreen';
 import { CompareScreen, MeasurementsScreen, PhotosScreen } from '../features/body/BodyScreens';
 import { PainDetailScreen } from '../features/body/PainScreens';
 import { ReviewScreen } from '../features/review/ReviewScreen';
+import { PulseHistoryScreen } from '../features/pulse/PulseHistoryScreen';
 import { PulseScreen } from '../features/pulse/PulseScreen';
 import { PulseSettingsScreen } from '../features/pulse/PulseSettingsScreen';
 import { KitchenScreen } from '../features/kitchen/KitchenScreen';
@@ -72,6 +73,7 @@ export const router = createBrowserRouter([
       { path: 'progression/bilans', element: <ReviewScreen /> },
       { path: 'pulse', element: <PulseScreen /> },
       { path: 'pulse/reglages', element: <PulseSettingsScreen /> },
+      { path: 'pulse/historique', element: <PulseHistoryScreen /> },
       { path: 'mind', element: <MindScreen /> },
       { path: 'mind/journal', element: <JournalScreen /> },
       { path: 'mind/sommeil', element: <SleepScreen /> },

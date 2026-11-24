@@ -13,7 +13,8 @@ import { PULSE_SOURCES } from './sources';
  * Règles de sécurité et de tendance : elles passent avant le score.
  * Elles ne posent jamais de diagnostic ; elles limitent l'entraînement proposé et orientent vers un avis médical.
  */
-export type RuleId = 'mineur' | 'poitrine' | 'douleur-alerte' | 'douleur-suivi' | 'nuit-courte' | 'fatigue-installee' | 'detresse' | 'apport-bas' | 'poids-bas';
+export type RuleId =
+  'mineur' | 'poitrine' | 'douleur-alerte' | 'douleur-suivi' | 'douleur-signalee' | 'nuit-courte' | 'fatigue-installee' | 'detresse' | 'apport-bas' | 'poids-bas';
 
 export interface RuleHit {
   id: RuleId;
@@ -60,7 +61,7 @@ export function templateLoads(template: WorkoutTemplate, muscles: readonly strin
   });
 }
 
-const MODE_RANK: Record<PulseMode, number> = { recuperation: 0, allege: 1, normal: 2, 'feu-vert': 3 };
+export const MODE_RANK: Record<PulseMode, number> = { recuperation: 0, allege: 1, normal: 2, 'feu-vert': 3 };
 export const lowerMode = (a: PulseMode, b: PulseMode): PulseMode => (MODE_RANK[a] <= MODE_RANK[b] ? a : b);
 
 export interface RulesInput {
@@ -134,11 +135,26 @@ export function evaluateRules(input: RulesInput): RuleHit[] {
     }
   }
 
+  // « Douleur inhabituelle » cochée au check-in sans douleur située aujourd'hui : prudence, sans rien deviner de la zone.
+  const located = hits.some((h) => h.id === 'poitrine' || h.id === 'douleur-alerte' || h.id === 'douleur-suivi');
+  const loggedToday = input.pains.some((p) => !p.deletedAt && p.logs.some((l) => l.date === date));
+  if (index.get(date)?.checkIn?.unusualPain === true && !located && !loggedToday) {
+    hits.push({
+      id: 'douleur-signalee',
+      level: 'securite',
+      title: 'Douleur inhabituelle signalée',
+      text: 'Tu signales une douleur inhabituelle sans l’avoir située : par prudence, PULSE propose au plus une version allégée. Situe-la pour que la séance s’adapte à la zone. Douleur dans la poitrine, essoufflement ou malaise : appelle le 15.',
+      capMode: 'allege',
+      to: '/progression?vue=douleurs',
+      source: PULSE_SOURCES.douleurs,
+    });
+  }
+
   if (input.sleepHours !== null && input.sleepHours < settings.shortNightHours) {
     hits.push({
       id: 'nuit-courte',
       level: 'securite',
-      title: `Nuit de moins de ${formatHours(settings.shortNightHours)}`,
+      title: `Nuit de moins de ${Number.isInteger(settings.shortNightHours) ? `${settings.shortNightHours} h` : formatHours(settings.shortNightHours)}`,
       text: 'Pas de séance intense ni de record visé aujourd’hui : une perte de sommeil aiguë diminue la performance physique.',
       capMode: 'allege',
       source: PULSE_SOURCES.sommeilPerf,
@@ -147,7 +163,7 @@ export function evaluateRules(input: RulesInput): RuleHit[] {
 
   const tired = (d: string) => {
     const c = index.get(d)?.checkIn;
-    return !!c && c.fatigue >= 4 && c.soreness >= 4;
+    return !!c && (c.fatigue ?? 0) >= 4 && (c.soreness ?? 0) >= 4;
   };
   const subjectiveTrend = [0, 1, 2].every((k) => tired(addDays(date, -k)));
   if ((input.hrvBelowDays >= 3 || subjectiveTrend) && input.load.ratio !== null && input.load.ratio > settings.loadHigh) {

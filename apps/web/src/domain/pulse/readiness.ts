@@ -1,8 +1,8 @@
-import type { CheckIn, MoodLog, PulseComponentKey, PulseConfidence, PulseMode } from '../../db/types';
+import type { CheckIn, MoodLog, PulseComponentKey, PulseConfidence, PulseLevel, PulseMode } from '../../db/types';
 import { addDays } from '../../lib/dates';
 import { formatHours, formatNumber } from '../../lib/format';
 import type { DayIndex } from '../lifeIndex';
-import { COMPONENT_LABELS, COMPONENT_ORDER, type PulseSettings } from './settings';
+import { COMPONENT_LABELS, COMPONENT_ORDER, levelFor, type PulseSettings } from './settings';
 
 /**
  * Readiness Score : disponibilité physique et mentale du jour, de 0 à 100.
@@ -21,6 +21,61 @@ export interface HealthDay {
   restingHr?: number | null;
 }
 
+export type HealthMetric = 'sleepHours' | 'hrvMs' | 'restingHr';
+
+/** Deux sources donnent des valeurs trop différentes le même jour. */
+export interface HealthConflict {
+  date: string;
+  metric: HealthMetric;
+  kept: { source: string; value: number };
+  other: { source: string; value: number };
+}
+
+/** Écart au-delà duquel deux sources sont jugées contradictoires. */
+const CONFLICT_TOLERANCE: Record<HealthMetric, (a: number, b: number) => boolean> = {
+  sleepHours: (a, b) => Math.abs(a - b) > 1,
+  hrvMs: (a, b) => Math.abs(a - b) > 0.2 * Math.max(a, b),
+  restingHr: (a, b) => Math.abs(a - b) > 5,
+};
+const METRICS: HealthMetric[] = ['sleepHours', 'hrvMs', 'restingHr'];
+
+/**
+ * Une valeur par jour et par mesure, jamais deux : quand plusieurs sources mesurent le même jour,
+ * PULSE garde celle de la source la plus régulière (le plus de jours enregistrés, puis l'ordre alphabétique)
+ * et signale l'écart s'il dépasse la tolérance. Aucune moyenne entre appareils : ce serait une valeur que personne n'a mesurée.
+ */
+export function mergeHealth(health: readonly HealthDay[]): { days: HealthDay[]; conflicts: HealthConflict[] } {
+  const daysBySource = new Map<string, Set<string>>();
+  for (const h of health) {
+    const set = daysBySource.get(h.source) ?? new Set<string>();
+    set.add(h.date);
+    daysBySource.set(h.source, set);
+  }
+  const rank = (s: string) => daysBySource.get(s)?.size ?? 0;
+  const bySourceRank = (a: HealthDay, b: HealthDay) => rank(b.source) - rank(a.source) || a.source.localeCompare(b.source);
+  const byDate = new Map<string, HealthDay[]>();
+  for (const h of health) byDate.set(h.date, [...(byDate.get(h.date) ?? []), h]);
+  const days: HealthDay[] = [];
+  const conflicts: HealthConflict[] = [];
+  for (const [date, list] of [...byDate.entries()].sort(([a], [b]) => a.localeCompare(b))) {
+    const sorted = [...list].sort(bySourceRank);
+    const merged: HealthDay = { date, source: sorted[0]!.source };
+    let first: string | null = null;
+    for (const m of METRICS) {
+      const values = sorted.filter((h) => typeof h[m] === 'number');
+      const kept = values[0];
+      if (!kept) continue;
+      merged[m] = kept[m];
+      first ??= kept.source;
+      const other = values.find((h) => h.source !== kept.source && CONFLICT_TOLERANCE[m](kept[m] as number, h[m] as number));
+      if (other) conflicts.push({ date, metric: m, kept: { source: kept.source, value: kept[m] as number }, other: { source: other.source, value: other[m] as number } });
+    }
+    merged.source = first ?? merged.source;
+    days.push(merged);
+  }
+  return { days, conflicts };
+}
+
 export type SourceKind = 'mesure' | 'declare' | 'calcule';
 
 export interface ComponentResult {
@@ -35,6 +90,10 @@ export interface ComponentResult {
   sourceLabel: string | null;
   lines: string[];
   missing: string | null;
+  /** Jour de la donnée utilisée (fraîcheur) : aujourd'hui, hier, ou la dernière séance pour la charge. */
+  dataDate: string | null;
+  /** Le détail court qui l'explique, ex. « nuit de 6 h 10 ». */
+  summary: string | null;
 }
 
 export interface Readiness {
@@ -43,8 +102,14 @@ export interface Readiness {
   unavailable: string | null;
   confidence: PulseConfidence | null;
   confidenceText: string;
+  /** Niveau de lecture du score (basse, modérée, satisfaisante, élevée). */
+  level: PulseLevel | null;
   modeFromScore: PulseMode | null;
   components: ComponentResult[];
+  /** Dimensions renseignées sur celles qui comptent (poids réglé au-dessus de 0). */
+  coverage: { present: number; total: number };
+  /** Sources de mesure contradictoires aujourd'hui. */
+  conflicts: HealthConflict[];
 }
 
 export interface ReadinessInput {
@@ -89,14 +154,28 @@ export function bedtimeSpreadMinutes(times: readonly string[]): number | null {
 }
 
 function component(key: PulseComponentKey, settings: PulseSettings, part: Partial<ComponentResult>): ComponentResult {
-  return { key, label: COMPONENT_LABELS[key], score: null, baseWeight: settings.weights[key], weight: 0, source: null, sourceLabel: null, lines: [], missing: null, ...part };
+  return {
+    key,
+    label: COMPONENT_LABELS[key],
+    score: null,
+    baseWeight: settings.weights[key],
+    weight: 0,
+    source: null,
+    sourceLabel: null,
+    lines: [],
+    missing: null,
+    dataDate: null,
+    summary: null,
+    ...part,
+  };
 }
 
-function sleepComponent({ date, index, health, settings }: ReadinessInput): ComponentResult {
+function sleepComponent({ date, index, settings }: ReadinessInput, health: readonly HealthDay[], conflicts: readonly HealthConflict[]): ComponentResult {
   const measured = health.find((h) => h.date === date && typeof h.sleepHours === 'number');
   const checkIn = index.get(date)?.checkIn ?? null;
   const hours = measured?.sleepHours ?? checkIn?.sleepHours ?? null;
-  if (hours === null || hours === undefined) return component('sommeil', settings, { missing: 'Pas de check-in ni de nuit mesurée aujourd’hui.' });
+  if (hours === null || hours === undefined)
+    return component('sommeil', settings, { missing: checkIn ? 'Durée de la nuit passée dans le check-in.' : 'Pas de check-in ni de nuit mesurée aujourd’hui.' });
   const duration = sleepDurationScore(hours, settings.sleepTargetHours);
   const lines = [`Nuit de ${formatHours(hours)} pour une cible de ${formatHours(settings.sleepTargetHours)} : ${round(duration)}/100.`];
   let score = duration;
@@ -111,11 +190,20 @@ function sleepComponent({ date, index, health, settings }: ReadinessInput): Comp
     score = Math.max(0, score - 10);
     lines.push(`Heures de coucher irrégulières sur 7 jours (écart moyen ${formatHours(spread / 60)}) : −10.`);
   }
+  const conflict = conflicts.find((c) => c.date === date && c.metric === 'sleepHours');
+  if (conflict)
+    lines.push(
+      `${conflict.kept.source} indique ${formatHours(conflict.kept.value)}, ${conflict.other.source} ${formatHours(conflict.other.value)} : PULSE retient ${conflict.kept.source}, ta source la plus régulière.`,
+    );
+  else if (measured && typeof checkIn?.sleepHours === 'number' && Math.abs(checkIn.sleepHours - hours) > 1)
+    lines.push(`Ton check-in indique ${formatHours(checkIn.sleepHours)} : PULSE retient la mesure de ${measured.source}.`);
   return component('sommeil', settings, {
     score: round(score),
     source: measured ? 'mesure' : 'declare',
     sourceLabel: measured ? measured.source : 'Check-in du matin',
     lines,
+    dataDate: date,
+    summary: `nuit de ${formatHours(hours)}${quality ? `, qualité ${quality}/5` : ''}`,
   });
 }
 
@@ -143,7 +231,7 @@ export interface PhysioSignals {
   component: ComponentResult;
 }
 
-function physioComponent({ date, health, settings }: ReadinessInput): PhysioSignals {
+function physioComponent({ date, settings }: ReadinessInput, health: readonly HealthDay[], conflicts: readonly HealthConflict[]): PhysioSignals {
   const series = (k: 'hrvMs' | 'restingHr') => health.flatMap((h) => (typeof h[k] === 'number' ? [{ date: h.date, value: h[k] as number }] : []));
   const hrv = series('hrvMs');
   const rhr = series('restingHr');
@@ -193,21 +281,54 @@ function physioComponent({ date, health, settings }: ReadinessInput): PhysioSign
     };
   }
   const source = health.find((h) => h.date === date)?.source ?? health.at(-1)?.source ?? 'Montre';
+  for (const c of conflicts.filter((x) => x.date === date && x.metric !== 'sleepHours')) {
+    const unit = c.metric === 'hrvMs' ? ' ms' : '';
+    const what = c.metric === 'hrvMs' ? 'VFC' : 'Fréquence au repos';
+    lines.push(
+      `${what} : ${c.kept.source} ${formatNumber(c.kept.value, 0)}${unit}, ${c.other.source} ${formatNumber(c.other.value, 0)}${unit}. PULSE retient ${c.kept.source}, ta source la plus régulière.`,
+    );
+  }
+  const summary = [hrvBase && hrvToday !== null ? `VFC ${formatNumber(hrvToday, 0)} ms` : null, rhrBase && rhrToday !== null ? `repos ${formatNumber(rhrToday, 0)} bpm` : null]
+    .filter(Boolean)
+    .join(', ');
   return {
     hrvBelowDays,
-    component: component('physiologie', settings, { score: round(scores.reduce((a, b) => a + b, 0) / scores.length), source: 'mesure', sourceLabel: source, lines }),
+    component: component('physiologie', settings, {
+      score: round(scores.reduce((a, b) => a + b, 0) / scores.length),
+      source: 'mesure',
+      sourceLabel: source,
+      lines,
+      dataDate: date,
+      summary,
+    }),
   };
 }
 
 function feelingComponent({ date, index, settings }: ReadinessInput): ComponentResult {
   const c: CheckIn | null = index.get(date)?.checkIn ?? null;
   if (!c) return component('ressenti', settings, { missing: 'Pas de check-in aujourd’hui.' });
-  const parts = [scale5(c.energy), inv5(c.fatigue), inv5(c.soreness)];
+  const parts: number[] = [];
+  const words: string[] = [];
+  if (c.energy) {
+    parts.push(scale5(c.energy));
+    words.push(`énergie ${c.energy}/5`);
+  }
+  if (c.fatigue) {
+    parts.push(inv5(c.fatigue));
+    words.push(`fatigue ${c.fatigue}/5`);
+  }
+  if (c.soreness) {
+    parts.push(inv5(c.soreness));
+    words.push(`courbatures ${c.soreness}/5`);
+  }
+  if (!parts.length) return component('ressenti', settings, { missing: 'Énergie, fatigue et courbatures passées dans le check-in.' });
   return component('ressenti', settings, {
-    score: round(parts.reduce((a, b) => a + b, 0) / 3),
+    score: round(parts.reduce((a, b) => a + b, 0) / parts.length),
     source: 'declare',
     sourceLabel: 'Check-in du matin',
-    lines: [`Énergie ${c.energy}/5, fatigue ${c.fatigue}/5, courbatures ${c.soreness}/5 (moyenne des trois, fatigue et courbatures inversées).`],
+    lines: [`${words.join(', ').replace(/^./, (x) => x.toLocaleUpperCase('fr-FR'))}${parts.length > 1 ? ' (moyenne, fatigue et courbatures inversées)' : ''}.`],
+    dataDate: date,
+    summary: words.join(', '),
   });
 }
 
@@ -223,6 +344,7 @@ export function loadSignals({ date, index, settings }: ReadinessInput): LoadSign
   if (firstWorkout > addDays(date, -28))
     return { ratio: null, component: component('charge', settings, { missing: 'Il faut 4 semaines de séances pour connaître ta charge habituelle.' }) };
   const setsOn = (d: string) => (index.get(d)?.workouts ?? []).reduce((n, w) => n + w.setCount, 0);
+  const lastWorkout = [...index.values()].filter((d) => d.workouts.length > 0 && d.date < date).reduce<string | null>((m, d) => (m === null || d.date > m ? d.date : m), null);
   const acute = Array.from({ length: 7 }, (_, i) => setsOn(addDays(date, -1 - i))).reduce((a, b) => a + b, 0);
   const chronic = Array.from({ length: 28 }, (_, i) => setsOn(addDays(date, -1 - i))).reduce((a, b) => a + b, 0) / 4;
   if (chronic === 0) {
@@ -233,6 +355,8 @@ export function loadSignals({ date, index, settings }: ReadinessInput): LoadSign
         source: 'calcule',
         sourceLabel: 'Séances notées',
         lines: ['Aucune séance depuis 4 semaines : reprise à faire en douceur.'],
+        dataDate: lastWorkout,
+        summary: 'aucune séance depuis 4 semaines',
       }),
     };
   }
@@ -245,6 +369,8 @@ export function loadSignals({ date, index, settings }: ReadinessInput): LoadSign
       source: 'calcule',
       sourceLabel: 'Séances notées',
       lines: [`${acute} séries sur 7 jours, pour ${n1(chronic)} par semaine en moyenne sur 4 semaines : rapport ${formatNumber(ratio, 2)}, ${s}/100.`],
+      dataDate: lastWorkout,
+      summary: `${acute} séries sur 7 jours (rapport ${formatNumber(ratio, 2)})`,
     }),
   };
 }
@@ -272,6 +398,8 @@ function mentalComponent({ date, index, settings }: ReadinessInput): ComponentRe
     source: 'declare',
     sourceLabel: m.date === date ? 'Journal Mind du jour' : 'Journal Mind d’hier',
     lines: [`${words.join(', ').replace(/^./, (c) => c.toLocaleUpperCase('fr-FR'))}${m.stress ? ' (stress inversé)' : ''}.`],
+    dataDate: m.date,
+    summary: words.join(', '),
   });
 }
 
@@ -288,11 +416,21 @@ export interface ReadinessResult {
   hrvBelowDays: number;
 }
 
+const LOWER: Record<PulseConfidence, PulseConfidence> = { haute: 'moyenne', moyenne: 'basse', basse: 'basse' };
+
 export function computeReadiness(input: ReadinessInput): ReadinessResult {
   const { settings } = input;
-  const physio = physioComponent(input);
+  const { days: health, conflicts: allConflicts } = mergeHealth(input.health);
+  const conflicts = allConflicts.filter((c) => c.date === input.date);
+  const physio = physioComponent(input, health, conflicts);
   const load = loadSignals(input);
-  const byKey = { sommeil: sleepComponent(input), physiologie: physio.component, ressenti: feelingComponent(input), charge: load.component, mental: mentalComponent(input) };
+  const byKey = {
+    sommeil: sleepComponent(input, health, conflicts),
+    physiologie: physio.component,
+    ressenti: feelingComponent(input),
+    charge: load.component,
+    mental: mentalComponent(input),
+  };
   const components = COMPONENT_ORDER.map((k) => byKey[k]);
   const active = components.filter((c) => c.baseWeight > 0);
   const present = active.filter((c) => c.score !== null);
@@ -301,6 +439,7 @@ export function computeReadiness(input: ReadinessInput): ReadinessResult {
   for (const c of present) c.weight = round((100 * c.baseWeight) / presentWeight);
   const hasCheckIn = !!input.index.get(input.date)?.checkIn;
   const core = present.some((c) => c.key === 'sommeil' || c.key === 'ressenti');
+  const coverage = { present: present.length, total: active.length };
   if (!core || !presentWeight) {
     return {
       readiness: {
@@ -308,23 +447,38 @@ export function computeReadiness(input: ReadinessInput): ReadinessResult {
         unavailable: hasCheckIn ? 'Pas assez de données pour calculer ton score aujourd’hui.' : 'Ton score du jour se calcule après ton check-in du matin.',
         confidence: null,
         confidenceText: '',
+        level: null,
         modeFromScore: null,
         components,
+        coverage,
+        conflicts,
       },
       load,
       hrvBelowDays: physio.hrvBelowDays,
     };
   }
   const score = round(present.reduce((n, c) => n + c.baseWeight * c.score!, 0) / presentWeight);
-  const coverage = presentWeight / totalWeight;
-  const confidence: PulseConfidence = coverage >= 0.9 ? 'haute' : coverage >= 0.6 ? 'moyenne' : 'basse';
+  const weightShare = presentWeight / totalWeight;
+  const byCoverage: PulseConfidence = weightShare >= 0.9 ? 'haute' : weightShare >= 0.6 ? 'moyenne' : 'basse';
+  const confidence = conflicts.length ? LOWER[byCoverage] : byCoverage;
   const missing = active.filter((c) => c.score === null).map((c) => c.label.toLocaleLowerCase('fr-FR'));
   const confidenceText =
     missing.length === 0
       ? 'Toutes les composantes sont renseignées.'
       : `Sans ${missing.join(', ').replace(/, ([^,]*)$/, ' ni $1')} : ${missing.length > 1 ? 'leur' : 'son'} poids est réparti sur les autres composantes.`;
+  const conflictText = conflicts.length ? ' Deux sources de mesure ne concordent pas aujourd’hui : confiance abaissée d’un cran.' : '';
   return {
-    readiness: { score, unavailable: null, confidence, confidenceText, modeFromScore: modeFor(score, settings), components },
+    readiness: {
+      score,
+      unavailable: null,
+      confidence,
+      confidenceText: confidenceText + conflictText,
+      level: levelFor(score, settings),
+      modeFromScore: modeFor(score, settings),
+      components,
+      coverage,
+      conflicts,
+    },
     load,
     hrvBelowDays: physio.hrvBelowDays,
   };

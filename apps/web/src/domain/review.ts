@@ -52,6 +52,7 @@ export function weekStats(index: DayIndex, data: LifeData, start: string, today:
   const recs = dates.map((d) => index.get(d)).filter((d): d is DayRecord => !!d);
   const foodRecs = recs.filter((d) => d.food.entries > 0);
   const nights = recs.flatMap((d) => (d.checkIn ? [d.checkIn] : []));
+  const slept = nights.flatMap((c) => (c.sleepHours !== null ? [c.sleepHours] : []));
   const moods = recs.flatMap((d) => (d.mood ? [d.mood] : []));
   const scale = (k: 'mood' | 'stress' | 'mentalEnergy') => mean(moods.flatMap((m) => (typeof m[k] === 'number' ? [m[k]] : [])));
   const weights = recs.flatMap((d) => (dayWeight(d) !== null ? [dayWeight(d)!] : []));
@@ -93,10 +94,10 @@ export function weekStats(index: DayIndex, data: LifeData, start: string, today:
     weighIns: weights.length,
     avgWeightKg: mean(weights),
     measured: recs.some((d) => !!d.measurement),
-    nights: nights.length,
-    avgSleep: mean(nights.map((c) => c.sleepHours)),
-    shortNights: nights.filter((c) => c.sleepHours < 7).length,
-    avgRecovery: mean(nights.map(recoveryScore)),
+    nights: slept.length,
+    avgSleep: mean(slept),
+    shortNights: slept.filter((h) => h < 7).length,
+    avgRecovery: mean(nights.flatMap((c) => (recoveryScore(c) === null ? [] : [recoveryScore(c)!]))),
     moodDays: moods.length,
     mood: scale('mood'),
     stress: scale('stress'),

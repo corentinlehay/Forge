@@ -231,18 +231,24 @@ export interface WorkoutSet extends SyncFields {
 export type Scale5 = 1 | 2 | 3 | 4 | 5;
 
 /** Check-in bien-être du jour : un par jour. */
+/**
+ * Check-in du matin. Chaque réponse peut être passée (null) : au moins une est enregistrée,
+ * et le check-in peut être complété plus tard dans la journée.
+ */
 export interface CheckIn extends SyncFields {
   date: string;
-  sleepHours: number;
-  energy: Scale5;
-  fatigue: Scale5;
-  soreness: Scale5;
+  sleepHours: number | null;
+  energy: Scale5 | null;
+  fatigue: Scale5 | null;
+  soreness: Scale5 | null;
   note?: string;
   /** Détails de la nuit, tous facultatifs : heures locales HH:mm, réveils nocturnes, qualité ressentie. */
   bedTime?: string | null;
   wakeTime?: string | null;
   awakenings?: number | null;
   sleepQuality?: Scale5 | null;
+  /** « As-tu des douleurs inhabituelles ? » : oui, non, ou question passée (null ou absent). */
+  unusualPain?: boolean | null;
 }
 
 /** Journal émotionnel : une entrée par jour, chaque mesure facultative (échelles de 1 à 5). */
@@ -419,7 +425,10 @@ export type PulseComponentKey = 'sommeil' | 'physiologie' | 'ressenti' | 'charge
 export type PulseMode = 'feu-vert' | 'normal' | 'allege' | 'recuperation';
 export type PulseConfidence = 'haute' | 'moyenne' | 'basse';
 export type NutritionKind = 'coherent' | 'sous' | 'au-dessus' | 'incomplet' | 'sans-objectif';
-export type PulseChoice = 'alleger' | 'garder' | 'deplacer';
+/** Choix sur la séance proposée : version allégée, récupération active à la place, séance prévue gardée, ou déplacée à demain. */
+export type PulseChoice = 'alleger' | 'remplacer' | 'garder' | 'deplacer';
+/** Niveau de lecture du score (conventions d'interface réglables, pas des seuils médicaux). */
+export type PulseLevel = 'basse' | 'moderee' | 'satisfaisante' | 'elevee';
 
 /**
  * Journal PULSE : le résultat du jour tel qu'il a été montré, et ton choix sur la séance.
@@ -436,6 +445,10 @@ export interface PulseDay extends SyncFields {
   nutritionScore: number | null;
   rules: string[];
   plannedTemplateId?: string | null;
+  /** À partir des règles v2 : niveau de lecture, dimensions renseignées, proposition faite pour la séance. */
+  level?: PulseLevel | null;
+  coverage?: number | null;
+  trainingKind?: string | null;
   choice?: PulseChoice | null;
   choiceAt?: string | null;
 }

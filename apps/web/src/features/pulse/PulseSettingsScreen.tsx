@@ -3,6 +3,7 @@ import {
   COMPONENT_LABELS,
   COMPONENT_ORDER,
   DEFAULT_PULSE_SETTINGS,
+  LEVEL_BOUNDS,
   MODE_BOUNDS,
   PULSE_SETTINGS_KEY,
   resolveSettings,
@@ -56,11 +57,45 @@ export function PulseSettingsScreen() {
         ))}
       </Card>
 
-      <Card label="Modes du jour">
-        <h2 className="text-[17px] font-semibold">Modes du jour</h2>
-        <p className="text-[13px] leading-snug text-cendre">Score à partir duquel chaque mode s’applique ; en dessous du dernier seuil, c’est Récupération.</p>
+      <Card label="Niveaux de lecture">
+        <h2 className="text-[17px] font-semibold">Niveaux de lecture</h2>
+        <p className="text-[13px] leading-snug text-cendre">
+          Score à partir duquel chaque niveau s’affiche ; en dessous du premier, disponibilité basse. Des conventions d’interface, pas des seuils médicaux.
+        </p>
         <Stepper
-          label="Feu vert"
+          label="Modérée"
+          value={s.levels.moderee}
+          {...LEVEL_BOUNDS}
+          start={40}
+          format={(v) => formatNumber(v, 0)}
+          onChange={(v) => save({ ...s, levels: { ...s.levels, moderee: v } })}
+        />
+        <Stepper
+          label="Satisfaisante"
+          value={s.levels.satisfaisante}
+          {...LEVEL_BOUNDS}
+          start={60}
+          format={(v) => formatNumber(v, 0)}
+          onChange={(v) => save({ ...s, levels: { ...s.levels, satisfaisante: v } })}
+        />
+        <Stepper
+          label="Élevée"
+          value={s.levels.elevee}
+          {...LEVEL_BOUNDS}
+          start={80}
+          format={(v) => formatNumber(v, 0)}
+          onChange={(v) => save({ ...s, levels: { ...s.levels, elevee: v } })}
+        />
+      </Card>
+
+      <Card label="Proposition de séance">
+        <h2 className="text-[17px] font-semibold">Proposition de séance</h2>
+        <p className="text-[13px] leading-snug text-cendre">
+          Score à partir duquel chaque proposition s’applique ; en dessous du dernier seuil, récupération active. Ce n’est qu’une proposition : tu peux toujours garder la séance
+          prévue.
+        </p>
+        <Stepper
+          label="Progression"
           value={s.modes.feuVert}
           {...MODE_BOUNDS}
           start={75}
@@ -68,7 +103,7 @@ export function PulseSettingsScreen() {
           onChange={(v) => save({ ...s, modes: { ...s.modes, feuVert: v } })}
         />
         <Stepper
-          label="Normal"
+          label="Séance prévue"
           value={s.modes.normal}
           {...MODE_BOUNDS}
           start={55}
@@ -76,7 +111,7 @@ export function PulseSettingsScreen() {
           onChange={(v) => save({ ...s, modes: { ...s.modes, normal: v } })}
         />
         <Stepper
-          label="Allégé"
+          label="Version allégée"
           value={s.modes.allege}
           {...MODE_BOUNDS}
           start={40}
@@ -107,8 +142,8 @@ export function PulseSettingsScreen() {
         <Stepper label="Charge élevée" value={s.loadHigh} {...SETTING_BOUNDS.loadHigh} start={1.3} format={ratio} onChange={(v) => save({ ...s, loadHigh: v })} />
         <Stepper label="Charge très élevée" value={s.loadVeryHigh} {...SETTING_BOUNDS.loadVeryHigh} start={1.5} format={ratio} onChange={(v) => save({ ...s, loadVeryHigh: v })} />
         <p className="text-[12px] leading-snug text-cendre">
-          Sous la nuit courte, le mode du jour ne dépasse pas Allégé. Charge : séries des 7 derniers jours rapportées à ta moyenne par semaine sur 4 semaines ; basse sous le
-          premier seuil, élevée et très élevée au-delà des deux autres. Un repère, pas un prédicteur de blessure.
+          Sous la nuit courte, la proposition ne dépasse pas la version allégée. Charge : séries des 7 derniers jours rapportées à ta moyenne par semaine sur 4 semaines ; basse
+          sous le premier seuil, élevée et très élevée au-delà des deux autres. Un repère, pas un prédicteur de blessure.
         </p>
       </Card>
 

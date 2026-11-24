@@ -7,8 +7,11 @@ import { holdLoad } from '../progression';
 import { ROUTINE_ORDER } from '../mind';
 import { computeNutritionStatus } from './nutrition';
 import { adjustTargets, computePulse, LIGHTEN, pulseSnapshot, sixHoursBefore, type PulseInput, type PulseResult } from './pulse';
-import { personalBaseline, sleepDurationScore, type HealthDay } from './readiness';
-import { DEFAULT_PULSE_SETTINGS, resolveSettings, type PulseSettings } from './settings';
+import { personalBaseline, sleepDurationScore, mergeHealth, type HealthDay } from './readiness';
+import { DEFAULT_PULSE_SETTINGS, levelFor, levelRange, resolveSettings, type PulseSettings } from './settings';
+import { acceptance, keptRecently, proposalOf, readinessSeries, trendAt } from './history';
+import { scoreText } from './analysis';
+import { checkInSummary, recoveryScore } from '../wellbeing';
 
 /**
  * Les cinq scénarios de référence de l'audit PULSE, rejoués par le moteur.
@@ -64,7 +67,15 @@ const mood = (date: string, m: number, stress: number): MoodLog => ({ ...sync(`m
 const meal = (date: string, kcal: number, proteinG: number): FoodEntry => ({ ...sync(`f${date}`), date, meal: 'lunch', name: 'Repas', kcal, proteinG, carbsG: 0, fatG: 0 });
 
 function scenario(
-  parts: Partial<LifeData> & { health?: HealthDay[]; goal?: string; heightCm?: number; birthDate?: string; settings?: PulseSettings; yesterday?: PulseDay | null },
+  parts: Partial<LifeData> & {
+    health?: HealthDay[];
+    goal?: string;
+    heightCm?: number;
+    birthDate?: string;
+    settings?: PulseSettings;
+    yesterday?: PulseDay | null;
+    journal?: PulseDay[];
+  },
 ): PulseResult {
   const data: LifeData = {
     workouts: [],
@@ -94,6 +105,7 @@ function scenario(
     muscleOf: (id) => MUSCLES[id] ?? null,
     settings: parts.settings ?? DEFAULT_PULSE_SETTINGS,
     yesterday: parts.yesterday ?? null,
+    journal: parts.journal ?? [],
   };
   return computePulse(input);
 }
@@ -315,6 +327,8 @@ describe('règles de sécurité', () => {
     const r = scenario({ templates: [push], checkIns: [checkIn(D, 4.5, null, 5, 1, 1)], moodLogs: [mood(D, 5, 1)] });
     expect(r.readiness.modeFromScore).toBe('normal');
     expect(r.mode).toBe('allege');
+    expect(r.training.recos[0]?.reason).toMatch(/^Nuit de moins de 5 h : Pas de séance intense/);
+    expect(r.training.actions).toEqual(['alleger', 'garder', 'deplacer']);
   });
 
   it('rappelle le 3114 quand le moral est au plus bas', () => {
@@ -375,7 +389,16 @@ describe('séance allégée, déplacée et journal', () => {
 
   it('résume le jour pour le journal PULSE', () => {
     const r = scenario({ templates: [push], checkIns: [checkIn(D, 8, null, 4, 2, 2)] });
-    expect(pulseSnapshot(r)).toMatchObject({ date: D, engineVersion: 1, readiness: r.readiness.score, plannedTemplateId: 'push', nutritionKind: 'sans-objectif' });
+    expect(pulseSnapshot(r)).toMatchObject({
+      date: D,
+      engineVersion: 2,
+      readiness: r.readiness.score,
+      plannedTemplateId: 'push',
+      nutritionKind: 'sans-objectif',
+      level: r.level,
+      coverage: 2,
+      trainingKind: 'as-planned',
+    });
   });
 
   it('calcule l’heure limite de la caféine autour de minuit', () => {
@@ -431,5 +454,222 @@ describe('séance allégée en direct', () => {
     });
     expect(holdLoad({ weightKg: 80, reps: 9, reason: 'x' }, 80)?.reason).toBe('x');
     expect(holdLoad(null, 80)).toBeNull();
+  });
+});
+
+/* ---------- PULSE 1.1 ---------- */
+
+const kinds = (r: PulseResult) => r.analysis.items.map((i) => i.kind);
+const itemsOf = (r: PulseResult, kind: string) => r.analysis.items.filter((i) => i.kind === kind).map((i) => i.text);
+
+describe('niveaux de lecture du score', () => {
+  it('lit les scores des cinq scénarios de référence avec les niveaux du cahier', () => {
+    expect([84, 45, 48, 82, 58].map((v) => levelFor(v, DEFAULT_PULSE_SETTINGS))).toEqual(['elevee', 'moderee', 'moderee', 'elevee', 'moderee']);
+    expect([0, 39, 40, 59, 60, 79, 80, 100].map((v) => levelFor(v, DEFAULT_PULSE_SETTINGS))).toEqual([
+      'basse',
+      'basse',
+      'moderee',
+      'moderee',
+      'satisfaisante',
+      'satisfaisante',
+      'elevee',
+      'elevee',
+    ]);
+    expect(levelRange('moderee', DEFAULT_PULSE_SETTINGS)).toEqual([40, 59]);
+  });
+
+  it('suit des seuils réglés, remis dans l’ordre', () => {
+    const s = resolveSettings({ levels: { moderee: 50, satisfaisante: 45, elevee: 40 } });
+    expect(s.levels.moderee).toBe(50);
+    expect(s.levels.satisfaisante).toBeGreaterThan(50);
+    expect(s.levels.elevee).toBeGreaterThan(s.levels.satisfaisante);
+    expect(levelFor(52, s)).toBe('moderee');
+  });
+
+  it('n’affiche pas une précision artificielle quand la confiance est basse', () => {
+    expect(scoreText(72, 'haute')).toBe('72');
+    expect(scoreText(72, 'basse')).toBe('≈ 70');
+    expect(scoreText(73, 'basse')).toBe('≈ 75');
+  });
+
+  it('affiche la couverture et le niveau du jour', () => {
+    const r = scenario({ ...training(25), templates: [push], checkIns: [checkIn(D, 8, null, 4, 2, 2)], moodLogs: [mood(D, 4, 2)] });
+    expect(r.readiness.coverage).toEqual({ present: 4, total: 5 });
+    expect(r.level).toBe(levelFor(r.readiness.score!, DEFAULT_PULSE_SETTINGS));
+  });
+});
+
+describe('check-in passable', () => {
+  it('calcule la récupération et le ressenti avec les seules réponses données', () => {
+    expect(recoveryScore({ sleepHours: null, energy: s5(5), fatigue: null, soreness: null })).toBe(100);
+    expect(recoveryScore({ sleepHours: null, energy: null, fatigue: null, soreness: null })).toBeNull();
+    expect(checkInSummary({ sleepHours: 7.5, energy: null, fatigue: s5(2), soreness: null })).toBe('7 h 30, fatigue 2/5');
+    const r = scenario({ checkIns: [{ ...checkIn(D, 8, null, 4, 2, 2), sleepHours: null, fatigue: null, soreness: null }] });
+    const feeling = r.readiness.components.find((c) => c.key === 'ressenti')!;
+    expect(feeling.score).toBe(75);
+    expect(feeling.lines[0]).toBe('Énergie 4/5.');
+  });
+});
+
+describe('les 7 cas de test du cahier PULSE', () => {
+  it('1. mal dormi, sans fatigue musculaire : la nuit pèse, sans inventer de fatigue', () => {
+    const r = scenario({ ...training(25), templates: [push], checkIns: [checkIn(D, 4.5, 2, 3, 2, 1)] });
+    expect(ruleIds(r)).toContain('nuit-courte');
+    expect(r.mode).toBe('allege');
+    expect(r.training.actions).toContain('garder');
+    expect(r.training.kind).toBe('lighten');
+    expect(r.training.recos[0]?.reason).toMatch(
+      /^Ton indicateur est à \d+, sous 55 : PULSE propose une version allégée\. C’est une proposition, tu peux garder la séance prévue\.$/,
+    );
+    expect(r.analysis.factors[0]).toMatchObject({ key: 'sommeil', direction: 'defavorable' });
+    expect(itemsOf(r, 'hypothese').join(' ')).not.toMatch(/fatigue ressentie/);
+    expect(r.recoveryRecos.map((x) => x.id)).toContain('sieste');
+  });
+
+  it('2. très stressé mais physiquement disponible : la séance reste, Mind aide', () => {
+    const r = scenario({ ...training(25), templates: [push], checkIns: [checkIn(D, 8, 4, 5, 1, 1)], moodLogs: [mood(D, 2, 5)] });
+    expect(r.readiness.components.find((c) => c.key === 'mental')?.score).toBe(13);
+    expect(r.level).not.toBe('basse');
+    expect(['as-planned', 'no-record']).toContain(r.training.kind);
+    expect(r.mindRecos.map((m) => m.id)).toContain('coherence');
+    expect(itemsOf(r, 'hypothese')).toContain('Le corps semble disponible : c’est surtout la charge mentale qui pèse aujourd’hui.');
+    expect(r.analysis.factors.some((f) => f.key === 'mental' && f.direction === 'defavorable')).toBe(true);
+  });
+
+  it('3. sommeil manquant : score sur les autres dimensions, couverture et manque affichés', () => {
+    const r = scenario({ ...training(25), templates: [push], checkIns: [{ ...checkIn(D, 8, null, 4, 2, 2), sleepHours: null }], moodLogs: [mood(D, 4, 2)] });
+    expect(r.readiness.components.find((c) => c.key === 'sommeil')?.score).toBeNull();
+    expect(r.readiness.components.find((c) => c.key === 'sommeil')?.missing).toBe('Durée de la nuit passée dans le check-in.');
+    expect(r.readiness.score).not.toBeNull();
+    expect(r.readiness.coverage).toEqual({ present: 3, total: 5 });
+    expect(itemsOf(r, 'manquant').some((t) => t.startsWith('Sommeil'))).toBe(true);
+    expect(ruleIds(r)).not.toContain('nuit-courte');
+    expect(r.recoveryRecos.map((x) => x.id)).not.toContain('sieste');
+    expect(r.nutritionRecos.map((x) => x.id)).not.toContain('cafeine');
+  });
+
+  it('4. séances rapprochées : la charge monte, la récupération active est proposée, sans rien imposer', () => {
+    const tired = [0, 1, 2].map((k) => checkIn(addDays(D, -k), 7.5, null, 2, 4, 4));
+    const r = scenario({ ...training(46), templates: [push], checkIns: tired });
+    expect(r.readiness.components.find((c) => c.key === 'charge')?.score).toBe(30);
+    expect(ruleIds(r)).toContain('fatigue-installee');
+    expect(r.training.kind).toBe('replace');
+    expect(r.training.actions).toEqual(['remplacer', 'garder', 'deplacer']);
+    expect(itemsOf(r, 'hypothese')).toContain('La hausse de ta charge sur 7 jours peut peser sur ton ressenti physique.');
+  });
+
+  it('5. douleur inhabituelle déclarée : prudence sans deviner la zone, puis adaptation une fois située', () => {
+    const c = { ...checkIn(D, 8, 4, 4, 2, 2), unusualPain: true };
+    const r = scenario({ ...training(25), templates: [push], checkIns: [c], moodLogs: [mood(D, 4, 2)] });
+    expect(r.mode).toBe('allege');
+    expect(ruleIds(r)).toContain('douleur-signalee');
+    expect(r.training.recos[0]?.reason).toMatch(/^Douleur inhabituelle signalée/);
+    expect(r.training.recos.map((x) => x.text).join(' ')).not.toMatch(/genou|épaule|dos/);
+    const located: Pain = { ...sync('p'), zone: 'epaule-d', startedOn: D, resolvedOn: null, activities: [], logs: [{ date: D, intensity: 3 }] };
+    expect(ruleIds(scenario({ ...training(25), templates: [push], checkIns: [c], pains: [located] }))).not.toContain('douleur-signalee');
+  });
+
+  it('6. propositions refusées plusieurs fois : le score ne change pas, le choix reste, un réglage est suggéré', () => {
+    const base = { ...training(25), templates: [legs], checkIns: [checkIn(D, 5.25, 2, 2, 4, 2, '01:30')], moodLogs: [mood(addDays(D, -1), 3, 4)] };
+    const day = (k: number, choice: PulseDay['choice']): PulseDay => ({
+      ...sync(`j${k}`),
+      date: addDays(D, -k),
+      engineVersion: 2,
+      readiness: 45,
+      confidence: 'moyenne',
+      mode: 'allege',
+      components: [],
+      nutritionKind: 'sans-objectif',
+      nutritionScore: null,
+      rules: [],
+      plannedTemplateId: 'legs',
+      trainingKind: 'lighten',
+      choice,
+    });
+    const journal = [day(1, 'garder'), day(2, 'garder'), day(4, 'garder'), day(5, 'alleger')];
+    const without = scenario(base);
+    const r = scenario({ ...base, journal });
+    expect(r.readiness.score).toBe(without.readiness.score);
+    expect(r.mode).toBe(without.mode);
+    expect(r.training.actions).toContain('garder');
+    expect(r.training.recos.find((x) => x.id === 'garde-souvent')?.to).toBe('/pulse/reglages');
+    expect(keptRecently(journal, D)).toBe(3);
+    expect(acceptance(journal, addDays(D, -7), addDays(D, -1))).toEqual({ proposals: 4, accepted: 1, kept: 3, unanswered: 0, rate: 0.25 });
+    expect(without.training.recos.find((x) => x.id === 'garde-souvent')).toBeUndefined();
+  });
+
+  it('7. deux appareils qui se contredisent : une seule valeur, l’écart signalé, la confiance baisse', () => {
+    const health = [...watch({ hrv: 58, rhr: 55 }).map((h) => (h.date === D ? { ...h, sleepHours: 7.5 } : h)), { date: D, source: 'Bague', sleepHours: 5 }];
+    const merged = mergeHealth(health);
+    expect(merged.days.filter((h) => h.date === D)).toHaveLength(1);
+    expect(merged.conflicts).toEqual([{ date: D, metric: 'sleepHours', kept: { source: 'Apple Watch', value: 7.5 }, other: { source: 'Bague', value: 5 } }]);
+    const agree = scenario({ ...training(25), health: health.slice(0, -1), checkIns: [checkIn(D, 7.5, null, 4, 2, 2)], moodLogs: [mood(D, 4, 2)] });
+    const r = scenario({ ...training(25), health, checkIns: [checkIn(D, 7.5, null, 4, 2, 2)], moodLogs: [mood(D, 4, 2)] });
+    expect(r.readiness.components.find((c) => c.key === 'sommeil')).toMatchObject({ score: 100, sourceLabel: 'Apple Watch' });
+    expect(agree.readiness.confidence).toBe('haute');
+    expect(r.readiness.confidence).toBe('moyenne');
+    expect(itemsOf(r, 'observe').some((t) => t.startsWith('Deux sources ne concordent pas sur le sommeil'))).toBe(true);
+  });
+});
+
+describe('évolution et analyse du jour', () => {
+  const history = Array.from({ length: 10 }, (_, i) => checkIn(addDays(D, -(i + 1)), 8, 4, 4, 2, 2));
+  const r = scenario({ ...training(25), templates: [push], checkIns: [...history, checkIn(D, 5.5, 2, 2, 4, 3)], moodLogs: [mood(D, 3, 3)] });
+
+  it('compare à hier et à la moyenne des 7 et 30 jours, le jour exclu', () => {
+    expect(r.trend.yesterday).not.toBeNull();
+    expect(r.trend.mean7).toBe(r.trend.yesterday);
+    expect(r.trend.vs7).toBeLessThan(-5);
+    expect(r.trend.direction).toBe('baisse');
+    expect(r.trend.mean30).toBe(r.trend.mean7);
+  });
+
+  it('explique la baisse par ses principaux éléments et sépare les natures d’information', () => {
+    expect(r.analysis.headline).toBe(
+      'Ton indicateur de disponibilité est en baisse par rapport à ta moyenne des 7 derniers jours. Les principaux éléments : un sommeil plus court ou moins bon et un ressenti physique moins bon (énergie, fatigue ou courbatures).',
+    );
+    expect(r.analysis.factors.map((f) => f.key)).toEqual(['sommeil', 'ressenti']);
+    expect(r.analysis.factors[0]?.text).toMatch(/^Sommeil \d+\/100, \d+ points sous ta moyenne des 7 derniers jours \(nuit de 5 h 30, qualité 2\/5\)\.$/);
+    expect(new Set(kinds(r))).toEqual(new Set(['observe', 'declare', 'estime', 'hypothese', 'manquant']));
+    expect(itemsOf(r, 'declare')[0]).toBe('Noté dans ton check-in du matin : nuit de 5 h 30, qualité 2/5, énergie 2/5, fatigue 4/5, courbatures 3/5.');
+  });
+
+  it('attend 3 jours de scores avant de comparer', () => {
+    const fresh = scenario({ templates: [push], checkIns: [checkIn(D, 8, null, 4, 2, 2)] });
+    expect(fresh.trend.direction).toBeNull();
+    expect(fresh.analysis.headline).toBe('Pas encore assez de jours pour comparer à ta moyenne. Ce qui compte le plus aujourd’hui : un bon sommeil.');
+  });
+
+  it('recalcule la série passée sans données inventées', () => {
+    const data = { ...training(25), checkIns: history } as unknown as LifeData;
+    const full: LifeData = {
+      ...data,
+      templates: [],
+      foodEntries: [],
+      waterLogs: [],
+      targets: null,
+      targetChanges: [],
+      weighIns: [],
+      measurements: [],
+      moodLogs: [],
+      mindSessions: [],
+      pains: [],
+      mealPlans: [],
+      exerciseName: () => '',
+      recipeName: () => '',
+    };
+    const series = readinessSeries({ index: buildDayIndex(full), health: [], settings: DEFAULT_PULSE_SETTINGS }, addDays(D, -12), addDays(D, -1));
+    expect(series).toHaveLength(12);
+    expect(series.slice(0, 2).every((p) => p.score === null)).toBe(true);
+    expect(series.slice(2).every((p) => p.score !== null && p.sleepHours === 8)).toBe(true);
+    expect(trendAt(series, D, 50).vs7).toBe(50 - Math.round(series.at(-1)!.score!));
+  });
+
+  it('déduit la proposition des anciennes lignes du journal', () => {
+    const old = { date: D, mode: 'allege', plannedTemplateId: 'push' } as PulseDay;
+    expect(proposalOf(old)).toBe('lighten');
+    expect(proposalOf({ ...old, mode: 'recuperation' })).toBe('replace');
+    expect(proposalOf({ ...old, plannedTemplateId: null })).toBeNull();
+    expect(proposalOf({ ...old, trainingKind: 'as-planned' })).toBe('as-planned');
   });
 });

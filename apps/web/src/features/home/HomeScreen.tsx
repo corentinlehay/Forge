@@ -119,7 +119,9 @@ function NutritionCard({ data }: { data: DashboardData }) {
           ) : (
             <p className="text-[15px] leading-snug">Objectif calorique à définir dans Nutrition.</p>
           )}
-          <p className="truncate text-[13px] text-cendre">{lastMeal ? `Dernier ajout : ${MEAL_LABELS[lastMeal.meal].toLocaleLowerCase('fr-FR')}` : 'Rien d’enregistré aujourd’hui'}</p>
+          <p className="truncate text-[13px] text-cendre">
+            {lastMeal ? `Dernier ajout : ${MEAL_LABELS[lastMeal.meal].toLocaleLowerCase('fr-FR')}` : 'Rien d’enregistré aujourd’hui'}
+          </p>
         </div>
       </div>
       <div className="flex flex-col gap-2.5">
@@ -134,7 +136,8 @@ function NutritionCard({ data }: { data: DashboardData }) {
         </span>
         <span>
           <span className="text-cendre">Boissons </span>
-          {formatLitres(data.waterMl)}{targets?.waterMl ? <span className="text-cendre"> / {formatLitres(targets.waterMl)}</span> : null}
+          {formatLitres(data.waterMl)}
+          {targets?.waterMl ? <span className="text-cendre"> / {formatLitres(targets.waterMl)}</span> : null}
         </span>
       </p>
     </LinkCard>
@@ -155,7 +158,11 @@ function PhysiqueCard({ data }: { data: DashboardData }) {
     <LinkCard to="/progression" title="Physique" label={`Dernier poids ${formatMeasuredKg(lastWeighIn.weightKg)}. Ouvrir Progression`}>
       <div className="grid grid-cols-3 gap-3">
         <Stat label="Dernier" value={formatNumber(lastWeighIn.weightKg, 1)} sub={`kg, ${formatDaysAgo(lastWeighIn.date, data.today)}`} />
-        <Stat label="Moy. 7 jours" value={weekAverage ? formatNumber(weekAverage.averageKg, 1) : '—'} sub={weekAverage ? `kg, ${weekAverage.days} pesée${weekAverage.days > 1 ? 's' : ''}` : 'aucune pesée'} />
+        <Stat
+          label="Moy. 7 jours"
+          value={weekAverage ? formatNumber(weekAverage.averageKg, 1) : '—'}
+          sub={weekAverage ? `kg, ${weekAverage.days} pesée${weekAverage.days > 1 ? 's' : ''}` : 'aucune pesée'}
+        />
         <Stat
           label="Évolution"
           value={weight.weeklyRateKg !== null ? formatSignedKg(weight.weeklyRateKg).replace(' kg', '') : '—'}
@@ -225,21 +232,25 @@ function RecoveryTile({ data }: { data: DashboardData }) {
     <Link
       to="/progression?vue=bien-etre"
       viewTransition
-      aria-label={`Récupération estimée ${score} sur 100. Voir le bien-être`}
+      aria-label={score !== null ? `Récupération estimée ${score} sur 100. Voir le bien-être` : 'Check-in partiel. Voir le bien-être'}
       className="flex flex-col gap-3 rounded-[18px] bg-anthracite p-3.5 active:scale-[0.985]"
     >
       <p className="text-[13px] text-cendre">Récupération estimée</p>
-      <div className="flex items-center gap-3">
-        <Ring value={score / 100} size={56} stroke={6} label={`${score} sur 100`}>
-          <span className="font-metal text-[20px]">{score}</span>
-        </Ring>
-        <span className="text-[13px] font-semibold">{recoveryLabel(score)}</span>
-      </div>
+      {score !== null ? (
+        <div className="flex items-center gap-3">
+          <Ring value={score / 100} size={56} stroke={6} label={`${score} sur 100`}>
+            <span className="font-metal text-[20px]">{score}</span>
+          </Ring>
+          <span className="text-[13px] font-semibold">{recoveryLabel(score)}</span>
+        </div>
+      ) : (
+        <p className="text-[13px] leading-snug">Questions passées : complète ton check-in pour l’estimer.</p>
+      )}
       <dl className="flex flex-col gap-1 text-[13px]">
         {[
-          ['Sommeil', `${formatNumber(checkIn.sleepHours, checkIn.sleepHours % 1 ? 1 : 0)} h`],
-          ['Énergie', `${checkIn.energy}/5`],
-          ['Fatigue', `${checkIn.fatigue}/5`],
+          ['Sommeil', checkIn.sleepHours !== null ? `${formatNumber(checkIn.sleepHours, checkIn.sleepHours % 1 ? 1 : 0)} h` : '—'],
+          ['Énergie', checkIn.energy ? `${checkIn.energy}/5` : '—'],
+          ['Fatigue', checkIn.fatigue ? `${checkIn.fatigue}/5` : '—'],
         ].map(([label, value]) => (
           <div key={label} className="flex justify-between gap-2">
             <dt className="text-cendre">{label}</dt>
@@ -256,7 +267,12 @@ function WeekTile({ data }: { data: DashboardData }) {
   const current = volumes.at(-1)?.volumeKg ?? 0;
   const previous = volumes.at(-2)?.volumeKg ?? 0;
   return (
-    <Link to="/training" viewTransition aria-label={`${weekSessions} séances cette semaine. Ouvrir Training`} className="flex flex-col gap-3 rounded-[18px] bg-anthracite p-3.5 active:scale-[0.985]">
+    <Link
+      to="/training"
+      viewTransition
+      aria-label={`${weekSessions} séances cette semaine. Ouvrir Training`}
+      className="flex flex-col gap-3 rounded-[18px] bg-anthracite p-3.5 active:scale-[0.985]"
+    >
       <p className="text-[13px] text-cendre">Cette semaine</p>
       <p>
         <span className="font-metal text-[36px]">{weekSessions}</span>
@@ -333,7 +349,11 @@ function CoachCard({ data }: { data: DashboardData }) {
           <p className="text-[15px] leading-snug">{brief.summary.slice(0, 2).join(' ')}</p>
           {brief.top && (
             <p className="flex items-start gap-2 text-[15px] leading-snug">
-              <Icon name={brief.top.tone === 'good' ? 'check' : 'warning'} size={18} className={`mt-0.5 shrink-0 ${brief.top.tone === 'good' ? 'text-citron' : brief.top.tone === 'alert' ? 'text-braise' : 'text-cendre'}`} />
+              <Icon
+                name={brief.top.tone === 'good' ? 'check' : 'warning'}
+                size={18}
+                className={`mt-0.5 shrink-0 ${brief.top.tone === 'good' ? 'text-citron' : brief.top.tone === 'alert' ? 'text-braise' : 'text-cendre'}`}
+              />
               {brief.top.observation}
             </p>
           )}

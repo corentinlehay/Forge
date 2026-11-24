@@ -1,18 +1,23 @@
-import type { GainRate, PulseChoice, PulseDay, PulseMode, TemplateExercise, WorkoutAdjustment, WorkoutTemplate } from '../../db/types';
+import type { GainRate, PulseChoice, PulseDay, PulseLevel, PulseMode, TemplateExercise, WorkoutAdjustment, WorkoutTemplate } from '../../db/types';
+import { addDays } from '../../lib/dates';
 import { formatHours, formatNumber, formatTime } from '../../lib/format';
 import type { DayIndex, LifeData } from '../lifeIndex';
 import { exerciseSessions, parseRepRange, suggestNext } from '../progression';
 import { templateForDay } from '../training';
+import { analyzeDay, type DayAnalysis } from './analysis';
+import { keptRecently, readinessSeries, trendAt, type Trend } from './history';
 import { computeNutritionStatus, type NutritionStatus } from './nutrition';
 import { computeReadiness, recentMood, type HealthDay, type Readiness } from './readiness';
-import { evaluateRules, lowerMode, templateLoads, type RuleHit } from './rules';
+import { evaluateRules, lowerMode, MODE_RANK, templateLoads, type RuleHit } from './rules';
 import { PULSE_ENGINE_VERSION, type PulseSettings } from './settings';
 import { PULSE_SOURCES } from './sources';
 
 /**
- * PULSE 1 : le moteur de décision du jour. Fonction pure : mêmes données, même résultat.
- * Deux indicateurs séparés (Readiness Score, Nutrition Status), des règles prioritaires,
- * puis des recommandations Training, Nutrition, Mind et Recovery. Rien n'est appliqué sans validation.
+ * PULSE : le moteur de décision du jour. Fonction pure : mêmes données, même résultat.
+ * Deux indicateurs séparés (Readiness Score, Nutrition Status), un niveau de lecture du score,
+ * des règles prioritaires, une proposition de séance séparée du score (qui garde toujours le choix
+ * « Garder la séance prévue »), puis des recommandations Training, Nutrition, Mind et Recovery.
+ * Rien n'est appliqué sans validation.
  */
 export interface Reco {
   id: string;
@@ -39,7 +44,12 @@ export interface PulseResult {
   readiness: Readiness;
   nutrition: NutritionStatus;
   rules: RuleHit[];
+  /** Niveau de lecture du score : basse, modérée, satisfaisante, élevée. */
+  level: PulseLevel | null;
+  /** Proposition de séance (après les règles) ; elle ne décide jamais seule d'annuler une séance. */
   mode: PulseMode | null;
+  trend: Trend;
+  analysis: DayAnalysis;
   training: TrainingAdvice;
   nutritionRecos: Reco[];
   mindRecos: Reco[];
@@ -56,6 +66,8 @@ export interface PulseInput {
   settings: PulseSettings;
   /** Journal PULSE d'hier (pour une séance déplacée). */
   yesterday: PulseDay | null;
+  /** Journal PULSE des jours précédents (choix passés). */
+  journal?: readonly PulseDay[];
 }
 
 export const LIGHTEN: WorkoutAdjustment = { source: 'pulse', setsDelta: -1, rirDelta: 2 };
@@ -88,7 +100,7 @@ function progressionHints(template: WorkoutTemplate, data: LifeData): string[] {
   return hints;
 }
 
-function trainingAdvice(input: PulseInput, mode: PulseMode | null, rules: RuleHit[]): TrainingAdvice {
+function trainingAdvice(input: PulseInput, mode: PulseMode | null, rules: RuleHit[], score: number | null, fromScore: PulseMode | null): TrainingAdvice {
   const { date, index, data } = input;
   const movedTemplate =
     input.yesterday?.choice === 'deplacer' && input.yesterday.plannedTemplateId
@@ -140,6 +152,20 @@ function trainingAdvice(input: PulseInput, mode: PulseMode | null, rules: RuleHi
     return { ...base, kind: 'as-planned', recos: [{ id: 'prevue', text: `Séance prévue : ${name}${movedNote}.` }] };
   }
   const fatigue = rules.find((r) => r.id === 'fatigue-installee');
+  /** La règle qui a fait baisser la proposition sous ce que le score seul aurait donné. */
+  const cap = fromScore ? rules.find((r) => r.capMode && MODE_RANK[r.capMode] < MODE_RANK[fromScore] && r.capMode === mode) : undefined;
+  const s = input.settings.modes;
+  const kept = keptRecently(input.journal ?? [], date);
+  const keptNote: Reco[] =
+    kept >= 3
+      ? [
+          {
+            id: 'garde-souvent',
+            text: `Tu as gardé ta séance prévue ${kept} fois ces 7 derniers jours malgré la proposition. Si les propositions te semblent trop prudentes, ajuste les seuils dans les réglages PULSE.`,
+            to: '/pulse/reglages',
+          },
+        ]
+      : [];
   switch (mode) {
     case 'feu-vert': {
       const hints = progressionHints(template, data);
@@ -167,21 +193,30 @@ function trainingAdvice(input: PulseInput, mode: PulseMode | null, rules: RuleHi
           {
             id: 'allegee',
             text: `Version allégée de ${name}${movedNote} : une série de moins par exercice, 2 répétitions en réserve de plus, pas de record visé.`,
-            reason: 'Ton score du jour est en zone Allégé.',
+            reason: cap
+              ? `${cap.title} : ${cap.text}`
+              : `Ton indicateur est à ${score}, sous ${s.normal} : PULSE propose une version allégée. C’est une proposition, tu peux garder la séance prévue.`,
+            source: cap?.source,
+            to: cap?.to,
           },
+          ...keptNote,
         ],
       };
     case 'recuperation':
       return {
         ...base,
         kind: 'replace',
-        actions: ['deplacer', 'garder'],
+        actions: ['remplacer', 'garder', 'deplacer'],
         recos: [
           {
             id: 'remplacer',
             text: `Remplace ${name}${movedNote} par 30 minutes d’activité facile (marche ou vélo, en pouvant parler) et 10 minutes de mobilité.`,
-            reason: fatigue ? fatigue.text : 'Ton score du jour est en zone Récupération.',
-            source: fatigue?.source,
+            reason: fatigue
+              ? fatigue.text
+              : cap
+                ? `${cap.title} : ${cap.text}`
+                : `Ton indicateur est à ${score}, sous ${s.allege} : PULSE propose une récupération active. C’est une proposition, tu peux garder la séance prévue.`,
+            source: fatigue?.source ?? cap?.source,
           },
           ...(fatigue
             ? [
@@ -192,6 +227,7 @@ function trainingAdvice(input: PulseInput, mode: PulseMode | null, rules: RuleHi
                 },
               ]
             : []),
+          ...keptNote,
         ],
       };
   }
@@ -304,14 +340,20 @@ export function computePulse(input: PulseInput): PulseResult {
     nutrition,
   });
   const mode = readiness.modeFromScore ? rules.reduce<PulseMode>((m, r) => (r.capMode ? lowerMode(m, r.capMode) : m), readiness.modeFromScore) : null;
-  const training = trainingAdvice(input, mode, rules);
+  const training = trainingAdvice(input, mode, rules, readiness.score, readiness.modeFromScore);
   const bedTime = checkIn?.bedTime ?? null;
+  const series = readinessSeries({ index, health: input.health, settings }, addDays(date, -30), addDays(date, -1));
+  const trend = trendAt(series, date, readiness.score);
+  const analysis = analyzeDay({ date, index, readiness, trend, loadRatio: load.ratio, settings });
   return {
     date,
     readiness,
     nutrition,
     rules,
+    level: readiness.level,
     mode,
+    trend,
+    analysis,
     training,
     nutritionRecos: nutritionRecos(input, nutrition, mode, rules, bedTime, sleepHours),
     mindRecos: mindRecos(input, mode, rules, training, sleepHours),
@@ -332,5 +374,8 @@ export function pulseSnapshot(r: PulseResult): Omit<PulseDay, 'id' | 'createdAt'
     nutritionScore: r.nutrition.score,
     rules: r.rules.map((h) => h.id),
     plannedTemplateId: r.training.template?.id ?? null,
+    level: r.level,
+    coverage: r.readiness.score === null ? null : r.readiness.coverage.present,
+    trainingKind: r.training.kind,
   };
 }

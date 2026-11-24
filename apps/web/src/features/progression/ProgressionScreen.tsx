@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 import { Link, useSearchParams } from 'react-router';
 import { useCheckIns, useExercises, useToday, useWorkouts, useWorkoutSets } from '../../db/hooks';
 import { e1rm, findRecords, weeklyVolumes } from '../../domain/training';
-import { averageCheckIns, recoveryScore } from '../../domain/wellbeing';
+import { averageCheckIns, checkInSummary, recoveryScore } from '../../domain/wellbeing';
 import { addDays } from '../../lib/dates';
 import { formatDayMonth, formatDayShort, formatNumber } from '../../lib/format';
 import { BarChart } from '../../ui/BarChart';
@@ -88,14 +88,21 @@ function TrainingPanel() {
       const current = best.get(s.exerciseId);
       if (!current || value > current.value) best.set(s.exerciseId, { value, weightKg: s.weightKg, reps: s.reps });
     }
-    const bests = [...best.entries()].map(([id, b]) => ({ id, name: nameOf(id), ...b })).sort((a, b) => b.value - a.value).slice(0, 8);
+    const bests = [...best.entries()]
+      .map(([id, b]) => ({ id, name: nameOf(id), ...b }))
+      .sort((a, b) => b.value - a.value)
+      .slice(0, 8);
     return { volumes, records: records.map((r) => ({ ...r, name: nameOf(r.exerciseId) })), bests };
   }, [workouts, sets, exercises, today]);
 
   if (!model) return null;
   const totalSessions = model.volumes.reduce((n, w) => n + w.sessions, 0);
   if (totalSessions === 0 && model.bests.length === 0) {
-    return <p className="rounded-[18px] bg-anthracite p-4 text-[15px] leading-snug text-cendre">Aucune séance enregistrée. Ta progression apparaîtra ici après tes premières séances dans Training.</p>;
+    return (
+      <p className="rounded-[18px] bg-anthracite p-4 text-[15px] leading-snug text-cendre">
+        Aucune séance enregistrée. Ta progression apparaîtra ici après tes premières séances dans Training.
+      </p>
+    );
   }
 
   return (
@@ -128,14 +135,14 @@ function TrainingPanel() {
               <li key={`${r.workoutId}-${r.exerciseId}`} className="border-b border-anthracite last:border-b-0">
                 <Link to={`/training/exercices/${r.exerciseId}`} viewTransition className="flex min-h-11 items-center justify-between gap-3 py-2">
                   <span className="flex min-w-0 items-center gap-2.5">
-                  <Icon name="trophy" size={18} className="shrink-0 text-citron" />
-                  <span className="min-w-0">
-                    <span className="block truncate text-[15px]">{r.name}</span>
-                    <span className="block text-[12px] text-cendre">
-                      {formatDayShort(r.date)}, 1RM estimé {kg(Math.round(r.e1rmKg * 2) / 2)} kg (+{kg(Math.round((r.e1rmKg - r.previousE1rmKg) * 2) / 2)})
+                    <Icon name="trophy" size={18} className="shrink-0 text-citron" />
+                    <span className="min-w-0">
+                      <span className="block truncate text-[15px]">{r.name}</span>
+                      <span className="block text-[12px] text-cendre">
+                        {formatDayShort(r.date)}, 1RM estimé {kg(Math.round(r.e1rmKg * 2) / 2)} kg (+{kg(Math.round((r.e1rmKg - r.previousE1rmKg) * 2) / 2)})
+                      </span>
                     </span>
                   </span>
-                </span>
                   <span className="shrink-0 text-[15px] font-semibold tabular-nums">
                     {kg(r.weightKg)} kg × {r.reps}
                   </span>
@@ -153,10 +160,12 @@ function TrainingPanel() {
             <li key={b.id} className="border-b border-anthracite last:border-b-0">
               <Link to={`/training/exercices/${b.id}`} viewTransition className="flex min-h-11 items-center justify-between gap-3 py-2">
                 <span className="min-w-0 truncate text-[15px]">{b.name}</span>
-              <span className="shrink-0 text-right">
-                <span className="block text-[15px] font-semibold tabular-nums">{kg(b.weightKg)} kg × {b.reps}</span>
-                <span className="block text-[12px] text-cendre">1RM estimé {kg(Math.round(b.value * 2) / 2)} kg</span>
-              </span>
+                <span className="shrink-0 text-right">
+                  <span className="block text-[15px] font-semibold tabular-nums">
+                    {kg(b.weightKg)} kg × {b.reps}
+                  </span>
+                  <span className="block text-[12px] text-cendre">1RM estimé {kg(Math.round(b.value * 2) / 2)} kg</span>
+                </span>
               </Link>
             </li>
           ))}
@@ -173,7 +182,11 @@ function WellbeingPanel() {
   const { openCheckIn } = useCheckInSheet();
   if (!checkIns) return null;
   if (checkIns.length === 0) {
-    return <p className="rounded-[18px] bg-anthracite p-4 text-[15px] leading-snug text-cendre">Aucun check-in pour l’instant. Un check-in prend dix secondes : sommeil, énergie, fatigue et courbatures.</p>;
+    return (
+      <p className="rounded-[18px] bg-anthracite p-4 text-[15px] leading-snug text-cendre">
+        Aucun check-in pour l’instant. Un check-in prend dix secondes : sommeil, énergie, fatigue et courbatures.
+      </p>
+    );
   }
   const week = averageCheckIns(checkIns, today, 7);
   const days = Array.from({ length: 14 }, (_, i) => addDays(today, i - 13));
@@ -184,10 +197,10 @@ function WellbeingPanel() {
       {week && (
         <dl className="grid grid-cols-2 gap-3">
           {[
-            ['Sommeil moyen', hours(week.sleepHours)],
-            ['Récupération moyenne', `${week.score}/100`],
-            ['Énergie moyenne', `${formatNumber(week.energy, 1)}/5`],
-            ['Fatigue moyenne', `${formatNumber(week.fatigue, 1)}/5`],
+            ['Sommeil moyen', week.sleepHours !== null ? hours(week.sleepHours) : '—'],
+            ['Récupération moyenne', week.score !== null ? `${week.score}/100` : '—'],
+            ['Énergie moyenne', week.energy !== null ? `${formatNumber(week.energy, 1)}/5` : '—'],
+            ['Fatigue moyenne', week.fatigue !== null ? `${formatNumber(week.fatigue, 1)}/5` : '—'],
           ].map(([label, value]) => (
             <div key={label} className="rounded-[18px] bg-anthracite p-3.5">
               <dt className="text-[12px] text-cendre">{label}</dt>
@@ -213,7 +226,7 @@ function WellbeingPanel() {
               label: formatDayMonth(d).split(' ')[0] ?? '',
               value: c?.sleepHours ?? 0,
               detail: c
-                ? `${formatDayShort(d)} : ${hours(c.sleepHours)}, énergie ${c.energy}/5, fatigue ${c.fatigue}/5, récupération ${recoveryScore(c)}/100`
+                ? `${formatDayShort(d)} : ${checkInSummary(c, false)}${recoveryScore(c) !== null ? `, récupération ${recoveryScore(c)}/100` : ''}`
                 : `${formatDayShort(d)} : pas de check-in`,
             };
           })}
@@ -231,12 +244,10 @@ function WellbeingPanel() {
                 <button type="button" onClick={() => openCheckIn(c.date)} className="flex min-h-11 w-full items-center justify-between gap-3 py-2.5 text-left">
                   <span className="min-w-0">
                     <span className="block text-[15px]">{formatDayShort(c.date)}</span>
-                    <span className="block text-[12px] text-cendre">
-                      {hours(c.sleepHours)}, énergie {c.energy}/5, fatigue {c.fatigue}/5, courbatures {c.soreness}/5
-                    </span>
+                    <span className="block text-[12px] text-cendre">{checkInSummary(c)}</span>
                   </span>
                   <span className="flex shrink-0 items-center gap-2 font-semibold tabular-nums">
-                    {recoveryScore(c)}
+                    {recoveryScore(c) ?? '—'}
                     <Icon name="chevron" size={16} className="text-cendre" />
                   </span>
                 </button>

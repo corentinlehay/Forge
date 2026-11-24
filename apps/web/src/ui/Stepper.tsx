@@ -10,16 +10,25 @@ interface StepperProps {
   start: number;
   format: (value: number) => string;
   onChange: (value: number) => void;
+  /** Fourni : un lien Effacer apparaît sous le libellé quand une valeur est saisie. */
+  onClear?: () => void;
 }
 
 const round = (v: number) => Math.round(v * 100) / 100;
 
 /** Moins / valeur / plus, avec de grandes cibles tactiles. */
-export function Stepper({ label, value, step, min, max, start, format, onChange }: StepperProps) {
+export function Stepper({ label, value, step, min, max, start, format, onChange, onClear }: StepperProps) {
   const move = (dir: 1 | -1) => onChange(round(value === null ? start : Math.min(max, Math.max(min, value + dir * step))));
   return (
     <div className="flex items-center justify-between gap-3">
-      <span className="text-[15px]">{label}</span>
+      <span className="flex flex-col items-start text-[15px]">
+        {label}
+        {onClear && value !== null && (
+          <button type="button" onClick={onClear} aria-label={`${label} : effacer`} className="py-1 text-[13px] text-cendre underline-offset-2 active:underline">
+            Effacer
+          </button>
+        )}
+      </span>
       <div className="flex items-center gap-2">
         <button
           type="button"

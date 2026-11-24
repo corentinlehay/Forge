@@ -36,7 +36,8 @@ export function SleepScreen() {
     const stats = sleepStats(checkIns, today, n);
     const since = addDays(today, -(n - 1));
     const recent = checkIns.filter((c) => !c.deletedAt && c.date >= since && c.date <= today);
-    const recovery = recent.length ? Math.round(recent.reduce((a, c) => a + recoveryScore(c), 0) / recent.length) : null;
+    const scores = recent.flatMap((c) => (recoveryScore(c) === null ? [] : [recoveryScore(c)!]));
+    const recovery = scores.length ? Math.round(scores.reduce((a, v) => a + v, 0) / scores.length) : null;
     const byDate = new Map(checkIns.map((c) => [c.date, c]));
     const bars = Array.from({ length: n }, (_, i) => addDays(today, i - (n - 1))).map((d, i) => {
       const c = byDate.get(d);
@@ -44,7 +45,7 @@ export function SleepScreen() {
         key: d,
         label: n === 7 || i % 5 === (n - 1) % 5 ? String(Number(d.slice(8, 10))) : '',
         value: c?.sleepHours ?? 0,
-        detail: c ? `Nuit du ${formatDayMonth(addDays(d, -1))} : ${hoursText(c.sleepHours)}` : `${formatDayMonth(d)} : pas noté`,
+        detail: c && c.sleepHours !== null ? `Nuit du ${formatDayMonth(addDays(d, -1))} : ${hoursText(c.sleepHours)}` : `${formatDayMonth(d)} : pas noté`,
       };
     });
     return { stats, recovery, bars, training: sleepAroundTraining(checkIns, workouts, today), lastNight: byDate.get(today) ?? null };

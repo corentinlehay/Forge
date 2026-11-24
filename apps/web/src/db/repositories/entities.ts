@@ -1,6 +1,33 @@
 import type { EntityTable, Table } from 'dexie';
 import type { ForgeDB } from '../schema';
-import type { BodyPhoto, CheckIn, Exercise, Food, FoodEntry, MealPlan, MealTemplate, Measurement, MindSession, MoodLog, Pain, Per100, PriceRecord, Program, RecipePhoto, RecipeRecord, PulseChoice, PulseDay, ShoppingList, SyncFields, TargetChange, WaterLog, WeekNote, Workout, WorkoutSet, WorkoutTemplate } from '../types';
+import type {
+  BodyPhoto,
+  CheckIn,
+  Exercise,
+  Food,
+  FoodEntry,
+  MealPlan,
+  MealTemplate,
+  Measurement,
+  MindSession,
+  MoodLog,
+  Pain,
+  Per100,
+  PriceRecord,
+  Program,
+  RecipePhoto,
+  RecipeRecord,
+  PulseChoice,
+  PulseDay,
+  ShoppingList,
+  SyncFields,
+  TargetChange,
+  WaterLog,
+  WeekNote,
+  Workout,
+  WorkoutSet,
+  WorkoutTemplate,
+} from '../types';
 import type { LibraryExercise } from '../../data/exerciseLibrary';
 import { isDateKey, isTimeKey } from '../../lib/dates';
 import { newId, nowIso } from '../../lib/ids';
@@ -192,15 +219,16 @@ export function createCheckInRepo(db: ForgeDB) {
   const scale = (v: unknown) => Number.isInteger(v) && between(v, 1, 5);
   return entityRepo<CheckIn>(db.checkIns, (i) => {
     if (i.date !== undefined) check(isDateKey(i.date), 'Date invalide.');
-    if (i.sleepHours !== undefined) check(between(i.sleepHours, 0, 16), 'Sommeil entre 0 et 16 h.');
-    if (i.energy !== undefined) check(scale(i.energy), 'Énergie : de 1 à 5.');
-    if (i.fatigue !== undefined) check(scale(i.fatigue), 'Fatigue : de 1 à 5.');
-    if (i.soreness !== undefined) check(scale(i.soreness), 'Courbatures : de 1 à 5.');
+    if (i.sleepHours !== undefined && i.sleepHours !== null) check(between(i.sleepHours, 0, 16), 'Sommeil entre 0 et 16 h.');
+    if (i.energy !== undefined && i.energy !== null) check(scale(i.energy), 'Énergie : de 1 à 5.');
+    if (i.fatigue !== undefined && i.fatigue !== null) check(scale(i.fatigue), 'Fatigue : de 1 à 5.');
+    if (i.soreness !== undefined && i.soreness !== null) check(scale(i.soreness), 'Courbatures : de 1 à 5.');
     if (i.note !== undefined) check(i.note.length <= 500, 'Note trop longue (500 caractères maximum).');
     if (i.bedTime !== undefined && i.bedTime !== null) check(isTimeKey(i.bedTime), 'Heure de coucher invalide.');
     if (i.wakeTime !== undefined && i.wakeTime !== null) check(isTimeKey(i.wakeTime), 'Heure de réveil invalide.');
     if (i.awakenings !== undefined && i.awakenings !== null) check(Number.isInteger(i.awakenings) && between(i.awakenings, 0, 20), 'Réveils : de 0 à 20.');
     if (i.sleepQuality !== undefined && i.sleepQuality !== null) check(scale(i.sleepQuality), 'Qualité du sommeil : de 1 à 5.');
+    if (i.unusualPain !== undefined && i.unusualPain !== null) check(typeof i.unusualPain === 'boolean', 'Réponse sur les douleurs invalide.');
   });
 }
 
@@ -242,7 +270,12 @@ export function createFoodCatalogRepo(db: ForgeDB) {
     async remember(input: Omit<Food, keyof SyncFields | 'favorite' | 'useCount' | 'lastUsedAt'>, now: Date = new Date()): Promise<Food> {
       if (input.source !== 'custom' && input.sourceId) {
         const existing = await this.findBySource(input.source, input.sourceId);
-        if (existing) return base.update(existing.id, { name: input.name, brand: input.brand, per100: input.per100, servingG: input.servingG, servingLabel: input.servingLabel, state: input.state, unit: input.unit }, now);
+        if (existing)
+          return base.update(
+            existing.id,
+            { name: input.name, brand: input.brand, per100: input.per100, servingG: input.servingG, servingLabel: input.servingLabel, state: input.state, unit: input.unit },
+            now,
+          );
       }
       return base.add({ ...input, favorite: false, useCount: 0, lastUsedAt: null }, now);
     },
@@ -282,7 +315,8 @@ export function createRecipeRepo(db: ForgeDB) {
     if (i.cookMin !== undefined) check(Number.isInteger(i.cookMin) && between(i.cookMin, 0, 1440), 'Temps de cuisson entre 0 et 1 440 minutes.');
     if (i.ingredients !== undefined) {
       check(i.ingredients.length >= 1 && i.ingredients.length <= 60, 'Entre 1 et 60 ingrédients.');
-      for (const ing of i.ingredients) check(ing.name.trim().length > 0 && Number.isFinite(ing.grams) && between(ing.grams, 0.1, 20000), `Quantité de « ${ing.name} » entre 0,1 g et 20 kg.`);
+      for (const ing of i.ingredients)
+        check(ing.name.trim().length > 0 && Number.isFinite(ing.grams) && between(ing.grams, 0.1, 20000), `Quantité de « ${ing.name} » entre 0,1 g et 20 kg.`);
     }
     if (i.steps !== undefined) check(i.steps.length <= 30 && i.steps.every((st) => st.length <= 600), 'Étapes : 30 au maximum, 600 caractères chacune.');
   });

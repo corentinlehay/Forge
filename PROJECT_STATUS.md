@@ -1,6 +1,6 @@
 # État du projet FORGE
 
-Mis à jour le 24 novembre 2026, PULSE 1 livré et comparé au cahier des charges PULSE v1.0. Le détail de chaque livraison est dans docs/journal.md.
+Mis à jour le 24 novembre 2026, PULSE 1.1 (fondations du cahier des charges) livré sur la branche `pulse-1`. Le détail de chaque livraison est dans docs/journal.md.
 
 ## En production (branche `main`)
 
@@ -22,7 +22,7 @@ Chaque branche contient les précédentes. La mise en production se fait d'un bl
 | `mind-2` | Séances audio (stockage Cloudflare KV), lecteur complet, hors connexion, catégorie Hypnose, espace créateur privé |
 | `progression-2` | Moyenne de poids sur 7 jours, mensurations, photos du corps, comparaison de dates, suivi des douleurs sur silhouette |
 | `bilans-1` | Bilan de la semaine avec notes et historique, calendrier jour, semaine, mois, analyses croisées sans causalité, badges et régularité |
-| `pulse-1` | PULSE 1 : Readiness Score expliqué et Nutrition Status séparé, règles de sécurité, recommandations Training, Nutrition, Mind, Recovery, séance allégée ou déplacée après validation, réglages |
+| `pulse-1` | PULSE 1 et 1.1 : indicateur expliqué en 5 dimensions et lu en 4 niveaux, couverture, évolution sur 7 et 30 jours, analyse du jour, Nutrition Status séparé, règles de sécurité, proposition de séance qui garde toujours « Garder », check-in passable en 5 questions, historique par période, réglages |
 
 Base de données locale : version 11. Serveur : relais Open Food Facts et séances audio (Workers KV `forge-audio`). Chaque changement de schéma a son test de migration sans perte.
 
@@ -46,20 +46,26 @@ Document complet, avec l'architecture, les cinq scénarios et le plan : https://
 
 **Cahier des charges PULSE v1.0, reçu après PULSE 1 :** il est gardé dans `docs/pulse-cahier-des-charges.md`, et la comparaison détaillée est dans le document d'audit.
 - **Ce qu'il confirme :** règles déterministes dans le code, propositions toujours validées, données manquantes gérées, aucun diagnostic.
-- **Ce qu'il contredit, à trancher par Coz :**
-    - la nutrition compte pour 10 % du score dans le cahier, alors qu'un indicateur séparé a été validé ;
-    - le cahier prévoit les dimensions Training, Sleep, Recovery, Mind et Nutrition (25, 25, 20, 20, 10), alors que PULSE 1 utilise Sommeil, Physiologie, Ressenti, Charge et Mental ;
-    - le cahier lit le score en 4 niveaux (basse, modérée, satisfaisante, élevée), alors que PULSE 1 utilise des modes de séance ;
-    - le cahier fait l'historique et la validation (V1, V2) avant les connecteurs (V3).
-- **Ce qui manque à PULSE 1 pour V1 et V2 :**
-    - évolution du score et couverture des données ;
+- **Points tranchés par Coz :**
+    - la nutrition reste un indicateur séparé, hors du score ;
+    - les dimensions restent celles de PULSE 1 (Sommeil, Physiologie, Ressenti, Charge, Mental) ;
+    - le score se lit avec les 4 niveaux du cahier, et la proposition de séance est séparée et garde toujours « Garder » ;
+    - l'ordre est PULSE 1.1, puis 1.2, puis 2 (connecteurs).
+- **Fait en PULSE 1.1 :**
+    - niveaux de lecture réglables ;
+    - couverture, fraîcheur et principaux facteurs ;
+    - évolution sur 7 et 30 jours ;
+    - analyse du jour (observé, déclaré, estimé, hypothèse, manquant) ;
     - check-in unifié et passable ;
-    - écran d'historique ;
-    - plan du jour avec objectif, durée et priorité ;
-    - validation complète avec retour en arrière ;
-    - bilan du soir ;
-    - documentation technique ;
+    - écran d'historique avec comparaison de périodes et taux d'acceptation ;
+    - fusion des sources contradictoires ;
+    - documentation technique (`docs/pulse.md`) ;
     - les 7 cas de test du cahier.
+- **Reste pour V1 et V2 (PULSE 1.2) :**
+    - plan du jour avec objectif, durée, priorité et lien ;
+    - rubrique Sleep ;
+    - validation complète avec refus, modification et retour en arrière ;
+    - bilan du soir et ressenti après une recommandation.
 - **Connecteurs réellement opérationnels :** aucun, en dehors de la saisie manuelle et des données FORGE.
 
 **Pile vérifiée avant PULSE 1 :** les dix versions de test sont intégrées dans bilans-1, et `npm run check` passe. Elles ne sont pas en production : on attend « mets en production ».
@@ -73,19 +79,19 @@ Document complet, avec l'architecture, les cinq scénarios et le plan : https://
 
 ## Reste à faire
 
-1. **Trancher les quatre points du cahier des charges** : nutrition dans le score, dimensions et poids, lecture du score, ordre des étapes.
-2. **PULSE 1.1 : fondations** (si l'ordre du cahier est retenu). Dimensions et lecture du score selon la décision, couverture et principaux facteurs, évolution sur 7 et 30 jours, check-in unifié, historique, documentation technique, 7 cas de test du cahier.
-3. **PULSE 1.2 : plan et validation.** Plan du jour avec objectif, durée, priorité et lien, rubrique Sleep, validation complète avec retour en arrière, bilan du soir.
-4. **Mise en production de la pile actuelle** (onze versions de test, de nutrition-1 à pulse-1), sur ton « mets en production », pour ne pas empiler davantage.
-5. **Tes séances audio.** Le code d'administration est en place (Secrets Store du compte, secret `ADMIN_CODE`) : il reste à ajouter tes enregistrements depuis l'espace créateur.
-6. **PULSE 2 : connecteurs.** Raccourci Apple Santé prêt à installer, bouton « Importer depuis Santé », registre de connecteurs, provenance, dédoublonnage, données contradictoires. Seulement après ta validation explicite.
-7. **PULSE 3 : apprentissage personnel.** Préférences apprises, consultables et modifiables, analyse des résultats des recommandations, semaine de décharge proposée, notification du matin en option.
-8. **IA transversale (dont la couche IA de PULSE et le « Pourquoi ? »).** Coach Claude avec le contexte de tous les modules, explication du score sans décision ni levée de garde-fou, mémoire et préférences modifiables, recommandations limitées aux contenus qui existent, données transmises réduites au nécessaire, plafond de coût par utilisateur. Nécessite ta clé API dans les secrets Cloudflare.
-9. **Compte et paiement.** Modèle à décider, compte léger, prestataire de paiement, pages légales ; avec la décision app native ou API Oura et WHOOP.
+1. **Valider PULSE 1.1 sur ton iPhone** (version de test `pulse-1`).
+2. **PULSE 1.2 : plan et validation.** Plan du jour avec objectif, durée, priorité et lien, rubrique Sleep, validation complète avec retour en arrière, bilan du soir.
+3. **Mise en production de la pile actuelle** (onze versions de test, de nutrition-1 à pulse-1), sur ton « mets en production », pour ne pas empiler davantage.
+4. **Tes séances audio.** Le code d'administration est en place (Secrets Store du compte, secret `ADMIN_CODE`) : il reste à ajouter tes enregistrements depuis l'espace créateur.
+5. **PULSE 2 : connecteurs.** Raccourci Apple Santé prêt à installer, bouton « Importer depuis Santé », registre de connecteurs, provenance, dédoublonnage, données contradictoires. Seulement après ta validation explicite.
+6. **PULSE 3 : apprentissage personnel.** Préférences apprises, consultables et modifiables, analyse des résultats des recommandations, semaine de décharge proposée, notification du matin en option.
+7. **IA transversale (dont la couche IA de PULSE et le « Pourquoi ? »).** Coach Claude avec le contexte de tous les modules, explication du score sans décision ni levée de garde-fou, mémoire et préférences modifiables, recommandations limitées aux contenus qui existent, données transmises réduites au nécessaire, plafond de coût par utilisateur. Nécessite ta clé API dans les secrets Cloudflare.
+8. **Compte et paiement.** Modèle à décider, compte léger, prestataire de paiement, pages légales ; avec la décision app native ou API Oura et WHOOP.
 
 ## Problèmes et limites techniques connus
 
-- **PULSE sans montre pour l'instant.** La composante Physiologie attend l'import Apple Santé (PULSE 2) : la confiance reste au plus « moyenne », et son poids est réparti sur les autres composantes.
+- **PULSE sans montre pour l'instant.** La composante Physiologie attend l'import Apple Santé (PULSE 2) : la confiance reste au plus « moyenne », et son poids est réparti sur les autres composantes. La fusion de plusieurs appareils est prête et testée, mais aucune source n'est encore branchée.
+- **Historique PULSE recalculé.** Les scores passés sont recalculés avec les réglages actuels : changer un réglage change aussi l'historique. Le score affiché chaque jour reste visible dans la vue Jour.
 - **Séance déplacée.** Elle est reproposée le lendemain dans PULSE, mais le programme et le calendrier ne changent pas.
 - **Apple Santé et Apple Watch.** Une app web n'a aucun accès à Apple Santé : import par Raccourci iOS (PULSE 2) ou app native à décider. Pas de calcul en arrière-plan : le score PULSE se calculera à l'ouverture.
 - **Photos du corps.** Gardées sur l'iPhone seulement, hors sauvegarde (vie privée et poids du fichier) : les enregistrer dans Photos pour en garder une copie.

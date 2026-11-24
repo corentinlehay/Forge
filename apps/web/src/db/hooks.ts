@@ -5,8 +5,59 @@ import { getDb } from './schema';
 import { createMetaRepo } from './repositories/meta';
 import { createProfileRepo } from './repositories/profile';
 import { createWeighInRepo } from './repositories/weighIns';
-import { createMindSessionRepo, createWeekNoteRepo, createPulseDayRepo, createMeasurementRepo, createBodyPhotoRepo, createPainRepo, createMoodLogRepo, createCheckInRepo, createExerciseRepo, createFoodCatalogRepo, createFoodRepo, createMealPlanRepo, createMealTemplateRepo, createPriceRepo, createProgramRepo, createRecipePhotoRepo, createRecipeRepo, createSetRepo, createShoppingListRepo, createTemplateRepo, createWaterRepo, createWorkoutRepo, createTargetChangeRepo } from './repositories/entities';
-import type { AudioState, BodyPhoto, PulseDay, WeekNote, Measurement, MindSession, MoodLog, Pain, TargetChange, CheckIn, Exercise, Food, FoodEntry, MealPlan, MealTemplate, PriceRecord, Profile, Program, RecipePhoto, RecipeRecord, ShoppingList, WaterLog, WeighIn, Workout, WorkoutSet, WorkoutTemplate } from './types';
+import {
+  createMindSessionRepo,
+  createWeekNoteRepo,
+  createPulseDayRepo,
+  createMeasurementRepo,
+  createBodyPhotoRepo,
+  createPainRepo,
+  createMoodLogRepo,
+  createCheckInRepo,
+  createExerciseRepo,
+  createFoodCatalogRepo,
+  createFoodRepo,
+  createMealPlanRepo,
+  createMealTemplateRepo,
+  createPriceRepo,
+  createProgramRepo,
+  createRecipePhotoRepo,
+  createRecipeRepo,
+  createSetRepo,
+  createShoppingListRepo,
+  createTemplateRepo,
+  createWaterRepo,
+  createWorkoutRepo,
+  createTargetChangeRepo,
+} from './repositories/entities';
+import type {
+  AudioState,
+  BodyPhoto,
+  PulseDay,
+  WeekNote,
+  Measurement,
+  MindSession,
+  MoodLog,
+  Pain,
+  TargetChange,
+  CheckIn,
+  Exercise,
+  Food,
+  FoodEntry,
+  MealPlan,
+  MealTemplate,
+  PriceRecord,
+  Profile,
+  Program,
+  RecipePhoto,
+  RecipeRecord,
+  ShoppingList,
+  WaterLog,
+  WeighIn,
+  Workout,
+  WorkoutSet,
+  WorkoutTemplate,
+} from './types';
 import { programTemplates } from '../domain/training';
 
 /**
@@ -98,6 +149,11 @@ export const repos = {
 /** Journal PULSE d'un jour : `null` si rien n'est enregistré, `undefined` pendant le chargement. */
 export function usePulseDay(date: string): PulseDay | null | undefined {
   return useLiveQuery(() => repos.pulseDays.byDate(date), [date]);
+}
+
+/** Journal PULSE complet, du plus ancien au plus récent. */
+export function usePulseDays(): PulseDay[] | undefined {
+  return useLiveQuery(async () => (await repos.pulseDays.listActive()).sort((a, b) => a.date.localeCompare(b.date)), []);
 }
 
 /** Notes de semaine des bilans, la plus récente d'abord. */

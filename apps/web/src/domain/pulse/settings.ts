@@ -1,4 +1,4 @@
-import type { PulseComponentKey } from '../../db/types';
+import type { PulseComponentKey, PulseLevel } from '../../db/types';
 
 /**
  * Réglages du moteur PULSE. Les valeurs de départ sont des exemples de conception,
@@ -7,7 +7,9 @@ import type { PulseComponentKey } from '../../db/types';
 export interface PulseSettings {
   /** Poids de chaque composante du Readiness Score (0 = composante ignorée). */
   weights: Record<PulseComponentKey, number>;
-  /** Seuils des modes du jour : Feu vert, Normal, Allégé ; en dessous, Récupération. */
+  /** Niveaux de lecture du score : à partir de ces valeurs, disponibilité modérée, satisfaisante, élevée ; en dessous, basse. */
+  levels: { moderee: number; satisfaisante: number; elevee: number };
+  /** Seuils de la proposition de séance : progression, séance prévue, version allégée ; en dessous, récupération active. */
   modes: { feuVert: number; normal: number; allege: number };
   /** Sommeil visé, en heures. */
   sleepTargetHours: number;
@@ -26,7 +28,11 @@ export interface PulseSettings {
 }
 
 export const PULSE_SETTINGS_KEY = 'pulseSettings';
-export const PULSE_ENGINE_VERSION = 1;
+/**
+ * Version des règles. 1 : PULSE 1. 2 : PULSE 1.1 (niveaux de lecture, sources fusionnées, fraîcheur,
+ * proposition de séance séparée du score). Le journal garde la version utilisée chaque jour.
+ */
+export const PULSE_ENGINE_VERSION = 2;
 
 export const COMPONENT_ORDER: PulseComponentKey[] = ['sommeil', 'physiologie', 'ressenti', 'charge', 'mental'];
 export const COMPONENT_LABELS: Record<PulseComponentKey, string> = {
@@ -39,6 +45,7 @@ export const COMPONENT_LABELS: Record<PulseComponentKey, string> = {
 
 export const DEFAULT_PULSE_SETTINGS: PulseSettings = {
   weights: { sommeil: 30, physiologie: 25, ressenti: 25, charge: 10, mental: 10 },
+  levels: { moderee: 40, satisfaisante: 60, elevee: 80 },
   modes: { feuVert: 75, normal: 55, allege: 40 },
   sleepTargetHours: 7,
   shortNightHours: 5,
@@ -50,7 +57,33 @@ export const DEFAULT_PULSE_SETTINGS: PulseSettings = {
   proteinMinPct: 90,
 };
 
-type Scalar = Exclude<keyof PulseSettings, 'weights' | 'modes'>;
+export const LEVEL_ORDER: PulseLevel[] = ['basse', 'moderee', 'satisfaisante', 'elevee'];
+export const LEVEL_LABELS: Record<PulseLevel, string> = {
+  basse: 'Disponibilité basse',
+  moderee: 'Disponibilité modérée',
+  satisfaisante: 'Disponibilité satisfaisante',
+  elevee: 'Disponibilité élevée',
+};
+
+/** Niveau de lecture d'un score, selon les seuils réglés. */
+export function levelFor(score: number, settings: Pick<PulseSettings, 'levels'>): PulseLevel {
+  const l = settings.levels;
+  if (score >= l.elevee) return 'elevee';
+  if (score >= l.satisfaisante) return 'satisfaisante';
+  if (score >= l.moderee) return 'moderee';
+  return 'basse';
+}
+
+/** Bornes basse et haute de chaque niveau, pour l'afficher (« 40 à 59 »). */
+export function levelRange(level: PulseLevel, settings: Pick<PulseSettings, 'levels'>): [number, number] {
+  const l = settings.levels;
+  if (level === 'basse') return [0, l.moderee - 1];
+  if (level === 'moderee') return [l.moderee, l.satisfaisante - 1];
+  if (level === 'satisfaisante') return [l.satisfaisante, l.elevee - 1];
+  return [l.elevee, 100];
+}
+
+type Scalar = Exclude<keyof PulseSettings, 'weights' | 'modes' | 'levels'>;
 
 /** Bornes et pas de chaque réglage (aussi utilisés par l'écran de réglages). */
 export const SETTING_BOUNDS: Record<Scalar, { min: number; max: number; step: number }> = {
@@ -65,6 +98,7 @@ export const SETTING_BOUNDS: Record<Scalar, { min: number; max: number; step: nu
 };
 export const WEIGHT_BOUNDS = { min: 0, max: 50, step: 5 };
 export const MODE_BOUNDS = { min: 20, max: 95, step: 5 };
+export const LEVEL_BOUNDS = { min: 20, max: 95, step: 5 };
 
 const clamp = (v: unknown, min: number, max: number, fallback: number) => (typeof v === 'number' && Number.isFinite(v) ? Math.min(max, Math.max(min, v)) : fallback);
 
@@ -77,11 +111,15 @@ export function resolveSettings(stored: unknown): PulseSettings {
   const allege = clamp(s.modes?.allege, MODE_BOUNDS.min, MODE_BOUNDS.max - 10, d.modes.allege);
   const normal = Math.max(allege + 5, clamp(s.modes?.normal, MODE_BOUNDS.min, MODE_BOUNDS.max - 5, d.modes.normal));
   const feuVert = Math.max(normal + 5, clamp(s.modes?.feuVert, MODE_BOUNDS.min, MODE_BOUNDS.max, d.modes.feuVert));
+  const moderee = clamp(s.levels?.moderee, LEVEL_BOUNDS.min, LEVEL_BOUNDS.max - 10, d.levels.moderee);
+  const satisfaisante = Math.max(moderee + 5, clamp(s.levels?.satisfaisante, LEVEL_BOUNDS.min, LEVEL_BOUNDS.max - 5, d.levels.satisfaisante));
+  const elevee = Math.max(satisfaisante + 5, clamp(s.levels?.elevee, LEVEL_BOUNDS.min, LEVEL_BOUNDS.max, d.levels.elevee));
   const scalar = (k: Scalar) => clamp(s[k], SETTING_BOUNDS[k].min, SETTING_BOUNDS[k].max, d[k]);
   const loadLow = scalar('loadLow');
   const loadHigh = Math.max(loadLow + 0.1, scalar('loadHigh'));
   return {
     weights,
+    levels: { moderee, satisfaisante, elevee },
     modes: { feuVert, normal, allege },
     sleepTargetHours: scalar('sleepTargetHours'),
     shortNightHours: Math.min(scalar('shortNightHours'), scalar('sleepTargetHours') - 1),

@@ -83,7 +83,10 @@ const foodEntrySchema = z.object({
 });
 
 const aisle = z.enum(['fruits-legumes', 'viandes-poissons', 'cremerie', 'feculents', 'conserves', 'epicerie', 'surgeles']);
-const unitTuple = z.tuple([z.string().max(30), z.string().max(30), z.number().min(0.1).max(5000)]).nullable().optional();
+const unitTuple = z
+  .tuple([z.string().max(30), z.string().max(30), z.number().min(0.1).max(5000)])
+  .nullable()
+  .optional();
 export const recipeIngredientSchema = z.object({
   key: z.string().min(1).max(160),
   name: z.string().min(1).max(160),
@@ -92,9 +95,33 @@ export const recipeIngredientSchema = z.object({
   aisle,
   unit: unitTuple,
   ml: z.boolean().optional(),
-  tags: z.array(z.enum(['gluten', 'lait', 'oeuf', 'poisson', 'crustaces', 'arachide', 'fruits-a-coque', 'soja', 'moutarde', 'sesame', 'viande', 'porc'])).nullable().optional(),
+  tags: z
+    .array(z.enum(['gluten', 'lait', 'oeuf', 'poisson', 'crustaces', 'arachide', 'fruits-a-coque', 'soja', 'moutarde', 'sesame', 'viande', 'porc']))
+    .nullable()
+    .optional(),
 });
-const glyph = z.enum(['bol', 'pancake', 'poele', 'tartine', 'boite', 'wok', 'cocotte', 'assiette', 'salade', 'pizza', 'burger', 'wrap', 'quiche', 'pates', 'gratin', 'verre', 'billes', 'mug', 'verrine', 'gateau']);
+const glyph = z.enum([
+  'bol',
+  'pancake',
+  'poele',
+  'tartine',
+  'boite',
+  'wok',
+  'cocotte',
+  'assiette',
+  'salade',
+  'pizza',
+  'burger',
+  'wrap',
+  'quiche',
+  'pates',
+  'gratin',
+  'verre',
+  'billes',
+  'mug',
+  'verrine',
+  'gateau',
+]);
 export const recipeFields = {
   name: z.string().min(1).max(80),
   description: z.string().max(400),
@@ -122,7 +149,20 @@ const mealPlanSchema = z.object({
 const shoppingListSchema = z.object({
   ...syncFields,
   name: z.string().min(1).max(80),
-  items: z.array(z.object({ key: z.string().max(160), name: z.string().max(160), grams: z.number().min(0).max(200000), ml: z.boolean(), aisle, unit: unitTuple, recipes: z.array(z.string().max(80)), checked: z.boolean() })).max(300),
+  items: z
+    .array(
+      z.object({
+        key: z.string().max(160),
+        name: z.string().max(160),
+        grams: z.number().min(0).max(200000),
+        ml: z.boolean(),
+        aisle,
+        unit: unitTuple,
+        recipes: z.array(z.string().max(80)),
+        checked: z.boolean(),
+      }),
+    )
+    .max(300),
   selections: z.array(z.object({ recipeKey: z.string().max(100), servings: z.number().min(0.25).max(50) })),
 });
 const targetChangeSchema = z.object({
@@ -133,7 +173,14 @@ const targetChangeSchema = z.object({
   source: z.enum(['proposition', 'manuel', 'questionnaire']),
   reason: z.string().max(400).optional(),
 });
-const priceSchema = z.object({ ...syncFields, key: z.string().min(1).max(160), name: z.string().min(1).max(160), amountEur: z.number().min(0.01).max(1000), quantity: z.number().min(0.1).max(100000), unit: z.enum(['g', 'ml', 'piece']) });
+const priceSchema = z.object({
+  ...syncFields,
+  key: z.string().min(1).max(160),
+  name: z.string().min(1).max(160),
+  amountEur: z.number().min(0.01).max(1000),
+  quantity: z.number().min(0.1).max(100000),
+  unit: z.enum(['g', 'ml', 'piece']),
+});
 
 const foodSchema = z.object({
   ...syncFields,
@@ -215,7 +262,10 @@ const workoutSchema = z.object({
   endedAt: z.string().nullable().optional(),
   note: z.string().max(2000).optional(),
   exerciseNotes: z.record(z.string(), z.string().max(1000)).optional(),
-  adjustment: z.object({ source: z.literal('pulse'), setsDelta: z.number().int().min(-5).max(0), rirDelta: z.number().int().min(0).max(5) }).nullable().optional(),
+  adjustment: z
+    .object({ source: z.literal('pulse'), setsDelta: z.number().int().min(-5).max(0), rirDelta: z.number().int().min(0).max(5) })
+    .nullable()
+    .optional(),
 });
 
 const setSchema = z.object({
@@ -232,15 +282,16 @@ const scale = z.union([z.literal(1), z.literal(2), z.literal(3), z.literal(4), z
 const checkInSchema = z.object({
   ...syncFields,
   date: dateKey,
-  sleepHours: z.number().min(0).max(16),
-  energy: scale,
-  fatigue: scale,
-  soreness: scale,
+  sleepHours: z.number().min(0).max(16).nullable(),
+  energy: scale.nullable(),
+  fatigue: scale.nullable(),
+  soreness: scale.nullable(),
   note: z.string().max(500).optional(),
   bedTime: timeKey.nullable().optional(),
   wakeTime: timeKey.nullable().optional(),
   awakenings: z.number().int().min(0).max(20).nullable().optional(),
   sleepQuality: scale.nullable().optional(),
+  unusualPain: z.boolean().nullable().optional(),
 });
 const moodLogSchema = z.object({
   ...syncFields,
@@ -291,13 +342,22 @@ const pulseDaySchema = z.object({
   nutritionScore: z.number().min(0).max(100).nullable(),
   rules: z.array(z.string().max(40)).max(20),
   plannedTemplateId: z.string().nullable().optional(),
-  choice: z.enum(['alleger', 'garder', 'deplacer']).nullable().optional(),
+  level: z.enum(['basse', 'moderee', 'satisfaisante', 'elevee']).nullable().optional(),
+  coverage: z.number().int().min(0).max(10).nullable().optional(),
+  trainingKind: z.string().max(20).nullable().optional(),
+  choice: z.enum(['alleger', 'remplacer', 'garder', 'deplacer']).nullable().optional(),
   choiceAt: z.string().nullable().optional(),
 });
 const audioStateSchema = z.object({
   id: z.string().min(1).max(40),
-  position: z.number().min(0).max(4 * 3600),
-  durationSec: z.number().min(0).max(4 * 3600),
+  position: z
+    .number()
+    .min(0)
+    .max(4 * 3600),
+  durationSec: z
+    .number()
+    .min(0)
+    .max(4 * 3600),
   favorite: z.boolean(),
   lastPlayedAt: z.string().nullable(),
   updatedAt: z.string(),
@@ -309,7 +369,10 @@ const mindSessionSchema = z.object({
   kind: z.enum(['exercise', 'routine', 'audio']),
   ref: z.string().min(1).max(120),
   title: z.string().min(1).max(120),
-  durationSec: z.number().min(0).max(6 * 3600),
+  durationSec: z
+    .number()
+    .min(0)
+    .max(6 * 3600),
   completed: z.boolean(),
   tensionBefore: scale.nullable().optional(),
   tensionAfter: scale.nullable().optional(),

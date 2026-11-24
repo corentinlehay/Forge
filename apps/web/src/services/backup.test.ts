@@ -2,15 +2,8 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { ForgeDB, SCHEMA_VERSION } from '../db/schema';
 import { createProfileRepo } from '../db/repositories/profile';
 import { createWeighInRepo } from '../db/repositories/weighIns';
-import {
-  backupFileName,
-  exportBackup,
-  importBackup,
-  isBackupDue,
-  markBackupDone,
-  parseBackup,
-  serializeBackup,
-} from './backup';
+import { createCheckInRepo, createPulseDayRepo } from '../db/repositories/entities';
+import { backupFileName, exportBackup, importBackup, isBackupDue, markBackupDone, parseBackup, serializeBackup } from './backup';
 
 const dbs: ForgeDB[] = [];
 
@@ -47,6 +40,34 @@ describe('sauvegarde et restauration', () => {
     expect(report.added).toBe(3);
     expect(await target.weighIns.toArray()).toEqual(await source.weighIns.toArray());
     expect(await target.profile.toArray()).toEqual(await source.profile.toArray());
+  });
+
+  it('garde un check-in aux réponses passées et le journal PULSE v2', async () => {
+    await createCheckInRepo(source).add({ date: '2026-11-24', sleepHours: null, energy: 4, fatigue: null, soreness: null, unusualPain: true });
+    const pulse = createPulseDayRepo(source);
+    await pulse.saveSnapshot({
+      date: '2026-11-24',
+      engineVersion: 2,
+      readiness: 66,
+      confidence: 'basse',
+      mode: 'allege',
+      components: [],
+      nutritionKind: 'sans-objectif',
+      nutritionScore: null,
+      rules: ['douleur-signalee'],
+      plannedTemplateId: 't1',
+      level: 'satisfaisante',
+      coverage: 2,
+      trainingKind: 'lighten',
+    });
+    await pulse.choose('2026-11-24', 'remplacer');
+    const parsed = parseBackup(serializeBackup(await exportBackup(source)));
+    expect(parsed.ok).toBe(true);
+    if (!parsed.ok) return;
+    const target = await freshDb();
+    await importBackup(target, parsed.backup, 'replace');
+    expect(await target.checkIns.toArray()).toEqual(await source.checkIns.toArray());
+    expect((await target.pulseDays.toArray())[0]).toMatchObject({ level: 'satisfaisante', trainingKind: 'lighten', choice: 'remplacer' });
   });
 
   it('refuse un fichier illisible ou étranger sans rien écrire', () => {

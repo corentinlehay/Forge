@@ -52,7 +52,14 @@ export function dayItems(d: DayRecord | undefined, date: string, today: string, 
     items.push({
       module: 'corps',
       title: 'Check-in',
-      detail: `Nuit de ${formatHours(d.checkIn.sleepHours)}, récupération ${recoveryScore(d.checkIn)}/100`,
+      detail:
+        [
+          d.checkIn.sleepHours !== null ? `Nuit de ${formatHours(d.checkIn.sleepHours)}` : null,
+          recoveryScore(d.checkIn) !== null ? `récupération ${recoveryScore(d.checkIn)}/100` : null,
+        ]
+          .filter(Boolean)
+          .join(', ')
+          .replace(/^r/, 'R') || 'Réponses passées',
       to: '/progression?vue=bien-etre',
     });
   for (const { pain, log } of d?.painLogs ?? [])

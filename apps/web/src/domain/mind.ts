@@ -267,9 +267,10 @@ export interface SleepStats {
 
 export function sleepStats(checkIns: readonly CheckIn[], today: string, days: number): SleepStats {
   const since = addDays(today, -(days - 1));
-  const nights = checkIns.filter((c) => !c.deletedAt && c.date >= since && c.date <= today);
-  const q = nights.map((c) => c.sleepQuality).filter((v): v is Scale5 => !!v);
-  const aw = nights.map((c) => c.awakenings).filter((v): v is number => v !== null && v !== undefined);
+  const all = checkIns.filter((c) => !c.deletedAt && c.date >= since && c.date <= today);
+  const nights = all.filter((c): c is typeof c & { sleepHours: number } => c.sleepHours !== null);
+  const q = all.map((c) => c.sleepQuality).filter((v): v is Scale5 => !!v);
+  const aw = all.map((c) => c.awakenings).filter((v): v is number => v !== null && v !== undefined);
   const r1 = (v: number) => Math.round(v * 10) / 10;
   return {
     nights: nights.length,
@@ -277,7 +278,7 @@ export function sleepStats(checkIns: readonly CheckIn[], today: string, days: nu
     avgQuality: q.length ? r1(sum(q) / q.length) : null,
     shortNights: nights.filter((c) => c.sleepHours < 7).length,
     bedTime: timeStats(
-      nights.map((c) => c.bedTime).filter((t): t is string => !!t),
+      all.map((c) => c.bedTime).filter((t): t is string => !!t),
       12 * 60,
     ),
     wakeTime: timeStats(
@@ -300,7 +301,7 @@ export function sleepAroundTraining(
 ): { before: number; other: number; nightsBefore: number; nightsOther: number } | null {
   const since = addDays(today, -(days - 1));
   const trainingDays = new Set(completedWorkouts(workouts).map((w) => w.date));
-  const nights = checkIns.filter((c) => !c.deletedAt && c.date >= since && c.date <= today);
+  const nights = checkIns.filter((c): c is typeof c & { sleepHours: number } => !c.deletedAt && c.date >= since && c.date <= today && c.sleepHours !== null);
   const before = nights.filter((c) => trainingDays.has(c.date)).map((c) => c.sleepHours);
   const other = nights.filter((c) => !trainingDays.has(c.date)).map((c) => c.sleepHours);
   if (before.length < 4 || other.length < 4) return null;
@@ -349,7 +350,7 @@ export function recommendMind(input: RecoInput): MindRecommendation {
   if (((mood?.mood ?? 5) <= 2 || (mood?.mentalEnergy ?? 5) <= 2) && !doneToday.has('lieu-calme')) {
     return ex('lieu-calme', 'Humeur ou énergie basse aujourd’hui : un moment pour toi, sans objectif.', ['apaiser', 'recul']);
   }
-  if (lastNight && lastNight.sleepHours < 6.5 && !doneToday.has('detente-corporelle')) {
+  if (lastNight && lastNight.sleepHours !== null && lastNight.sleepHours < 6.5 && !doneToday.has('detente-corporelle')) {
     return ex('detente-corporelle', 'Nuit courte : une pause de détente, sans forcer.', ['recuperer', 'apaiser']);
   }
   if ((mood?.motivation ?? 5) <= 2 && !doneToday.has('motivation')) return ex('motivation', 'Motivation en baisse : revenir à tes raisons.', ['depasser', 'confiance']);

@@ -71,7 +71,7 @@ export function crossInsights(index: DayIndex, data: LifeData, today: string, da
   const specs: Spec[] = [];
 
   // Le check-in du jour J décrit la nuit qui précède J ; l'humeur du journal est notée dans la journée de J.
-  const withNight = window.filter((d) => d.checkIn && d.mood);
+  const withNight = window.filter((d) => typeof d.checkIn?.sleepHours === 'number' && d.mood);
   for (const [key, field, title, word] of [
     ['humeur', 'mood', 'Sommeil et humeur', 'ton humeur est notée'],
     ['stress', 'stress', 'Sommeil et stress', 'ton stress est noté'],
@@ -82,8 +82,8 @@ export function crossInsights(index: DayIndex, data: LifeData, today: string, da
       title,
       unit: 'scale5',
       labels: ['Après 7 h ou plus', 'Après une nuit plus courte'],
-      a: rows.filter((d) => d.checkIn!.sleepHours >= 7).map((d) => d.mood![field]!),
-      b: rows.filter((d) => d.checkIn!.sleepHours < 7).map((d) => d.mood![field]!),
+      a: rows.filter((d) => d.checkIn!.sleepHours! >= 7).map((d) => d.mood![field]!),
+      b: rows.filter((d) => d.checkIn!.sleepHours! < 7).map((d) => d.mood![field]!),
       min: MIN_DAYS,
       threshold: 0.4,
       sentence: (a, b) => `Les jours qui suivent une nuit de 7 h ou plus, ${word} ${a} en moyenne, contre ${b} après une nuit plus courte.`,
@@ -91,14 +91,14 @@ export function crossInsights(index: DayIndex, data: LifeData, today: string, da
   }
 
   // Stress du jour J, nuit qui suit (check-in de J+1).
-  const stressThenNight = window.filter((d) => scale(d.mood?.stress) && get(addDays(d.date, 1))?.checkIn && addDays(d.date, 1) <= today);
+  const stressThenNight = window.filter((d) => scale(d.mood?.stress) && typeof get(addDays(d.date, 1))?.checkIn?.sleepHours === 'number' && addDays(d.date, 1) <= today);
   specs.push({
     id: 'stress-sommeil',
     title: 'Stress et nuit suivante',
     unit: 'hours',
     labels: ['Après un stress de 4 ou 5', 'Après une journée plus calme'],
-    a: stressThenNight.filter((d) => d.mood!.stress! >= 4).map((d) => get(addDays(d.date, 1))!.checkIn!.sleepHours),
-    b: stressThenNight.filter((d) => d.mood!.stress! <= 3).map((d) => get(addDays(d.date, 1))!.checkIn!.sleepHours),
+    a: stressThenNight.filter((d) => d.mood!.stress! >= 4).map((d) => get(addDays(d.date, 1))!.checkIn!.sleepHours!),
+    b: stressThenNight.filter((d) => d.mood!.stress! <= 3).map((d) => get(addDays(d.date, 1))!.checkIn!.sleepHours!),
     min: MIN_DAYS,
     threshold: 1 / 3,
     sentence: (a, b) => `Après une journée où ton stress est noté 4 ou 5, tu dors en moyenne ${a}, contre ${b} après une journée plus calme.`,
@@ -142,8 +142,8 @@ export function crossInsights(index: DayIndex, data: LifeData, today: string, da
   for (const { w } of sessions) if (w.workout.templateId && w.volumeKg > 0) byTemplate.set(w.workout.templateId, [...(byTemplate.get(w.workout.templateId) ?? []), w.volumeKg]);
   const ratios = sessions.flatMap(({ d, w }) => {
     const list = w.workout.templateId ? byTemplate.get(w.workout.templateId) : undefined;
-    if (!list || list.length < 2 || !d.checkIn || w.volumeKg <= 0) return [];
-    return [{ sleep: d.checkIn.sleepHours, pct: (100 * w.volumeKg) / mean(list)! - 100 }];
+    if (!list || list.length < 2 || typeof d.checkIn?.sleepHours !== 'number' || w.volumeKg <= 0) return [];
+    return [{ sleep: d.checkIn.sleepHours as number, pct: (100 * w.volumeKg) / mean(list)! - 100 }];
   });
   specs.push({
     id: 'sommeil-seance',

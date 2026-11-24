@@ -37,7 +37,7 @@ export interface BriefInput {
     plannedSoFar: number;
     recentRecords: { exerciseName: string; weightKg: number; reps: number; date: string }[];
   };
-  wellbeing: { sleepHours: number; score: number } | null;
+  wellbeing: { sleepHours: number | null; score: number | null } | null;
 }
 
 export interface DailyBrief {
@@ -78,7 +78,12 @@ export function buildDailyBrief(input: BriefInput): DailyBrief {
         : `Poids tendance ${kg(weight.latestTrendKg)}.`,
     );
   }
-  if (wellbeing) summary.push(`Sommeil ${sleep(wellbeing.sleepHours)}, récupération ${wellbeing.score}/100.`);
+  if (wellbeing) {
+    const parts = [wellbeing.sleepHours !== null ? `Sommeil ${sleep(wellbeing.sleepHours)}` : null, wellbeing.score !== null ? `récupération ${wellbeing.score}/100` : null].filter(
+      Boolean,
+    );
+    if (parts.length) summary.push(`${parts.join(', ').replace(/^r/, 'R')}.`);
+  }
 
   // Poids : rythme par rapport à la fourchette (seulement hors calibrage).
   if (!weight.calibrating && weight.band && weight.weeklyRateKg !== null) {
@@ -102,20 +107,24 @@ export function buildDailyBrief(input: BriefInput): DailyBrief {
         priority: 75,
       });
     } else if (weight.status === 'within') {
-      findings.push({ id: 'rate-within', tone: 'good', observation: `Rythme de poids dans ta fourchette : ${formatSignedKg(weight.weeklyRateKg)} par semaine.`, link: '/progression', priority: 20 });
+      findings.push({
+        id: 'rate-within',
+        tone: 'good',
+        observation: `Rythme de poids dans ta fourchette : ${formatSignedKg(weight.weeklyRateKg)} par semaine.`,
+        link: '/progression',
+        priority: 20,
+      });
     }
   }
 
   // Sommeil court.
-  if (wellbeing && wellbeing.sleepHours < 6.5) {
+  if (wellbeing && wellbeing.sleepHours !== null && wellbeing.sleepHours < 6.5) {
     const sessionAhead = Boolean(training.plannedToday && !training.doneToday);
     findings.push({
       id: 'short-sleep',
       tone: sessionAhead ? 'alert' : 'neutral',
       observation: sessionAhead ? `Nuit courte (${sleep(wellbeing.sleepHours)}) avec une séance prévue.` : `Nuit courte (${sleep(wellbeing.sleepHours)}).`,
-      recommendation: sessionAhead
-        ? 'Garde tes charges habituelles et retire une série par exercice si la fatigue monte.'
-        : 'Si tu peux, couche-toi plus tôt ce soir.',
+      recommendation: sessionAhead ? 'Garde tes charges habituelles et retire une série par exercice si la fatigue monte.' : 'Si tu peux, couche-toi plus tôt ce soir.',
       link: '/progression',
       priority: sessionAhead ? 70 : 50,
     });
@@ -160,7 +169,13 @@ export function buildDailyBrief(input: BriefInput): DailyBrief {
 
   // Séance faite aujourd'hui.
   if (training.doneToday) {
-    findings.push({ id: 'done-today', tone: 'good', observation: `${training.doneToday.name} faite : ${int(training.doneToday.volumeKg)} kg soulevés.`, link: '/training', priority: 30 });
+    findings.push({
+      id: 'done-today',
+      tone: 'good',
+      observation: `${training.doneToday.name} faite : ${int(training.doneToday.volumeKg)} kg soulevés.`,
+      link: '/training',
+      priority: 30,
+    });
   }
 
   // Retard sur le programme.

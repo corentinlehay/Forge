@@ -564,7 +564,7 @@ export function generateDemoData(today: string, now: Date): DemoTables {
   for (let i = 20; i >= 0; i--) {
     const date = addDays(today, -i);
     const night = checkIns.find((c) => c.date === date);
-    const rested = night ? (night.sleepHours - 6) / 2.5 : 0.5;
+    const rested = night && night.sleepHours !== null ? (night.sleepHours - 6) / 2.5 : 0.5;
     const weekday = isoWeekday(date);
     if (!(i === 0 && hour < 8) && mrand() < 0.75) {
       const stress = clamp5(2.2 + (weekday <= 5 ? 0.8 : -0.4) + mrand() * 1.6 - rested);
