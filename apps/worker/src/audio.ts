@@ -13,7 +13,19 @@
 
 export interface AudioEnv {
   AUDIO?: KVNamespace;
-  ADMIN_CODE?: string;
+  /** Code d'administration : secret du Worker (texte) ou secret du Secrets Store de Cloudflare (lu avec get()). */
+  ADMIN_CODE?: string | { get(): Promise<string> };
+}
+
+async function adminCode(env: AudioEnv): Promise<string> {
+  const c = env.ADMIN_CODE;
+  if (!c) return '';
+  if (typeof c === 'string') return c;
+  try {
+    return await c.get();
+  } catch {
+    return '';
+  }
 }
 
 export const FORMATS = ['hypnose', 'relaxation', 'meditation', 'visualisation', 'sommeil', 'respiration', 'preparation'] as const;
@@ -89,7 +101,7 @@ async function sameSecret(given: string, expected: string): Promise<boolean> {
 }
 
 async function checkAdmin(request: Request, env: AudioEnv): Promise<Response | null> {
-  const expected = env.ADMIN_CODE ?? '';
+  const expected = await adminCode(env);
   if (expected.length < MIN_CODE_LENGTH) return fail(503, 'Espace créateur pas encore configuré : ajoute le secret ADMIN_CODE (12 caractères au moins) dans Cloudflare.');
   const header = request.headers.get('authorization') ?? '';
   const given = header.startsWith('Bearer ') ? header.slice(7) : '';

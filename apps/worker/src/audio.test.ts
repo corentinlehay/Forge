@@ -101,6 +101,14 @@ describe('métadonnées', () => {
 });
 
 describe('administration', () => {
+  it('accepte aussi un code venant du Secrets Store', async () => {
+    const kv = memoryKv();
+    const env = { AUDIO: kv as unknown as KVNamespace, ADMIN_CODE: { get: async () => CODE } } as AudioEnv;
+    const req = (code: string) => new Request('https://forge.example/api/admin/check', { headers: { authorization: `Bearer ${code}` } });
+    expect((await handleAudio(req(CODE), env))!.status).toBe(200);
+    expect((await handleAudio(req('autre-code-tres-long'), env))!.status).toBe(401);
+  });
+
   it('reste fermée tant que le code n’est pas configuré', async () => {
     const { call } = setup('');
     const res = await call('/api/admin/check', { admin: true });

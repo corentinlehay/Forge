@@ -17,5 +17,9 @@
     "run_worker_first": ["/api/*"]
   },
   // Séances audio de FORGE MIND (catalogue, fichiers découpés, couvertures). Le code d'administration est le secret ADMIN_CODE.
-  "kv_namespaces": [{ "binding": "AUDIO", "id": "4892a4db27b247dd90839865db5db989" }]
+  "kv_namespaces": [{ "binding": "AUDIO", "id": "4892a4db27b247dd90839865db5db989" }],
+  // Versions de test (Worker Previews) : elles n'héritent pas des liaisons de production. Même catalogue audio que la production.
+  "previews": {
+    "kv_namespaces": [{ "binding": "AUDIO", "id": "4892a4db27b247dd90839865db5db989" }]
+  }
 }
