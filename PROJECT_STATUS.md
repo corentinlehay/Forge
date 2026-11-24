@@ -1,6 +1,6 @@
 # État du projet FORGE
 
-Mis à jour le 24 novembre 2026, livraison Bilans 1. Le détail de chaque livraison est dans docs/journal.md.
+Mis à jour le 24 novembre 2026, audit FORGE PULSE (aucun code modifié). Le détail de chaque livraison est dans docs/journal.md.
 
 ## En production (branche `main`)
 
@@ -25,14 +25,30 @@ Chaque branche contient les précédentes. La mise en production se fait d'un bl
 
 Base de données locale : version 10. Serveur : relais Open Food Facts et séances audio (Workers KV `forge-audio`). Chaque changement de schéma a son test de migration sans perte.
 
-## Reste à faire (prompt FORGE MIND et suite)
+## Audit FORGE PULSE (24 novembre 2026)
 
-1. **Tes séances audio.** Le code d'administration est en place (Secrets Store du compte, secret `ADMIN_CODE`) : il reste à ajouter tes enregistrements depuis l'espace créateur.
-2. **IA transversale.** Coach Claude avec le contexte de tous les modules, mémoire et préférences modifiables, recommandations limitées aux contenus qui existent, données transmises réduites au nécessaire, plafond de coût par utilisateur. Nécessite ta clé API dans les secrets Cloudflare.
-3. **Compte et paiement.** Modèle à décider, compte léger, prestataire de paiement, pages légales.
+Document complet, avec l'architecture, les cinq scénarios et le plan : https://claude.ai/artifact/TYs77QWqYgYutAHa48vmH9. Le cahier des charges de PULSE n'a pas encore été reçu : l'audit part de la demande (score quotidien, moteur de décision, Apple Santé et Apple Watch, recommandations Training, Nutrition, Mind, Recovery).
+
+- **Intégration sans refonte.** Le moteur lit l'index jour par jour de Bilans 1 et réutilise une quinzaine de fonctions testées (récupération estimée, sommeil, journal, douleurs et alertes, surcharge progressive, séance du jour, objectifs dynamiques, garde-fous du plan). Il ajoute `domain/pulse/`, `features/pulse/` et la base v11 (`healthDays`, `pulseDays`), sans modifier aucune table existante.
+- **Apple Santé.** Aucun accès possible depuis une app web, ni API dans le cloud. Chemins réels : Raccourci iOS puis collage dans FORGE (sans serveur), app native Capacitor avec HealthKit (programme développeur Apple, compilation dans le cloud, revue App Store), ou API Oura et WHOOP (compte FORGE nécessaire). Garmin a suspendu les nouvelles demandes d'accès. L'Apple Watch passe uniquement par Apple Santé.
+- **Données de santé.** Elles restent sur l'iPhone : pas d'hébergement serveur, donc pas de question HDS tant que rien n'est stocké en ligne.
+- **Moteur.** Score sur 100 (Sommeil, Physiologie si montre, Ressenti, Charge, Mental) avec niveau de confiance ; nutrition hors du score mais dans les recommandations ; règles de sécurité et tendances prioritaires ; chaque modification proposée, jamais appliquée sans validation. Poids et seuils = exemples de conception, pas des seuils validés médicalement.
+- **Décisions attendues.** Validation de l'architecture, des poids de départ et des cinq scénarios ; chemin Apple Santé ; mise en production de la pile avant PULSE ; envoi du cahier des charges ; modèle d'Apple Watch porté.
+
+## Reste à faire
+
+1. **Valider l'audit PULSE** (liste des décisions dans le document).
+2. **Mise en production de la pile actuelle**, recommandée avant PULSE 1 pour ne pas empiler davantage.
+3. **Tes séances audio.** Le code d'administration est en place (Secrets Store du compte, secret `ADMIN_CODE`) : il reste à ajouter tes enregistrements depuis l'espace créateur.
+4. **PULSE 1 : moteur sur les données FORGE.** Score du matin, mode du jour, recommandations dans les quatre espaces, séance allégée ou déplacée après validation, règles de sécurité, base v11, cinq scénarios en tests.
+5. **PULSE 2 : Apple Santé par Raccourci.** Raccourci prêt à installer, bouton « Importer depuis Santé », composante Physiologie après 14 jours de données.
+6. **PULSE 3 : PULSE dans les Bilans.** Score dans le bilan et le calendrier, semaine de décharge proposée, réglage de la sensibilité, notification du matin en option.
+7. **IA transversale (dont PULSE 4).** Coach Claude avec le contexte de tous les modules, explication du score sans décision ni levée de garde-fou, mémoire et préférences modifiables, recommandations limitées aux contenus qui existent, données transmises réduites au nécessaire, plafond de coût par utilisateur. Nécessite ta clé API dans les secrets Cloudflare.
+8. **Compte et paiement.** Modèle à décider, compte léger, prestataire de paiement, pages légales ; avec la décision app native ou API Oura et WHOOP.
 
 ## Problèmes et limites techniques connus
 
+- **Apple Santé et Apple Watch.** Une app web n'a aucun accès à Apple Santé : import par Raccourci iOS (PULSE 2) ou app native à décider. Pas de calcul en arrière-plan : le score PULSE se calculera à l'ouverture.
 - **Photos du corps.** Gardées sur l'iPhone seulement, hors sauvegarde (vie privée et poids du fichier) : les enregistrer dans Photos pour en garder une copie.
 - **Données sur un seul appareil.** Tout est stocké sur l'iPhone (IndexedDB). Pas de synchronisation entre appareils : la sauvegarde manuelle (fichier) est la seule copie. Un compte ou une synchronisation viendra avec le paiement.
 - **Sons sur iPhone.** Les repères sonores (repos, exercices Mind) passent par Web Audio : muets en mode silencieux et quand l'app est en arrière-plan.
