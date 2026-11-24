@@ -71,7 +71,7 @@ export function BodyPanel() {
           </dl>
         )}
         {known.length > 0 && (
-          <Link to="/progression/mensurations" viewTransition className="flex min-h-11 items-center justify-between text-[15px] text-citron">
+          <Link to="/progression/mensurations" viewTransition className="flex min-h-11 items-center justify-between text-[15px] text-module">
             Évolution et historique
             <Icon name="chevron" size={18} />
           </Link>

@@ -98,7 +98,7 @@ export function QuantityForm({ choice, date, meal: initialMeal, editing, onDone 
           onClick={() => void toggleFavorite()}
           aria-pressed={Boolean(stored?.favorite)}
           aria-label={stored?.favorite ? 'Retirer des favoris' : 'Ajouter aux favoris'}
-          className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-graphite ${stored?.favorite ? 'text-citron' : 'text-cendre'}`}
+          className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-graphite ${stored?.favorite ? 'text-module' : 'text-cendre'}`}
         >
           <Icon name="star" size={20} fill={stored?.favorite ? 'currentColor' : 'none'} />
         </button>

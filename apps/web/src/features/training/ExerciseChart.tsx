@@ -80,7 +80,7 @@ export function ExerciseChart({ points, unit, summary, minSpan }: { points: Char
                 </text>
               </g>
             ))}
-            {points.length > 1 && <path d={path} fill="none" stroke="var(--color-citron)" strokeWidth={2} strokeLinejoin="round" strokeLinecap="round" />}
+            {points.length > 1 && <path d={path} fill="none" stroke="var(--forge-module)" strokeWidth={2} strokeLinejoin="round" strokeLinecap="round" />}
             {current && <line x1={x(current.date)} x2={x(current.date)} y1={TOP} y2={BOTTOM} stroke="var(--color-craie)" strokeOpacity={0.35} />}
             {points.map((p, i) => (
               <circle
@@ -88,7 +88,7 @@ export function ExerciseChart({ points, unit, summary, minSpan }: { points: Char
                 cx={x(p.date)}
                 cy={y(p.value)}
                 r={selected === i ? 5.5 : 4}
-                fill={selected === i ? 'var(--color-craie)' : 'var(--color-citron)'}
+                fill={selected === i ? 'var(--color-craie)' : 'var(--forge-module)'}
                 stroke="var(--color-anthracite)"
                 strokeWidth={2}
               />

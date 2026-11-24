@@ -404,7 +404,7 @@ function IngredientPicker({ onAdd }: { onAdd: (ing: RecipeIngredient) => void })
                 {c.name}
                 <span className="block text-[12px] text-cendre">{c.kind === 'food' ? (c.food.source === 'custom' ? 'Perso' : 'Mes aliments') : 'Ciqual'}</span>
               </span>
-              <Icon name="plus" size={18} className="shrink-0 text-citron" />
+              <Icon name="plus" size={18} className="shrink-0 text-module" />
             </button>
           </li>
         ))}
@@ -419,7 +419,7 @@ function IngredientPicker({ onAdd }: { onAdd: (ing: RecipeIngredient) => void })
                 {p.name}
                 <span className="block text-[12px] text-cendre">{p.brand ? `${p.brand}, ` : ''}Open Food Facts</span>
               </span>
-              <Icon name="plus" size={18} className="shrink-0 text-citron" />
+              <Icon name="plus" size={18} className="shrink-0 text-module" />
             </button>
           </li>
         ))}

@@ -18,15 +18,16 @@ import { useToast } from '../../ui/Toast';
 import { HEAD, SILHOUETTE, VIEW_H, VIEW_W } from '../muscles/bodyShapes';
 import { BodyBack } from './bodyShared';
 
-/** Couleur d'un point selon l'intensité actuelle (0 à 10). */
-const intensityColor = (v: number | null) => (v === null ? '#5b5f68' : v >= 7 ? '#ff6a3d' : v >= 4 ? '#f0b44a' : '#b7d149');
+/** Couleur d'un point selon l'intensité actuelle (0 à 10) : une seule teinte d'alerte, plus foncée quand ça fait plus mal. */
+const intensityColor = (v: number | null) =>
+  v === null ? 'var(--forge-neutral-mark)' : v >= 7 ? 'var(--forge-danger)' : v >= 4 ? 'var(--forge-danger-2)' : 'var(--forge-danger-1)';
 
 /** Silhouette face et dos : toucher une zone pour noter ou retrouver une douleur. */
 export function PainMap({ view, active, selected, onPick }: { view: PainView; active: Map<string, number | null>; selected: string | null; onPick: (zone: string) => void }) {
   const zones = PAIN_ZONES.filter((z) => z[view]);
   return (
     <svg viewBox={`-6 0 ${VIEW_W + 12} ${VIEW_H}`} className="mx-auto h-[380px] w-auto" role="group" aria-label={`Silhouette vue ${view === 'face' ? 'de face' : 'de dos'}`}>
-      <g fill="#24262b" pointerEvents="none">
+      <g fill="var(--forge-body)" pointerEvents="none">
         <ellipse cx={HEAD.cx} cy={HEAD.cy} rx={HEAD.rx} ry={HEAD.ry} />
         {SILHOUETTE.map((d, i) => (
           <g key={i}>
@@ -50,8 +51,15 @@ export function PainMap({ view, active, selected, onPick }: { view: PainView; ac
             onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && onPick(z.key)}
           >
             <circle cx={x} cy={y} r="11" fill="transparent" />
-            {isSel && <circle cx={x} cy={y} r="9" fill="none" stroke="#f3f1ea" strokeWidth="1.5" />}
-            <circle cx={x} cy={y} r={has ? 6 : 3.5} fill={has ? intensityColor(active.get(z.key) ?? null) : '#5b5f68'} stroke={has ? '#0b0c0e' : 'none'} strokeWidth="1.5" />
+            {isSel && <circle cx={x} cy={y} r="9" fill="none" stroke="var(--forge-text)" strokeWidth="1.5" />}
+            <circle
+              cx={x}
+              cy={y}
+              r={has ? 6 : 3.5}
+              fill={has ? intensityColor(active.get(z.key) ?? null) : 'var(--forge-neutral-mark)'}
+              stroke={has ? 'var(--forge-bg)' : 'none'}
+              strokeWidth="1.5"
+            />
           </g>
         );
       })}
@@ -197,7 +205,7 @@ function IntensityPicker({ value, onChange }: { value: number | null; onChange: 
             aria-pressed={value === v}
             aria-label={`Intensité ${v} sur 10`}
             onClick={() => onChange(v)}
-            className={`h-11 rounded-[12px] text-[15px] tabular-nums ${value === v ? 'font-semibold text-noir' : 'bg-graphite text-craie'}`}
+            className={`h-11 rounded-[12px] text-[15px] tabular-nums ${value === v ? `font-semibold ${v >= 7 ? 'text-noir' : 'text-craie'}` : 'bg-graphite text-craie'}`}
             style={value === v ? { background: intensityColor(v) } : undefined}
           >
             {v}
@@ -218,7 +226,7 @@ function FlagChecks({ flags, setFlags }: { flags: string[]; setFlags: (f: string
             type="checkbox"
             checked={flags.includes(f.key)}
             onChange={(e) => setFlags(e.target.checked ? [...flags, f.key] : flags.filter((x) => x !== f.key))}
-            className="h-5 w-5 shrink-0 accent-[#ff6a3d]"
+            className="h-5 w-5 shrink-0 accent-[var(--forge-danger)]"
           />
           {f.label}
         </label>

@@ -49,7 +49,7 @@ export function RecipeVisual({
     <div
       role="img"
       aria-label={`Visuel FORGE : ${recipe.name}`}
-      className={`relative flex items-center justify-center overflow-hidden ${hot ? 'bg-[#2c1a14] text-braise' : 'bg-citron-voile text-citron'} ${className}`}
+      className={`relative flex items-center justify-center overflow-hidden ${hot ? 'bg-nutrition/15 text-nutrition' : 'bg-nutrition/[0.07] text-nutrition/80'} ${className}`}
     >
       <svg width={icon} height={icon} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.4} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
         <path d={GLYPHS[recipe.glyph]} />

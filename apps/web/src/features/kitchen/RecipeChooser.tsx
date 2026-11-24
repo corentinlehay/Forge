@@ -33,7 +33,7 @@ export function RecipeChooser({ kitchen, selected, onPick }: { kitchen: KitchenD
                     {on && <Icon name="check" size={14} strokeWidth={3} />}
                   </span>
                 ) : (
-                  <Icon name="plus" size={18} className="shrink-0 text-citron" />
+                  <Icon name="plus" size={18} className="shrink-0 text-module" />
                 )}
               </button>
             </li>

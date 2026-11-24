@@ -103,7 +103,7 @@ function MonthGrid({ month, today, items, onPick }: { month: string; today: stri
               aria-label={describe(date, list)}
               className={`flex min-h-12 flex-col items-center justify-center gap-1 rounded-[12px] active:bg-graphite ${isToday ? 'bg-graphite' : ''}`}
             >
-              <span className={`text-[15px] tabular-nums ${isToday ? 'font-semibold text-citron' : date > today ? 'text-cendre' : ''}`}>{Number(date.slice(8))}</span>
+              <span className={`text-[15px] tabular-nums ${isToday ? 'font-semibold text-module' : date > today ? 'text-cendre' : ''}`}>{Number(date.slice(8))}</span>
               <span className="grid grid-cols-4 gap-[3px]">
                 {marks(list).map((m) => (
                   <ModuleMark key={m.module} module={m.module} state={m.state} size={6} />
@@ -127,10 +127,10 @@ function WeekList({ start, today, items, onPick }: { start: string; today: strin
             <button
               type="button"
               onClick={() => onPick(date)}
-              className={`flex w-full items-start gap-3 rounded-[16px] bg-anthracite p-3.5 text-left active:opacity-80 ${date === today ? 'ring-1 ring-citron' : ''}`}
+              className={`flex w-full items-start gap-3 rounded-[16px] bg-anthracite p-3.5 text-left active:opacity-80 ${date === today ? 'ring-1 ring-module' : ''}`}
             >
               <span className="w-[86px] shrink-0">
-                <span className={`block text-[15px] font-semibold ${date === today ? 'text-citron' : ''}`}>{formatDayShort(date).split(' ').slice(0, 2).join(' ')}</span>
+                <span className={`block text-[15px] font-semibold ${date === today ? 'text-module' : ''}`}>{formatDayShort(date).split(' ').slice(0, 2).join(' ')}</span>
                 {date === today && <span className="block text-[12px] text-cendre">Aujourd’hui</span>}
               </span>
               <span className="flex min-w-0 flex-1 flex-col gap-1">

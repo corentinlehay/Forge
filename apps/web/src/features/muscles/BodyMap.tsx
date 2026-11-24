@@ -2,13 +2,13 @@ import { MUSCLE_LABELS, type MuscleGroup } from '../../data/muscles';
 import type { VolumeLevel } from '../../domain/muscleVolume';
 import { HEAD, MUSCLE_SHAPES, SILHOUETTE, VIEW_H, VIEW_W, type View } from './bodyShapes';
 
-/** Paliers de couleur : du graphite (aucune série) au citron (volume élevé). */
+/** Paliers de couleur : du gris (aucune série) au vert Training (volume élevé), depuis les jetons FORGE SIGNATURE. */
 export const LEVEL_COLORS: Record<VolumeLevel, string> = {
-  0: '#3a3d44',
-  1: '#697446',
-  2: '#90a347',
-  3: '#b7d149',
-  4: '#d6f64a',
+  0: 'var(--forge-scale-empty)',
+  1: 'var(--forge-training-1)',
+  2: 'var(--forge-training-2)',
+  3: 'var(--forge-training-3)',
+  4: 'var(--forge-training)',
 };
 
 export const LEVEL_LABELS: Record<VolumeLevel, string> = {
@@ -38,7 +38,7 @@ function Figure({
   return (
     <figure className="m-0 flex flex-1 flex-col items-center gap-1">
       <svg viewBox={`0 0 ${VIEW_W} ${VIEW_H}`} className="block h-auto w-full max-w-[190px]" role="group" aria-label={view === 'face' ? 'Vue de face' : 'Vue de dos'}>
-        <g fill="#24262b" pointerEvents="none">
+        <g fill="var(--forge-body)" pointerEvents="none">
           <ellipse {...HEAD} />
           {SILHOUETTE.map((d) => (
             <g key={d}>
@@ -116,7 +116,7 @@ export function MiniBody({ levels }: { levels: Record<MuscleGroup, VolumeLevel> 
     <div className="flex shrink-0 gap-1" aria-hidden="true">
       {(['face', 'dos'] as View[]).map((view) => (
         <svg key={view} viewBox={`0 0 ${VIEW_W} ${VIEW_H}`} width={38} height={(38 * VIEW_H) / VIEW_W}>
-          <g fill="#24262b">
+          <g fill="var(--forge-body)">
             <ellipse {...HEAD} />
             {SILHOUETTE.map((d) => (
               <g key={d}>

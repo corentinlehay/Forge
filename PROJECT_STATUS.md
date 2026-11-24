@@ -1,6 +1,6 @@
 # État du projet FORGE
 
-Mis à jour le 24 novembre 2026, PULSE 1.2 (plan du jour, validation, bilan du soir) livré sur la branche `pulse-1-2`. Le détail de chaque livraison est dans docs/journal.md.
+Mis à jour le 24 novembre 2026, identité visuelle FORGE SIGNATURE livrée sur la branche `signature-1` (après PULSE 1.2 sur `pulse-1-2`). Le détail de chaque livraison est dans docs/journal.md.
 
 ## En production (branche `main`)
 
@@ -22,6 +22,7 @@ Chaque branche contient les précédentes. La mise en production se fait d'un bl
 | `mind-2` | Séances audio (stockage Cloudflare KV), lecteur complet, hors connexion, catégorie Hypnose, espace créateur privé |
 | `progression-2` | Moyenne de poids sur 7 jours, mensurations, photos du corps, comparaison de dates, suivi des douleurs sur silhouette |
 | `bilans-1` | Bilan de la semaine avec notes et historique, calendrier jour, semaine, mois, analyses croisées sans causalité, badges et régularité |
+| `signature-1` | FORGE SIGNATURE : nouvelle palette dans un système de couleurs unique (docs/design-system.md), couleur par espace pour les graphiques, indicateurs et l'onglet actif, vert FORGE pour toutes les actions principales, rouge d'alerte distinct de l'orange Nutrition, icône de l'app aux nouvelles couleurs |
 | `pulse-1-2` | PULSE 1.2 : plan du jour par module avec « Pourquoi ? », rubrique Sommeil, proposition à valider (accepter, garder, modifier, reporter, revenir en arrière), version allégée appliquée par Training, bilan du soir, historique des décisions et des bilans |
 | `pulse-1` | PULSE 1 et 1.1 : indicateur expliqué en 5 dimensions et lu en 4 niveaux, couverture, évolution sur 7 et 30 jours, analyse du jour, Nutrition Status séparé, règles de sécurité, proposition de séance qui garde toujours « Garder », check-in passable en 5 questions, historique par période, réglages |
 
@@ -85,13 +86,14 @@ Document complet, avec l'architecture, les cinq scénarios et le plan : https://
 
 ## Reste à faire
 
-1. **Valider PULSE 1.1 et 1.2 sur ton iPhone** (versions de test `pulse-1` et `pulse-1-2`).
-2. **Mise en production de la pile actuelle** (douze versions de test, de nutrition-1 à pulse-1-2), sur ton « mets en production », pour ne pas empiler davantage.
-3. **Tes séances audio.** Le code d'administration est en place (Secrets Store du compte, secret `ADMIN_CODE`) : il reste à ajouter tes enregistrements depuis l'espace créateur.
-4. **PULSE 2 : connecteurs.** Raccourci Apple Santé prêt à installer, bouton « Importer depuis Santé », registre de connecteurs, provenance, dédoublonnage, données contradictoires. Seulement après ta validation explicite.
-5. **PULSE 3 : apprentissage personnel.** Préférences apprises, consultables et modifiables, analyse des résultats des recommandations, semaine de décharge proposée, notification du matin en option.
-6. **IA transversale (dont la couche IA de PULSE et le « Pourquoi ? »).** Coach Claude avec le contexte de tous les modules, explication du score sans décision ni levée de garde-fou, mémoire et préférences modifiables, recommandations limitées aux contenus qui existent, données transmises réduites au nécessaire, plafond de coût par utilisateur. Nécessite ta clé API dans les secrets Cloudflare.
-7. **Compte et paiement.** Modèle à décider, compte léger, prestataire de paiement, pages légales ; avec la décision app native ou API Oura et WHOOP.
+1. **Valider PULSE 1.1, PULSE 1.2 et FORGE SIGNATURE sur ton iPhone** (versions de test `pulse-1`, `pulse-1-2` et `signature-1`).
+2. **Logo : choisir parmi les pistes proposées** (aucune modification du dessin sans ton accord).
+3. **Mise en production de la pile actuelle** (treize versions de test, de nutrition-1 à signature-1), sur ton « mets en production », pour ne pas empiler davantage.
+4. **Tes séances audio.** Le code d'administration est en place (Secrets Store du compte, secret `ADMIN_CODE`) : il reste à ajouter tes enregistrements depuis l'espace créateur.
+5. **PULSE 2 : connecteurs.** Raccourci Apple Santé prêt à installer, bouton « Importer depuis Santé », registre de connecteurs, provenance, dédoublonnage, données contradictoires. Seulement après ta validation explicite.
+6. **PULSE 3 : apprentissage personnel.** Préférences apprises, consultables et modifiables, analyse des résultats des recommandations, semaine de décharge proposée, notification du matin en option.
+7. **IA transversale (dont la couche IA de PULSE et le « Pourquoi ? »).** Coach Claude avec le contexte de tous les modules, explication du score sans décision ni levée de garde-fou, mémoire et préférences modifiables, recommandations limitées aux contenus qui existent, données transmises réduites au nécessaire, plafond de coût par utilisateur. Nécessite ta clé API dans les secrets Cloudflare.
+8. **Compte et paiement.** Modèle à décider, compte léger, prestataire de paiement, pages légales ; avec la décision app native ou API Oura et WHOOP.
 
 ## Problèmes et limites techniques connus
 
@@ -107,5 +109,8 @@ Document complet, avec l'architecture, les cinq scénarios et le plan : https://
 - **Audio en arrière-plan.** iOS limite la lecture en arrière-plan des apps web installées ; la lecture écran verrouillé et le minuteur d'arrêt pendant le verrouillage sont à vérifier sur ton iPhone.
 - **Stockage audio limité.** KV gratuit : 1 Go (une quarantaine de séances de 20 min) et 1 000 écritures par jour (un fichier de 50 Mo en utilise environ 30). Au-delà, passer à R2 (carte bancaire demandée par Cloudflare, gratuit jusqu'à 10 Go).
 - **Calcul serveur limité.** L'offre gratuite de Cloudflare accorde 10 ms de calcul par requête : les fichiers sont envoyés par morceaux de 2 Mio pour rester dessous.
-- **Production en retard.** Douze versions de test attendent une validation : plus l'écart grandit, plus la mise en production sera grosse. La mise à jour depuis la production garde les données (testé à chaque livraison).
+- **Bleu Progression et violet Mind proches.** Écart perçu 11,6 (sous le seuil de 15), 4,2 pour un daltonien deutéranope. Sans conséquence tant qu'ils ne sont pas côte à côte sans libellé ; seul le calendrier des bilans les montre ensemble, avec une place fixe et une légende. Un bleu plus cyan (#52CBD6) réglerait l'écart si tu le souhaites.
+- **Planche visuelle (artefact) pas encore mise à jour** avec FORGE SIGNATURE ; la référence est docs/design-system.md.
+- **Icône de l'app sur l'iPhone.** Elle ne change qu'en retirant puis en ajoutant de nouveau l'app à l'écran d'accueil ; l'écart de couleur est minime.
+- **Production en retard.** Treize versions de test attendent une validation : plus l'écart grandit, plus la mise en production sera grosse. La mise à jour depuis la production garde les données (testé à chaque livraison).
 - **Mise en forme du code.** Pas de configuration Prettier dans le dépôt ; quelques anciens fichiers ne suivent pas le format du reste.

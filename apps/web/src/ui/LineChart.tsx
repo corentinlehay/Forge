@@ -20,17 +20,17 @@ export function LineChart({
   unit,
   title,
   decimals = 1,
-  tone = 'citron',
+  tone = 'module',
 }: {
   points: LinePoint[];
   unit: string;
   title: string;
   decimals?: number;
-  tone?: 'citron' | 'brume';
+  tone?: 'module' | 'citron' | 'brume';
 }) {
   const [picked, setPicked] = useState<number | null>(null);
   if (points.length === 0) return null;
-  const color = tone === 'brume' ? '#aebcf5' : '#d6f64a';
+  const color = tone === 'brume' ? 'var(--forge-mind)' : tone === 'citron' ? 'var(--forge-accent)' : 'var(--forge-module)';
   const values = points.map((p) => p.value);
   const scale = niceScale(Math.min(...values), Math.max(...values), 3, 2);
   const t0 = Date.parse(points[0]!.date);
@@ -60,17 +60,17 @@ export function LineChart({
       >
         {scale.ticks.map((t) => (
           <g key={t}>
-            <line x1={PAD.l} x2={W - PAD.r} y1={y(t)} y2={y(t)} stroke="#2a2c31" strokeWidth="1" />
-            <text x={PAD.l - 6} y={y(t) + 4} textAnchor="end" fontSize="10" fill="#8a8d94">
+            <line x1={PAD.l} x2={W - PAD.r} y1={y(t)} y2={y(t)} stroke="var(--forge-chart-grid)" strokeWidth="1" />
+            <text x={PAD.l - 6} y={y(t) + 4} textAnchor="end" fontSize="10" fill="var(--forge-chart-axis)">
               {formatNumber(t, t % 1 ? 1 : 0)}
             </text>
           </g>
         ))}
-        <text x={PAD.l} y={H - 6} fontSize="10" fill="#8a8d94">
+        <text x={PAD.l} y={H - 6} fontSize="10" fill="var(--forge-chart-axis)">
           {formatDayMonth(points[0]!.date)}
         </text>
         {points.length > 1 && (
-          <text x={W - PAD.r} y={H - 6} textAnchor="end" fontSize="10" fill="#8a8d94">
+          <text x={W - PAD.r} y={H - 6} textAnchor="end" fontSize="10" fill="var(--forge-chart-axis)">
             {formatDayMonth(points.at(-1)!.date)}
           </text>
         )}
@@ -78,7 +78,7 @@ export function LineChart({
         {points.map((pt, i) => (
           <g key={`${pt.date}-${i}`} onClick={() => setPicked(i)} className="cursor-pointer">
             <circle cx={x(pt.date)} cy={y(pt.value)} r="14" fill="transparent" />
-            <circle cx={x(pt.date)} cy={y(pt.value)} r={i === sel ? 5 : 3.5} fill={i === sel ? color : '#0b0c0e'} stroke={color} strokeWidth="2" />
+            <circle cx={x(pt.date)} cy={y(pt.value)} r={i === sel ? 5 : 3.5} fill={i === sel ? color : 'var(--forge-bg)'} stroke={color} strokeWidth="2" />
           </g>
         ))}
       </svg>

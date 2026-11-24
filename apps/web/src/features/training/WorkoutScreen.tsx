@@ -296,7 +296,7 @@ function LiveWorkout({ workout, workouts, sets, targets }: { workout: Workout; w
                       </span>
                       {s.rir !== null && s.rir !== undefined && <span className="text-[13px] text-cendre">RIR {s.rir === 5 ? '5+' : s.rir}</span>}
                       {isRecord(s) && (
-                        <span className="flex items-center gap-1 rounded-full bg-citron px-2 py-0.5 text-[12px] font-semibold text-noir shadow-[0_0_14px_rgb(214_246_74/0.55)]">
+                        <span className="flex items-center gap-1 rounded-full bg-citron px-2 py-0.5 text-[12px] font-semibold text-noir shadow-[0_0_10px_color-mix(in_oklab,var(--forge-accent)_40%,transparent)]">
                           <Icon name="trophy" size={13} strokeWidth={2.2} />
                           Record
                         </span>

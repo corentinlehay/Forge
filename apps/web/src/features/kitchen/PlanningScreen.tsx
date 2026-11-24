@@ -88,7 +88,7 @@ export function PlanningScreen() {
           <section
             key={date}
             aria-label={formatDayShort(date)}
-            className={`flex flex-col gap-2 rounded-[18px] p-3.5 ${date === today ? 'bg-anthracite outline-1 outline-citron/50' : 'bg-anthracite'}`}
+            className={`flex flex-col gap-2 rounded-[18px] p-3.5 ${date === today ? 'bg-anthracite outline-1 outline-module/50' : 'bg-anthracite'}`}
           >
             <div className="flex items-baseline justify-between gap-2">
               <h2 className="text-[15px] font-semibold">{formatDayShort(date)}</h2>
@@ -115,7 +115,7 @@ export function PlanningScreen() {
                     </p>
                   </div>
                   {p.status === 'eaten' ? (
-                    <span className="flex shrink-0 items-center gap-1 text-[13px] text-citron">
+                    <span className="flex shrink-0 items-center gap-1 text-[13px] text-module">
                       <Icon name="check" size={16} strokeWidth={2.4} />
                       Mangé
                     </span>
@@ -139,7 +139,7 @@ export function PlanningScreen() {
                 </div>
               );
             })}
-            <button type="button" onClick={() => setAdding({ date, recipe: null })} className="flex min-h-10 items-center gap-1.5 self-start text-[13px] text-citron">
+            <button type="button" onClick={() => setAdding({ date, recipe: null })} className="flex min-h-10 items-center gap-1.5 self-start text-[13px] text-module">
               <Icon name="plus" size={16} />
               Prévoir un repas
             </button>

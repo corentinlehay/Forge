@@ -105,7 +105,11 @@ export function Practice({ kind, refId, title, items, tensionBefore, sound, onCl
   };
 
   return (
-    <div className="fixed inset-0 z-40 flex flex-col overflow-y-auto bg-[radial-gradient(ellipse_at_top,#1e2233,#000_70%)]" role="dialog" aria-label={title}>
+    <div
+      className="fixed inset-0 z-40 flex flex-col overflow-y-auto bg-[radial-gradient(ellipse_at_top,var(--color-brume-voile),var(--forge-bg)_70%)]"
+      role="dialog"
+      aria-label={title}
+    >
       <div className="pt-safe pb-safe mx-auto flex min-h-full w-full max-w-[560px] flex-1 flex-col gap-4 px-5">
         <header className="flex min-h-14 items-center justify-between gap-3 pt-2">
           <div className="min-w-0">
@@ -166,9 +170,7 @@ export function Practice({ kind, refId, title, items, tensionBefore, sound, onCl
                 Tension avant : {tensionBefore}, après : {after}.
               </p>
             )}
-            <Button variant="calm" onClick={onClose}>
-              Fermer
-            </Button>
+            <Button onClick={onClose}>Fermer</Button>
           </div>
         )}
       </div>

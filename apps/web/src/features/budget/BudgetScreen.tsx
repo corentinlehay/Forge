@@ -351,7 +351,7 @@ function AddPrice({ foods, ciqual, onDone }: { foods: Food[]; ciqual: CiqualFood
           <li key={c.key} className="border-b border-graphite last:border-b-0">
             <button type="button" onClick={() => setChosen(c)} className="flex min-h-12 w-full items-center justify-between gap-3 py-2 text-left text-[15px]">
               <span className="min-w-0">{c.name}</span>
-              <Icon name="plus" size={18} className="shrink-0 text-citron" />
+              <Icon name="plus" size={18} className="shrink-0 text-module" />
             </button>
           </li>
         ))}

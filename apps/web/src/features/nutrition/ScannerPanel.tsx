@@ -93,7 +93,7 @@ export function ScannerPanel({ onFound, onNotFound }: { onFound: (choice: FoodCh
       <div className="relative aspect-[4/3] overflow-hidden rounded-[18px] bg-noir">
         <video ref={video} playsInline muted className="h-full w-full object-cover" aria-label="Aperçu de la caméra" />
         {phase === 'scanning' && (
-          <div aria-hidden="true" className="pointer-events-none absolute inset-x-[12%] top-1/2 h-[34%] -translate-y-1/2 rounded-[14px] border-2 border-citron/80 shadow-[0_0_0_999px_rgb(0_0_0/0.35)]" />
+          <div aria-hidden="true" className="pointer-events-none absolute inset-x-[12%] top-1/2 h-[34%] -translate-y-1/2 rounded-[14px] border-2 border-module/80 shadow-[0_0_0_999px_rgb(0_0_0/0.35)]" />
         )}
       </div>
       <p className="min-h-[20px] text-[15px] leading-snug" aria-live="polite">

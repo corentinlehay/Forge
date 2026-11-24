@@ -13,6 +13,7 @@ import { nowIso } from '../lib/ids';
 import { isStandalone, requestPersistentStorage } from '../services/storage';
 import { TabBar } from '../ui/TabBar';
 import { UpdateBanner } from './UpdateBanner';
+import { moduleOf } from './modules';
 
 /** Coquille de l'app : onboarding tant qu'il n'est pas terminé, puis les 5 espaces. */
 export function AppShell() {
@@ -60,7 +61,7 @@ function ShellContent() {
 
   const withTabBar = !['/reglages', '/training/', '/nutrition/', '/mind/', '/progression/', '/coach', '/pulse'].some((p) => pathname.startsWith(p));
   return (
-    <div className="lg:pl-24">
+    <div className="lg:pl-24" data-module={moduleOf(pathname)}>
       <Outlet />
       {withTabBar && <TabBar />}
       {!pathname.startsWith('/training/seance') && <MiniPlayer withTabBar={withTabBar} />}

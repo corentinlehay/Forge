@@ -266,7 +266,7 @@ export function AudioDetailScreen() {
       </div>
 
       <div className="flex flex-col gap-2">
-        <Button variant="calm" disabled={!source} onClick={() => start(resume)}>
+        <Button disabled={!source} onClick={() => start(resume)}>
           <Icon name="play" size={18} />
           {current && player.playing ? 'Ouvrir le lecteur' : resume > 0 ? `Reprendre à ${clockText(resume)}` : 'Écouter'}
         </Button>

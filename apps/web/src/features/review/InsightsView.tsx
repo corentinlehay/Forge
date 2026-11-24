@@ -59,7 +59,7 @@ function InsightCard({ insight: i }: { insight: Insight }) {
       <h2 className="text-[13px] text-cendre">{i.title}</h2>
       <p className="text-[15px] leading-snug">{i.text}</p>
       <div className="flex flex-col gap-2.5">
-        <Bar group={i.a} unit={i.unit} other={i.b.value} tone="bg-citron" />
+        <Bar group={i.a} unit={i.unit} other={i.b.value} tone="bg-module" />
         <Bar group={i.b} unit={i.unit} other={i.a.value} tone="bg-cendre" />
       </div>
       {i.caveat && <p className="text-[13px] leading-snug text-cendre">{i.caveat}</p>}

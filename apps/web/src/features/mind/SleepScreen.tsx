@@ -149,7 +149,7 @@ export function SleepScreen() {
             to="/mind/routine/soir"
             viewTransition
             aria-label={`Commencer : ${soir.title}`}
-            className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-brume text-noir"
+            className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-citron text-noir active:scale-95"
           >
             <Icon name="play" size={22} />
           </Link>

@@ -1,5 +1,30 @@
 # Journal des versions
 
+## FORGE SIGNATURE : identité visuelle (version de test, branche `signature-1`)
+
+### Fait
+- **Audit :**
+    - l'ancienne palette était proche de la nouvelle ;
+    - 7 composants avaient des couleurs écrites en dur (courbe, carte des muscles, silhouette des douleurs, couvertures audio, lecteur, respiration, visuel de recette) ;
+    - deux conflits relevés : l'alerte orangée trop proche du nouvel orange Nutrition (écart 14,3), et le bleu Progression proche du violet Mind (écart 11,6).
+- **Système de couleurs unique dans `design/tokens.css`** (`--forge-*`), décrit dans `docs/design-system.md` :
+    - structure, marque, espaces, états, bordures, focus, graphiques, échelles ;
+    - les noms historiques pointent vers ces jetons.
+- **Palette officielle :**
+    - fond #08090B, cartes #181A1E, surface secondaire #292C32 ;
+    - textes #F4F4EF et #A0A3AA ;
+    - vert électrique #D5FA45 ;
+    - Nutrition #F5AD55, Mind #A99AF5, Progression #69BDEB.
+- **Couleur par espace** (attribut `data-module` posé selon l'écran) : jauges, barres, graphiques, icônes et petits accents prennent la couleur de l'espace. Sur l'accueil, la carte Nutrition est orange et la carte Physique bleue.
+- **Vert FORGE pour toutes les actions principales,** y compris dans Mind (boutons de lecture et d'enregistrement, auparavant en couleur Mind), ainsi que pour la sélection, la validation, le focus et les trophées.
+- **Onglet actif dans la couleur de son espace :** icône, libellé, gras et un petit trait, pour que la couleur ne soit jamais seule.
+- **Alerte et douleur en rouge #FF5A5F** (5,7:1 sur les cartes), distinct de l'orange Nutrition. La silhouette des douleurs passe d'une échelle vert, ambre, rouge à une seule teinte d'alerte, plus foncée quand l'intensité monte.
+- Couvertures audio générées dans le violet Mind, chaque format avec sa lumière, au lieu de 7 teintes différentes.
+- Visuels de recette dans l'orange Nutrition, au lieu du rouge d'alerte pour les plats chauds.
+- Lueur du badge record adoucie ; boutons secondaires avec un état au survol ; transitions de l'onglet actif ; animations toujours coupées si l'iPhone demande moins de mouvement.
+- Icône de l'app et couleur du navigateur aux nouvelles valeurs, même dessin.
+- **Aucune logique, aucune donnée, aucune fonction modifiées.** 297 tests, compilation, parcours PULSE complet, avant et après au format iPhone sur les cinq espaces et des écrans secondaires (recettes, audio, douleurs, calendrier, PULSE).
+
 ## PULSE 1.2 : plan du jour, validation, bilan du soir (version de test, branche `pulse-1-2`)
 
 ### Fait

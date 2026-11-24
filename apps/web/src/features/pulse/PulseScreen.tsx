@@ -12,6 +12,7 @@ import { Card, Screen } from '../../ui/Screen';
 import { StatusChip } from '../../ui/StatusChip';
 import { useHistoryBack } from '../mind/mindShared';
 import { useCheckInSheet } from '../wellbeing/CheckInSheet';
+import type { ModuleKey } from '../../app/modules';
 import { PlanSection } from './PlanSection';
 import { ProposalCard } from './ProposalCard';
 import { ReviewSection } from './ReviewSection';
@@ -107,16 +108,22 @@ function PulseBody({ model }: { model: Model }) {
 }
 
 function QuickLinks() {
-  const links: [string, string, IconName][] = [
-    ['/training', 'Training', 'training'],
-    ['/nutrition', 'Nutrition', 'nutrition'],
-    ['/mind', 'Mind', 'mind'],
+  const links: [string, string, IconName, ModuleKey][] = [
+    ['/training', 'Training', 'training', 'training'],
+    ['/nutrition', 'Nutrition', 'nutrition', 'nutrition'],
+    ['/mind', 'Mind', 'mind', 'mind'],
   ];
   return (
     <nav aria-label="Accès rapides" className="grid grid-cols-3 gap-2">
-      {links.map(([to, label, icon]) => (
-        <Link key={to} to={to} viewTransition className="flex min-h-11 items-center justify-center gap-1.5 rounded-[14px] bg-anthracite px-2 py-2.5 text-[14px] active:opacity-80">
-          <Icon name={icon} size={18} className="text-cendre" />
+      {links.map(([to, label, icon, module]) => (
+        <Link
+          key={to}
+          to={to}
+          viewTransition
+          data-module={module}
+          className="flex min-h-11 items-center justify-center gap-1.5 rounded-[14px] bg-anthracite px-2 py-2.5 text-[14px] active:opacity-80"
+        >
+          <Icon name={icon} size={18} className="text-module" />
           {label}
         </Link>
       ))}

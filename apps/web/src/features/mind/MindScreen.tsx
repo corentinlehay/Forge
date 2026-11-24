@@ -158,7 +158,7 @@ export function MindScreen() {
               to={recoLink}
               viewTransition
               aria-label={`Commencer : ${recoTitle}`}
-              className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-brume text-noir active:scale-95"
+              className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-citron text-noir active:scale-95"
             >
               <Icon name="play" size={24} />
             </Link>

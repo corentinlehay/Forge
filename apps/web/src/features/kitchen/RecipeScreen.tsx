@@ -92,7 +92,7 @@ function RecipeView({ recipe, kitchen }: { recipe: Recipe; kitchen: KitchenData 
           aria-pressed={favorite}
           aria-label={favorite ? 'Retirer des favoris' : 'Ajouter aux favoris'}
           onClick={() => void toggleFavorite(recipe.key, kitchen.favorites).then((on) => toast.show(on ? 'Ajoutée aux favoris' : 'Retirée des favoris'))}
-          className={`flex h-11 w-11 items-center justify-center rounded-full ${favorite ? 'text-citron' : 'text-cendre'}`}
+          className={`flex h-11 w-11 items-center justify-center rounded-full ${favorite ? 'text-module' : 'text-cendre'}`}
         >
           <Icon name="star" size={22} fill={favorite ? 'currentColor' : 'none'} />
         </button>
@@ -100,7 +100,7 @@ function RecipeView({ recipe, kitchen }: { recipe: Recipe; kitchen: KitchenData 
       <RecipeVisual recipe={recipe} photo={photo} size="hero" className="aspect-[16/10] w-full rounded-[22px]" />
       <input ref={photoInput} type="file" accept="image/*" className="hidden" onChange={(e) => void onPhoto(e.target.files?.[0])} />
       <div className="-mt-2 flex gap-4 text-[13px]">
-        <button type="button" onClick={() => photoInput.current?.click()} className="min-h-11 text-citron">
+        <button type="button" onClick={() => photoInput.current?.click()} className="min-h-11 text-module">
           {photo ? 'Changer la photo' : 'Ajouter ma photo'}
         </button>
         {photo && (
@@ -464,7 +464,7 @@ export function PricesPanel({ recipe, kitchen }: { recipe: Recipe; kitchen: Kitc
             <li key={ing.key} className="border-b border-graphite py-2 last:border-b-0">
               <div className="flex min-h-11 items-center justify-between gap-3">
                 <span className="min-w-0 text-[15px]">{ing.name}</span>
-                <button type="button" onClick={() => setEditing(editing === ing.key ? null : ing.key)} className="min-h-11 shrink-0 text-right text-[13px] text-citron">
+                <button type="button" onClick={() => setEditing(editing === ing.key ? null : ing.key)} className="min-h-11 shrink-0 text-right text-[13px] text-module">
                   {price ? `${formatEur(price.amountEur)} pour ${g1(price.quantity)} ${price.unit === 'piece' ? 'pièce(s)' : price.unit}` : 'Saisir le prix'}
                 </button>
               </div>

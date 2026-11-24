@@ -55,7 +55,7 @@ export function ProgressionScreen() {
       </div>
       <Link to="/progression/bilans" viewTransition className="flex min-h-12 items-center justify-between gap-3 rounded-[14px] bg-anthracite px-4 active:opacity-80">
         <span className="flex items-center gap-2.5 text-[15px] font-semibold">
-          <Icon name="calendar" size={20} className="text-citron" />
+          <Icon name="calendar" size={20} className="text-module" />
           Bilans et calendrier
         </span>
         <Icon name="chevron" size={16} className="text-cendre" />
@@ -135,7 +135,7 @@ function TrainingPanel() {
               <li key={`${r.workoutId}-${r.exerciseId}`} className="border-b border-anthracite last:border-b-0">
                 <Link to={`/training/exercices/${r.exerciseId}`} viewTransition className="flex min-h-11 items-center justify-between gap-3 py-2">
                   <span className="flex min-w-0 items-center gap-2.5">
-                    <Icon name="trophy" size={18} className="shrink-0 text-citron" />
+                    <Icon name="trophy" size={18} className="shrink-0 text-training" />
                     <span className="min-w-0">
                       <span className="block truncate text-[15px]">{r.name}</span>
                       <span className="block text-[12px] text-cendre">

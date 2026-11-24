@@ -1,15 +1,19 @@
 import { NavLink } from 'react-router';
 import { Icon, type IconName } from './Icon';
+import type { ModuleKey } from '../app/modules';
 
-export const TABS: { to: string; label: string; icon: IconName }[] = [
-  { to: '/', label: 'Accueil', icon: 'home' },
-  { to: '/training', label: 'Training', icon: 'training' },
-  { to: '/nutrition', label: 'Nutrition', icon: 'nutrition' },
-  { to: '/mind', label: 'Mind', icon: 'mind' },
-  { to: '/progression', label: 'Progression', icon: 'progression' },
+export const TABS: { to: string; label: string; icon: IconName; module: ModuleKey }[] = [
+  { to: '/', label: 'Accueil', icon: 'home', module: 'accueil' },
+  { to: '/training', label: 'Training', icon: 'training', module: 'training' },
+  { to: '/nutrition', label: 'Nutrition', icon: 'nutrition', module: 'nutrition' },
+  { to: '/mind', label: 'Mind', icon: 'mind', module: 'mind' },
+  { to: '/progression', label: 'Progression', icon: 'progression', module: 'progression' },
 ];
 
-/** Barre d'onglets en bas sur iPhone ; barre latérale sur grand écran. */
+/**
+ * Barre d'onglets en bas sur iPhone ; barre latérale sur grand écran.
+ * L'onglet actif prend la couleur de son espace (icône, libellé et trait), en plus du gras : la couleur n'est jamais seule.
+ */
 export function TabBar() {
   return (
     <nav
@@ -22,10 +26,21 @@ export function TabBar() {
           to={tab.to}
           end={tab.to === '/'}
           viewTransition
-          className={({ isActive }) => `flex min-h-11 flex-col items-center gap-[3px] text-[11px] lg:py-2 ${isActive ? 'font-semibold text-craie' : 'text-cendre'}`}
+          data-module={tab.module}
+          className={({ isActive }) =>
+            `relative flex min-h-11 flex-col items-center gap-[3px] text-[11px] transition-colors duration-200 lg:py-2 ${isActive ? 'font-semibold text-module' : 'text-cendre active:text-craie'}`
+          }
         >
-          <Icon name={tab.icon} />
-          {tab.label}
+          {({ isActive }) => (
+            <>
+              <span
+                aria-hidden="true"
+                className={`absolute -top-2 h-[2px] w-6 rounded-full bg-module transition-opacity duration-200 lg:top-1/2 lg:-left-1.5 lg:h-6 lg:w-[2px] lg:-translate-y-1/2 ${isActive ? 'opacity-100' : 'opacity-0'}`}
+              />
+              <Icon name={tab.icon} />
+              {tab.label}
+            </>
+          )}
         </NavLink>
       ))}
     </nav>

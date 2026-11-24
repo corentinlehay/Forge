@@ -29,6 +29,7 @@ export function WeekCard() {
   const top = review.highlights[0]?.text;
   return (
     <LinkCard
+      module="progression"
       to={monday ? `/progression/bilans?semaine=${view.start}` : '/progression/bilans'}
       title={monday ? 'Bilan de la semaine dernière' : 'Ta semaine'}
       label={`${monday ? 'Bilan de la semaine dernière' : 'Ta semaine'} : ${s.activeDays} jours actifs. Ouvrir les bilans`}
@@ -37,7 +38,7 @@ export function WeekCard() {
         {days.map((d, i) => (
           <li key={d.date} className="flex flex-col items-center gap-1">
             <span
-              className={`h-2 w-full rounded-full ${d.active ? 'bg-citron' : d.future ? 'bg-graphite/50' : 'bg-graphite'} ${d.date === view.today ? 'ring-1 ring-craie ring-offset-2 ring-offset-anthracite' : ''}`}
+              className={`h-2 w-full rounded-full ${d.active ? 'bg-module' : d.future ? 'bg-graphite/50' : 'bg-graphite'} ${d.date === view.today ? 'ring-1 ring-craie ring-offset-2 ring-offset-anthracite' : ''}`}
             />
             <span className="text-[11px] text-cendre">{LETTERS[i]}</span>
           </li>

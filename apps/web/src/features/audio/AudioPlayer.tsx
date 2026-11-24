@@ -426,7 +426,11 @@ function FullPlayer() {
   const sleepLeft = p.sleepEndsAt ? Math.max(0, (p.sleepEndsAt - now) / 1000) : null;
 
   return (
-    <div className="fixed inset-0 z-50 flex flex-col overflow-y-auto bg-[radial-gradient(ellipse_at_top,#2a3150,#000_75%)]" role="dialog" aria-label={`Lecteur : ${item.title}`}>
+    <div
+      className="fixed inset-0 z-50 flex flex-col overflow-y-auto bg-[radial-gradient(ellipse_at_top,color-mix(in_oklab,var(--forge-mind)_22%,var(--forge-bg)),var(--forge-bg)_75%)]"
+      role="dialog"
+      aria-label={`Lecteur : ${item.title}`}
+    >
       <div className="pt-safe pb-safe mx-auto flex min-h-full w-full max-w-[480px] flex-1 flex-col gap-5 px-6">
         <div className="flex items-center justify-between">
           <button type="button" onClick={() => p.expand(false)} aria-label="Réduire le lecteur" className="-ml-2 flex h-11 w-11 items-center justify-center text-cendre">
@@ -454,7 +458,7 @@ function FullPlayer() {
             onChange={(e) => p.seekTo(Number(e.target.value))}
             aria-label="Position dans la séance"
             aria-valuetext={`${clockText(p.position)} sur ${clockText(max)}`}
-            className="h-8 w-full accent-[#aebcf5]"
+            className="h-8 w-full accent-[var(--forge-mind)]"
           />
           <div className="flex justify-between text-[12px] text-cendre tabular-nums">
             <span>{clockText(p.position)}</span>
@@ -481,7 +485,15 @@ function FullPlayer() {
         {p.volume !== null && (
           <label className="flex items-center gap-3 text-[13px] text-cendre">
             Volume
-            <input type="range" min={0} max={1} step={0.05} value={p.volume} onChange={(e) => p.setVolume(Number(e.target.value))} className="h-8 flex-1 accent-[#aebcf5]" />
+            <input
+              type="range"
+              min={0}
+              max={1}
+              step={0.05}
+              value={p.volume}
+              onChange={(e) => p.setVolume(Number(e.target.value))}
+              className="h-8 flex-1 accent-[var(--forge-mind)]"
+            />
           </label>
         )}
         <div className="flex flex-col gap-2">

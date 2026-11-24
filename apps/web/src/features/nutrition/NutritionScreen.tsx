@@ -150,7 +150,7 @@ export function NutritionScreen() {
       <section aria-label="Hydratation" className="flex flex-col gap-3 rounded-[22px] bg-anthracite p-[18px]">
         <div className="flex items-center justify-between gap-3">
           <h2 className="flex items-center gap-2 text-[13px] text-cendre">
-            <Icon name="drop" size={16} className="text-citron" />
+            <Icon name="drop" size={16} className="text-module" />
             Hydratation
           </h2>
           <button type="button" onClick={() => setSheet({ kind: 'water' })} className="-mr-2 min-h-11 px-2 text-[13px] text-cendre">
@@ -163,7 +163,7 @@ export function NutritionScreen() {
         </p>
         {targets?.waterMl ? (
           <div className="h-1.5 overflow-hidden rounded-full bg-graphite" role="progressbar" aria-label="Hydratation" aria-valuemin={0} aria-valuemax={targets.waterMl} aria-valuenow={waterMl}>
-            <div className="h-full rounded-full bg-citron transition-[width] duration-700" style={{ width: `${Math.min(1, waterMl / targets.waterMl) * 100}%` }} />
+            <div className="h-full rounded-full bg-module transition-[width] duration-700" style={{ width: `${Math.min(1, waterMl / targets.waterMl) * 100}%` }} />
           </div>
         ) : null}
         <div className="grid grid-cols-3 gap-2">
@@ -193,7 +193,7 @@ export function NutritionScreen() {
                     type="button"
                     aria-label={`Ajouter au ${MEAL_LABELS[meal].toLocaleLowerCase('fr-FR')}`}
                     onClick={() => navigate(addPath(meal), { viewTransition: true })}
-                    className="-mr-2 flex h-11 w-11 items-center justify-center rounded-full text-citron"
+                    className="-mr-2 flex h-11 w-11 items-center justify-center rounded-full text-module"
                   >
                     <Icon name="plus" size={20} strokeWidth={2.5} />
                   </button>

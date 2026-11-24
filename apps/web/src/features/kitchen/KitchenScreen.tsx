@@ -177,7 +177,7 @@ function RecipeCard({ recipe, kitchen }: { recipe: Recipe; kitchen: KitchenData 
       <RecipeVisual recipe={recipe} photo={kitchen.photos.get(recipe.key)} className="aspect-[4/3] w-full" />
       <div className="flex flex-1 flex-col gap-1 p-3">
         <p className="text-[15px] leading-tight font-semibold">
-          {kitchen.favorites.has(recipe.key) && <Icon name="star" size={13} className="mr-1 inline-block align-[-1px] text-citron" />}
+          {kitchen.favorites.has(recipe.key) && <Icon name="star" size={13} className="mr-1 inline-block align-[-1px] text-module" />}
           {recipe.name}
         </p>
         <p className="mt-auto text-[12px] leading-snug text-cendre">{recipeMeta(recipe)}</p>

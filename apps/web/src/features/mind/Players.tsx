@@ -75,8 +75,11 @@ function BreathPlayer({ exercise, minutes, elapsed, running, sound, onComplete }
     <div className="flex flex-1 flex-col items-center justify-center gap-8">
       <div className="relative flex h-[280px] w-[280px] items-center justify-center" aria-hidden="true">
         <div className="absolute inset-0 rounded-full border border-brume/25" />
-        <div className="absolute inset-0 rounded-full bg-[radial-gradient(circle,rgb(174_188_245/0.55),rgb(174_188_245/0.12)_70%)]" style={{ transform: `scale(${scale})` }} />
-        <div className="absolute inset-0 rounded-full" style={{ transform: `scale(${MIN_SCALE})`, border: '1px dashed rgb(174 188 245 / 0.35)' }} />
+        <div
+          className="absolute inset-0 rounded-full bg-[radial-gradient(circle,color-mix(in_oklab,var(--forge-mind)_55%,transparent),color-mix(in_oklab,var(--forge-mind)_12%,transparent)_70%)]"
+          style={{ transform: `scale(${scale})` }}
+        />
+        <div className="absolute inset-0 rounded-full" style={{ transform: `scale(${MIN_SCALE})`, border: '1px dashed color-mix(in oklab, var(--forge-mind) 35%, transparent)' }} />
       </div>
       <div className="flex flex-col items-center gap-1 text-center" aria-live="polite">
         <p className="font-metal text-[44px] leading-none">{phase.label}</p>

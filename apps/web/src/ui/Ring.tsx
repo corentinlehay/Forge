@@ -11,7 +11,7 @@ interface RingProps {
   overTone?: 'alert' | 'neutral';
 }
 
-/** Jauge circulaire. Elle se remplit à l'affichage, puis suit les changements. */
+/** Jauge circulaire, dans la couleur de l'espace affiché. Elle se remplit à l'affichage, puis suit les changements. */
 export function Ring({ value, size = 112, stroke = 10, label, children, overTone = 'neutral' }: RingProps) {
   const target = Math.min(Math.max(value, 0), 1);
   const [shown, setShown] = useState(0);
@@ -22,12 +22,12 @@ export function Ring({ value, size = 112, stroke = 10, label, children, overTone
 
   const r = (size - stroke) / 2;
   const c = 2 * Math.PI * r;
-  const color = value > 1.05 && overTone === 'alert' ? 'var(--color-braise)' : 'var(--color-citron)';
+  const color = value > 1.05 && overTone === 'alert' ? 'var(--forge-danger)' : 'var(--forge-module)';
 
   return (
     <div className="relative shrink-0" style={{ width: size, height: size }} role="img" aria-label={label}>
       <svg width={size} height={size} className="-rotate-90" aria-hidden="true">
-        <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="var(--color-graphite)" strokeWidth={stroke} />
+        <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="var(--forge-surface-secondary)" strokeWidth={stroke} />
         <circle
           cx={size / 2}
           cy={size / 2}

@@ -31,7 +31,7 @@ function SoundToggle({ sound, setSound }: { sound: boolean; setSound: (v: boolea
         Repères sonores
         <span className="block text-[12px] text-cendre">Une note douce à chaque changement ; muette si l’iPhone est en silencieux.</span>
       </span>
-      <input type="checkbox" checked={sound} onChange={(e) => setSound(e.target.checked)} className="h-6 w-6 shrink-0 accent-[#aebcf5]" />
+      <input type="checkbox" checked={sound} onChange={(e) => setSound(e.target.checked)} className="h-6 w-6 shrink-0 accent-[var(--forge-mind)]" />
     </label>
   );
 }
@@ -127,7 +127,6 @@ export function ExerciseScreen() {
       <ScaleChips tone="brume" label="Tension ressentie avant (facultatif)" value={tension} onChange={setTension} low="Détendu" high="Très tendu" />
       <SoundToggle sound={sound} setSound={setSound} />
       <Button
-        variant="calm"
         onClick={() => {
           unlockAudio();
           setPlaying(true);
@@ -207,7 +206,6 @@ export function RoutineScreen() {
       <ScaleChips tone="brume" label="Tension ressentie avant (facultatif)" value={tension} onChange={setTension} low="Détendu" high="Très tendu" />
       <SoundToggle sound={sound} setSound={setSound} />
       <Button
-        variant="calm"
         onClick={() => {
           unlockAudio();
           setPlaying(true);

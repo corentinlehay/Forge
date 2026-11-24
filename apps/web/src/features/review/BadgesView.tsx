@@ -48,7 +48,7 @@ export function BadgesView({ model }: { model: LifeModel }) {
             <li
               key={w.start}
               aria-label={`Semaine du ${formatDayMonth(w.start)} : ${w.activeDays} jour${w.activeDays > 1 ? 's' : ''} avec une donnée${w.current ? ', en cours' : ''}`}
-              className={`h-7 rounded-[6px] ${w.active ? 'bg-citron' : w.activeDays > 0 ? 'bg-citron-voile' : 'bg-graphite'} ${w.current ? 'ring-1 ring-craie ring-offset-2 ring-offset-anthracite' : ''}`}
+              className={`h-7 rounded-[6px] ${w.active ? 'bg-module' : w.activeDays > 0 ? 'bg-module-voile' : 'bg-graphite'} ${w.current ? 'ring-1 ring-craie ring-offset-2 ring-offset-anthracite' : ''}`}
             />
           ))}
         </ol>
@@ -68,7 +68,7 @@ export function BadgesView({ model }: { model: LifeModel }) {
               <li key={`${r.workoutId}-${r.exerciseId}`} className="border-b border-anthracite last:border-b-0">
                 <Link to={`/training/exercices/${r.exerciseId}`} viewTransition className="flex min-h-11 items-center justify-between gap-3 py-2">
                   <span className="flex min-w-0 items-center gap-2.5">
-                    <Icon name="trophy" size={18} className="shrink-0 text-citron" />
+                    <Icon name="trophy" size={18} className="shrink-0 text-training" />
                     <span className="min-w-0">
                       <span className="block truncate text-[15px]">{model.data.exerciseName(r.exerciseId)}</span>
                       <span className="block text-[12px] text-cendre">{formatDayMonth(r.date)}</span>

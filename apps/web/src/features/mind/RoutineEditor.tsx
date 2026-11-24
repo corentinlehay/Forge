@@ -144,9 +144,7 @@ function Editor({ routineId, initial, stored }: { routineId: RoutineId; initial:
           Ajouter un exercice
         </Button>
       )}
-      <Button variant="calm" onClick={() => void save(steps)}>
-        Enregistrer la routine
-      </Button>
+      <Button onClick={() => void save(steps)}>Enregistrer la routine</Button>
       {stored?.[routineId] && (
         <Button variant="quiet" className="self-center" onClick={() => void save(null)}>
           Revenir à la routine d’origine

@@ -1,13 +1,11 @@
 import type { ButtonHTMLAttributes } from 'react';
 
-type Variant = 'primary' | 'calm' | 'secondary' | 'quiet' | 'danger';
+type Variant = 'primary' | 'secondary' | 'quiet' | 'danger';
 type Size = 'large' | 'small';
 
 const variants: Record<Variant, string> = {
   primary: 'bg-citron text-noir disabled:bg-citron-voile disabled:text-cendre',
-  /** Action principale dans FORGE MIND : même poids que primary, teinte apaisée. */
-  calm: 'bg-brume text-noir disabled:bg-brume-voile disabled:text-cendre',
-  secondary: 'bg-graphite text-craie disabled:text-cendre',
+  secondary: 'bg-graphite text-craie hover:bg-graphite/80 disabled:text-cendre',
   quiet: 'bg-transparent text-cendre hover:text-craie disabled:opacity-50',
   danger: 'bg-graphite text-braise disabled:opacity-50',
 };
@@ -22,7 +20,7 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   size?: Size;
 }
 
-/** Une seule action principale (citron) par écran ; le reste reste calme. */
+/** Une seule action principale par écran, toujours dans le vert FORGE, même dans Nutrition, Mind et Progression ; le reste reste calme. */
 export function Button({ variant = 'primary', size = 'large', className = '', type = 'button', ...rest }: ButtonProps) {
   const quietSize = variant === 'quiet' ? 'min-h-11 px-2 text-[15px] font-medium' : sizes[size];
   return (

@@ -177,7 +177,7 @@ function EntryForm({ date, entry }: { date: string; entry: MoodLog | null }) {
           {error}
         </p>
       )}
-      <Button variant="calm" onClick={() => void save()} disabled={empty && !entry}>
+      <Button onClick={() => void save()} disabled={empty && !entry}>
         Enregistrer
       </Button>
       {entry && (

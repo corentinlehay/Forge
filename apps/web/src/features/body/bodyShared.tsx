@@ -46,7 +46,7 @@ export function usePhotosVisible(): [boolean, (v: boolean) => void] {
 
 export function PhotoPrivacyToggle({ visible, setVisible }: { visible: boolean; setVisible: (v: boolean) => void }) {
   return (
-    <button type="button" onClick={() => setVisible(!visible)} aria-pressed={visible} className="flex min-h-11 items-center gap-1.5 px-1 text-[15px] text-citron">
+    <button type="button" onClick={() => setVisible(!visible)} aria-pressed={visible} className="flex min-h-11 items-center gap-1.5 px-1 text-[15px] text-module">
       <Icon name={visible ? 'eye-off' : 'eye'} size={18} />
       {visible ? 'Flouter' : 'Afficher'}
     </button>
@@ -153,7 +153,7 @@ export function MeasurementForm({ existing, date, onDone }: { existing: Measurem
           />
         ))}
       </div>
-      <button type="button" onClick={() => setHelp((h) => !h)} aria-expanded={help} className="self-start py-1 text-[15px] text-citron">
+      <button type="button" onClick={() => setHelp((h) => !h)} aria-expanded={help} className="self-start py-1 text-[15px] text-module">
         Comment mesurer
       </button>
       {help && (

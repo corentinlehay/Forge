@@ -102,7 +102,7 @@ function NutritionCard({ data }: { data: DashboardData }) {
   const { totals, targets, remainingKcal, progress, entries } = data.nutrition;
   const lastMeal = entries.at(-1);
   return (
-    <LinkCard to="/nutrition" title="Nutrition" label={`Nutrition : ${kcal(totals.kcal)} consommées. Ouvrir Nutrition`}>
+    <LinkCard to="/nutrition" module="nutrition" title="Nutrition" label={`Nutrition : ${kcal(totals.kcal)} consommées. Ouvrir Nutrition`}>
       <div className="flex items-center gap-5">
         <Ring value={progress?.kcal ?? 0} size={112} label={targets ? `${kcal(totals.kcal)} sur ${kcal(targets.kcal)}` : `${kcal(totals.kcal)}`} overTone="alert">
           <span className="font-metal text-[28px]">{formatNumber(totals.kcal, 0)}</span>
@@ -148,14 +148,14 @@ function PhysiqueCard({ data }: { data: DashboardData }) {
   const { weight, lastWeighIn, weekAverage, gainRate } = data;
   if (!lastWeighIn) {
     return (
-      <LinkCard to="/progression" title="Physique" label="Physique : aucune pesée. Ouvrir Progression">
+      <LinkCard to="/progression" module="progression" title="Physique" label="Physique : aucune pesée. Ouvrir Progression">
         <p className="text-[15px] leading-snug">Aucune pesée pour l’instant. Pèse-toi au réveil, à jeun : la tendance démarre dès la première.</p>
       </LinkCard>
     );
   }
   const status = statusView(weight);
   return (
-    <LinkCard to="/progression" title="Physique" label={`Dernier poids ${formatMeasuredKg(lastWeighIn.weightKg)}. Ouvrir Progression`}>
+    <LinkCard to="/progression" module="progression" title="Physique" label={`Dernier poids ${formatMeasuredKg(lastWeighIn.weightKg)}. Ouvrir Progression`}>
       <div className="grid grid-cols-3 gap-3">
         <Stat label="Dernier" value={formatNumber(lastWeighIn.weightKg, 1)} sub={`kg, ${formatDaysAgo(lastWeighIn.date, data.today)}`} />
         <Stat
@@ -304,7 +304,7 @@ function WeekTile({ data }: { data: DashboardData }) {
 function TrainingCard({ data }: { data: DashboardData }) {
   const { lastWorkout, records } = data.training;
   return (
-    <LinkCard to="/training" title="Entraînement" label="Entraînement : dernière séance et records. Ouvrir Training">
+    <LinkCard to="/training" module="training" title="Entraînement" label="Entraînement : dernière séance et records. Ouvrir Training">
       {lastWorkout ? (
         <div className="flex items-baseline justify-between gap-3">
           <div className="min-w-0">

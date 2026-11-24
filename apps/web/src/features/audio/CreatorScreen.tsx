@@ -88,7 +88,7 @@ function Unlock({ onDone }: { onDone: () => void }) {
             {error}
           </p>
         )}
-        <Button type="submit" variant="calm" disabled={busy || code.trim().length < 4}>
+        <Button type="submit" disabled={busy || code.trim().length < 4}>
           {busy ? 'Vérification…' : 'Ouvrir'}
         </Button>
       </form>
@@ -142,7 +142,7 @@ export function CreatorScreen() {
       <Back />
       <div className="flex items-center justify-between gap-3">
         <h1 className="font-metal text-[36px] leading-none">Espace créateur</h1>
-        <Link to="/mind/createur/nouvelle" viewTransition className="flex h-10 items-center gap-1.5 rounded-full bg-brume px-4 text-[15px] font-semibold text-noir">
+        <Link to="/mind/createur/nouvelle" viewTransition className="flex h-10 items-center gap-1.5 rounded-full bg-citron px-4 text-[15px] font-semibold text-noir">
           <Icon name="plus" size={18} />
           Séance
         </Link>
@@ -480,7 +480,7 @@ export function CreatorEditor() {
           Publier pour tous les utilisateurs
           <span className="block text-[12px] text-cendre">Décoché : brouillon, visible seulement ici.</span>
         </span>
-        <input type="checkbox" checked={form.published} onChange={(e) => set('published', e.target.checked)} className="h-6 w-6 shrink-0 accent-[#aebcf5]" />
+        <input type="checkbox" checked={form.published} onChange={(e) => set('published', e.target.checked)} className="h-6 w-6 shrink-0 accent-[var(--forge-mind)]" />
       </label>
 
       {error && (
@@ -493,7 +493,7 @@ export function CreatorEditor() {
           {step}
         </p>
       )}
-      <Button variant="calm" disabled={busy} onClick={() => void save()}>
+      <Button disabled={busy} onClick={() => void save()}>
         Enregistrer
       </Button>
       {item?.file && (

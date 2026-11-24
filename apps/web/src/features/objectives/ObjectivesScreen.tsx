@@ -85,7 +85,7 @@ export function ObjectivesScreen() {
         )}
         <p className="border-t border-graphite pt-2 text-[13px] text-cendre">
           Rythme de poids visé : {signedPct(rate.lowPctPerWeek)} à {signedPct(rate.highPctPerWeek)} % par semaine.{' '}
-          <Link to="/reglages" viewTransition className="text-citron">
+          <Link to="/reglages" viewTransition className="text-module">
             Changer
           </Link>
         </p>

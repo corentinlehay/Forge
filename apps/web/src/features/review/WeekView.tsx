@@ -60,7 +60,7 @@ export function WeekView({ model }: { model: LifeModel }) {
       />
 
       {intention && (
-        <section aria-label="Ton intention" className="border-l-2 border-citron pl-3">
+        <section aria-label="Ton intention" className="border-l-2 border-module pl-3">
           <h2 className="text-[13px] text-cendre">Ton intention pour cette semaine</h2>
           <p className="text-[15px] leading-snug">{intention}</p>
         </section>

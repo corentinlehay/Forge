@@ -154,7 +154,7 @@ export function ShoppingListScreen() {
           {done} sur {list.items.length} articles cochés
         </p>
         <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-graphite" aria-hidden="true">
-          <div className="h-full rounded-full bg-citron transition-[width]" style={{ width: `${list.items.length ? (done / list.items.length) * 100 : 0}%` }} />
+          <div className="h-full rounded-full bg-module transition-[width]" style={{ width: `${list.items.length ? (done / list.items.length) * 100 : 0}%` }} />
         </div>
       </div>
       {cost && (

@@ -214,7 +214,7 @@ export function AddFoodScreen() {
                             {t.items.length} aliment{t.items.length > 1 ? 's' : ''}, {formatNumber(kcal, 0)} kcal
                           </span>
                         </span>
-                        <Icon name="plus" size={20} className="shrink-0 text-citron" />
+                        <Icon name="plus" size={20} className="shrink-0 text-module" />
                       </button>
                     </li>
                   );
@@ -365,7 +365,7 @@ function ResultRow({
       <button type="button" onClick={onPick} className="flex min-h-[52px] min-w-0 flex-1 items-center justify-between gap-3 py-2 text-left">
         <span className="min-w-0">
           <span className="flex items-center gap-1.5 text-[15px]">
-            {favorite && <Icon name="star" size={14} fill="currentColor" className="shrink-0 text-citron" />}
+            {favorite && <Icon name="star" size={14} fill="currentColor" className="shrink-0 text-module" />}
             <span className="truncate">{name}</span>
           </span>
           {info && <span className="block truncate text-[12px] text-cendre">{info}</span>}

@@ -1,29 +1,107 @@
 @import "tailwindcss";
 
 /*
- * Design system FORGE, direction « Métal et mesure ».
- * Contrastes vérifiés : Craie sur Anthracite 15,6:1 ; Cendre sur Anthracite 7,4:1 ;
- * Cendre sur Graphite 5,8:1 ; texte noir sur Citron 17,1:1 ; Braise sur Anthracite 6,2:1.
- * Chiffres et titres : Archivo condensée (option A), embarquée dans l'app pour fonctionner hors ligne.
+ * FORGE SIGNATURE : un seul système de couleurs pour toute l'app.
+ * Les valeurs vivent dans :root (--forge-*) ; les noms Tailwind historiques (noir, anthracite, citron…)
+ * pointent vers elles, donc changer une couleur ici la change partout.
+ *
+ * Contrastes vérifiés (WCAG) :
+ * - Texte principal sur Surface 15,8:1 ; Texte secondaire sur Surface 6,9:1, sur Surface secondaire 5,5:1 ;
+ * - texte de fond sur Vert électrique 16,7:1 ; Vert sur Surface 14,6:1 ;
+ * - Nutrition 9,1:1, Mind 7,2:1, Progression 8,4:1 et Alerte 5,7:1 sur Surface (Alerte 4,6:1 sur Surface secondaire).
+ * Bleu Progression et violet Mind sont proches (écart perçu 11,6) : jamais côte à côte sans libellé ni position fixe.
+ * L'alerte est un rouge, distinct de l'orange Nutrition (écart 18,3) : une couleur de module ne signale jamais un danger.
  */
+:root {
+  /* Structure */
+  --forge-bg: #08090b;
+  --forge-surface: #181a1e;
+  --forge-surface-secondary: #292c32;
+  --forge-text: #f4f4ef;
+  --forge-text-secondary: #a0a3aa;
+
+  /* Marque : le vert électrique, pour le logo, l'action principale, PULSE, la validation */
+  --forge-accent: #d5fa45;
+  --forge-accent-dim: color-mix(in oklab, var(--forge-accent) 16%, var(--forge-surface));
+
+  /* Modules : icônes, graphiques, indicateurs, onglet actif, petits accents. Jamais un bouton principal. */
+  --forge-home: var(--forge-accent);
+  --forge-training: var(--forge-accent);
+  --forge-nutrition: #f5ad55;
+  --forge-mind: #a99af5;
+  --forge-progression: #69bdeb;
+
+  /* États : sémantiques, indépendants des modules */
+  --forge-success: var(--forge-accent);
+  --forge-danger: #ff5a5f;
+
+  /* Bordures et séparateurs */
+  --forge-border: var(--forge-surface-secondary);
+  --forge-border-subtle: var(--forge-surface);
+
+  /* Interactions */
+  --forge-focus: var(--forge-accent);
+  --forge-pressed-opacity: 0.8;
+  --forge-scrim: rgb(0 0 0 / 0.65);
+
+  /* Graphiques : axes discrets ; réel en trait plein, estimé en pointillés ou en voile, prévision en clair */
+  --forge-chart-grid: var(--forge-surface-secondary);
+  --forge-chart-axis: var(--forge-text-secondary);
+  --forge-chart-estimate-opacity: 0.45;
+
+  /* Échelles : volume musculaire (Training) et intensité d'une douleur (alerte, jamais une couleur de module) */
+  --forge-body: color-mix(in oklab, var(--forge-surface) 60%, var(--forge-surface-secondary));
+  --forge-scale-empty: color-mix(in oklab, var(--forge-text-secondary) 18%, var(--forge-surface-secondary));
+  --forge-training-1: color-mix(in oklab, var(--forge-training) 32%, var(--forge-surface-secondary));
+  --forge-training-2: color-mix(in oklab, var(--forge-training) 55%, var(--forge-surface-secondary));
+  --forge-training-3: color-mix(in oklab, var(--forge-training) 78%, var(--forge-surface-secondary));
+  --forge-danger-1: color-mix(in oklab, var(--forge-danger) 42%, var(--forge-surface-secondary));
+  --forge-danger-2: color-mix(in oklab, var(--forge-danger) 70%, var(--forge-surface-secondary));
+  --forge-neutral-mark: color-mix(in oklab, var(--forge-text-secondary) 45%, var(--forge-surface));
+
+  /* Couleur du module affiché : posée par l'app selon l'écran (attribut data-module) */
+  --forge-module: var(--forge-accent);
+}
+
+[data-module='accueil'] {
+  --forge-module: var(--forge-home);
+}
+[data-module='training'] {
+  --forge-module: var(--forge-training);
+}
+[data-module='nutrition'] {
+  --forge-module: var(--forge-nutrition);
+}
+[data-module='mind'] {
+  --forge-module: var(--forge-mind);
+}
+[data-module='progression'] {
+  --forge-module: var(--forge-progression);
+}
+
 @theme {
-  --color-noir: #000000;
-  --color-anthracite: #17181b;
-  --color-graphite: #2a2c31;
-  --color-craie: #f1f0ea;
-  --color-cendre: #a4a7ad;
-  --color-citron: #d6f64a;
-  --color-citron-voile: #363c23;
-  --color-braise: #ff6a3d;
-  /* FORGE MIND : un bleu brume, plus apaisant que le citron. */
-  --color-brume: #aebcf5;
-  --color-brume-voile: #1e2233;
-  /* Calendrier : un repère par espace, toujours à la même place et nommé dans la légende.
-     Palette vérifiée sur Anthracite (lumière, saturation, daltonismes, contraste 3:1). */
-  --color-mod-training: #87a100;
-  --color-mod-nutrition: #ae5c00;
-  --color-mod-corps: #9a4c95;
-  --color-mod-mind: #1f99c7;
+  --color-noir: var(--forge-bg);
+  --color-anthracite: var(--forge-surface);
+  --color-graphite: var(--forge-surface-secondary);
+  --color-craie: var(--forge-text);
+  --color-cendre: var(--forge-text-secondary);
+  --color-citron: var(--forge-accent);
+  --color-citron-voile: var(--forge-accent-dim);
+  /* Alerte et sécurité */
+  --color-braise: var(--forge-danger);
+  /* FORGE MIND : le violet du module */
+  --color-brume: var(--forge-mind);
+  --color-brume-voile: color-mix(in oklab, var(--forge-mind) 14%, var(--forge-bg));
+  /* Couleurs des modules, nommées (calendrier des bilans, légendes) */
+  --color-training: var(--forge-training);
+  --color-nutrition: var(--forge-nutrition);
+  --color-mind: var(--forge-mind);
+  --color-progression: var(--forge-progression);
+  /* Calendrier : un repère par espace, toujours à la même place et nommé dans la légende. */
+  --color-mod-training: var(--forge-training);
+  --color-mod-nutrition: var(--forge-nutrition);
+  --color-mod-corps: var(--forge-progression);
+  --color-mod-mind: var(--forge-mind);
 
   --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", Arial, sans-serif;
   --font-display: "Archivo Variable", -apple-system, BlinkMacSystemFont, sans-serif;
@@ -43,9 +121,9 @@
   }
   /* Signature FORGE : une série validée est « frappée », comme un chiffre poinçonné dans la fonte. */
   @keyframes frappe {
-    0% { transform: scale(1.06); background-color: rgb(214 246 74 / 0.28); }
+    0% { transform: scale(1.06); background-color: color-mix(in oklab, var(--forge-accent) 28%, transparent); }
     55% { transform: scale(0.985); }
-    100% { transform: scale(1); background-color: rgb(214 246 74 / 0); }
+    100% { transform: scale(1); background-color: transparent; }
   }
   @keyframes fade-in {
     from { opacity: 0; }
@@ -53,9 +131,9 @@
   }
   /* Le point du jour s'éclaire un instant après une pesée. */
   @keyframes pulse-once {
-    0% { transform: scale(1); filter: drop-shadow(0 0 0 rgb(214 246 74 / 0)); }
-    35% { transform: scale(1.6); filter: drop-shadow(0 0 6px rgb(214 246 74 / 0.9)); }
-    100% { transform: scale(1); filter: drop-shadow(0 0 0 rgb(214 246 74 / 0)); }
+    0% { transform: scale(1); filter: drop-shadow(0 0 0 transparent); }
+    35% { transform: scale(1.6); filter: drop-shadow(0 0 6px color-mix(in oklab, var(--forge-module) 90%, transparent)); }
+    100% { transform: scale(1); filter: drop-shadow(0 0 0 transparent); }
   }
 }
 
@@ -108,9 +186,15 @@ body {
   }
 }
 
+/* Couleur du module affiché, résolue à l'endroit où elle sert (bg-module, text-module…). */
+@theme inline {
+  --color-module: var(--forge-module);
+  --color-module-voile: color-mix(in oklab, var(--forge-module) 14%, var(--forge-surface));
+}
+
 @layer base {
   :focus-visible {
-    outline: 2px solid var(--color-citron);
+    outline: 2px solid var(--forge-focus);
     outline-offset: 2px;
   }
 }
@@ -122,7 +206,7 @@ body {
 }
 
 dialog::backdrop {
-  background: rgb(0 0 0 / 0.65);
+  background: var(--forge-scrim);
 }
 
 @media (prefers-reduced-motion: reduce) {

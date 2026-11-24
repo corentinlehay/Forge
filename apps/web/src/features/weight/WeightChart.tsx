@@ -82,7 +82,7 @@ export function WeightChart({ model, pulseKey }: { model: WeightChartModel; puls
                 </text>
               </g>
             ))}
-            {band && <polygon points={band} fill="var(--color-citron)" fillOpacity={0.1} clipPath="url(#plot-area)" />}
+            {band && <polygon points={band} fill="var(--forge-module)" fillOpacity={0.1} clipPath="url(#plot-area)" />}
             <g fill="var(--color-cendre)" fillOpacity={0.55}>
               {model.points
                 .filter((p) => p.measured)
@@ -90,7 +90,7 @@ export function WeightChart({ model, pulseKey }: { model: WeightChartModel; puls
                   <circle key={p.date} cx={x(p.date)} cy={y(p.weightKg)} r={2.5} />
                 ))}
             </g>
-            <path d={trendPath} fill="none" stroke="var(--color-citron)" strokeWidth={2} strokeLinejoin="round" strokeLinecap="round" />
+            <path d={trendPath} fill="none" stroke="var(--forge-module)" strokeWidth={2} strokeLinejoin="round" strokeLinecap="round" />
             {selected && (
               <g>
                 <line x1={x(selected.date)} x2={x(selected.date)} y1={PLOT_TOP} y2={PLOT_BOTTOM} stroke="var(--color-craie)" strokeOpacity={0.35} />
@@ -104,7 +104,7 @@ export function WeightChart({ model, pulseKey }: { model: WeightChartModel; puls
                 cx={x(last.date)}
                 cy={y(last.trendKg)}
                 r={4.5}
-                fill="var(--color-citron)"
+                fill="var(--forge-module)"
                 stroke="var(--color-noir)"
                 strokeWidth={2}
                 className={pulseKey ? 'animate-pulse-once' : undefined}
@@ -140,7 +140,7 @@ export function WeightChart({ model, pulseKey }: { model: WeightChartModel; puls
       </div>
       <figcaption className="mt-2.5 flex flex-wrap gap-4 text-[13px] text-cendre">
         <span className="flex items-center gap-1.5">
-          <span aria-hidden="true" className="h-0.5 w-3.5 rounded-full bg-citron" />
+          <span aria-hidden="true" className="h-0.5 w-3.5 rounded-full bg-module" />
           Tendance
         </span>
         <span className="flex items-center gap-1.5">
@@ -148,7 +148,7 @@ export function WeightChart({ model, pulseKey }: { model: WeightChartModel; puls
           Pesées
         </span>
         <span className="flex items-center gap-1.5">
-          <span aria-hidden="true" className="h-2.5 w-3.5 rounded-[2px] bg-citron/20" />
+          <span aria-hidden="true" className="h-2.5 w-3.5 rounded-[2px] bg-module/20" />
           Fourchette visée
         </span>
       </figcaption>
@@ -170,7 +170,7 @@ export function TrendSparkline({ points, width = 132, height = 28 }: { points: T
   return (
     <svg width={width} height={height} viewBox={`0 0 ${width} ${height}`} aria-hidden="true" className="overflow-visible">
       <path d={d} fill="none" stroke="var(--color-cendre)" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
-      <circle cx={px(points.length - 1)} cy={py(lastPoint.trendKg)} r={4} fill="var(--color-citron)" stroke="var(--color-anthracite)" strokeWidth={2} />
+      <circle cx={px(points.length - 1)} cy={py(lastPoint.trendKg)} r={4} fill="var(--forge-module)" stroke="var(--color-anthracite)" strokeWidth={2} />
     </svg>
   );
 }
