@@ -63,3 +63,54 @@ S'y ajoutent `training`, `nutrition`, `mind`, `progression`, et `module` pour la
 
 - **Mind et Progression sont proches.** L'écart perçu entre le violet et le bleu est de 11,6 (sous 15) ; pour un daltonien deutéranope, il tombe à 4,2. Ces deux couleurs ne doivent jamais être côte à côte sans libellé ni position fixe, comme dans le calendrier des bilans où chaque espace a sa place et sa légende.
 - **L'orange Nutrition et le rouge d'alerte** restent distincts (écart 18,3). L'ancienne braise orangée (#FF6A3D) était trop proche du nouvel orange.
+
+## FORGE MOTION : le mouvement
+
+Chaque animation a une fonction : confirmer une action, guider vers la suite, montrer un changement. Rien ne bouge en permanence, et une donnée n'est jamais modifiée pour animer : un score ou un total apparaît directement à sa vraie valeur, sans compteur qui fait défiler de faux chiffres.
+
+### Jetons (`design/tokens.css`, et `lib/motion.ts` côté code)
+
+| Jeton | Valeur | Usage |
+|---|---|---|
+| `--forge-duration-press` | 110 ms | Appui |
+| `--forge-duration-fast` | 180 ms | Sortie d'écran, fondu |
+| `--forge-duration-base` | 260 ms | Entrée d'écran, apparition, changement de valeur |
+| `--forge-duration-slow` | 420 ms | Barres de graphique |
+| `--forge-duration-fill` | 700 ms | Jauges qui se remplissent |
+| `--forge-duration-draw` | 800 ms | Tracé d'une courbe |
+| `--forge-stagger` | 40 ms | Décalage entre les éléments d'une liste |
+| `--forge-ease-standard` / `-enter` / `-exit` / `-spring` | courbes | Mouvement, arrivée, départ, rebond léger |
+
+### Utilitaires
+
+- `motion-press` : l'élément s'enfonce à 97 % pendant l'appui (boutons, puces, pavé, onglets).
+- `motion-rise` : apparition en montant, décalée selon `--i`.
+- `motion-pop` : réponse d'une validation (coche, badge record, onglet choisi).
+- `motion-grow` et `motion-grow-x` : barres et jauges qui se remplissent depuis leur base.
+- `motion-draw` : tracé d'une courbe ; il faut `pathLength={1}` sur le chemin.
+- `motion-attention` : un halo unique sur ce qui attend une action (proposition PULSE, exercice suivant).
+- `motion-value-up` et `motion-value-down` : la nouvelle valeur arrive par le haut si elle monte, par le bas si elle baisse. Le composant `LiveValue` les applique tout seul.
+
+### Navigation
+
+- Fondu court entre deux écrans (API View Transitions, prise en charge par Safari sur iPhone).
+- Entre deux onglets, glissement de 24 px dans le sens de la barre.
+- La barre d'onglets et le bandeau de démonstration ne bougent pas.
+
+### Retour haptique (`services/haptics.ts`)
+
+- **Où il se déclenche :**
+    - validation d'une série et record ;
+    - aliment ajouté, repas prévu marqué mangé, pesée ;
+    - check-in, bilan du soir, décision PULSE ;
+    - fin d'une pratique Mind.
+- **Comment, selon l'appareil :**
+    - Android : l'API de vibration ;
+    - iPhone (Safari, iOS 18 et plus) : le retour natif d'un interrupteur système, seulement pendant un geste ;
+    - ailleurs, rien.
+
+### Accessibilité et performance
+
+- **Moins de mouvement sur l'iPhone :** toutes les animations et transitions passent à 1 ms, sans délai, les transitions d'écran sont coupées et le défilement automatique devient instantané. Tout reste visible tout de suite.
+- **Seulement transform et opacity** pour ce qui bouge (jauges et barres comprises, via `scale`). Les tracés de courbe utilisent stroke-dashoffset.
+- **Mesuré au format iPhone,** avec un processeur 4 fois plus lent : même fluidité qu'avant l'ajout du mouvement (environ 21 ms par image en moyenne, autant d'images lentes).

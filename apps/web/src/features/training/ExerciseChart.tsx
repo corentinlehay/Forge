@@ -44,6 +44,7 @@ export function ExerciseChart({ points, unit, summary, minSpan }: { points: Char
   const path = points.map((p, i) => `${i ? 'L' : 'M'}${x(p.date).toFixed(1)} ${y(p.value).toFixed(1)}`).join('');
   const decimals = scale.ticks.some((t) => !Number.isInteger(t)) ? 1 : 0;
   const current = selected === null ? null : points[selected];
+  const best = points.reduce((b, p, i) => (p.value > points[b]!.value ? i : b), 0);
 
   const inspect = (e: PointerEvent<SVGRectElement>) => {
     const rect = e.currentTarget.getBoundingClientRect();
@@ -64,7 +65,10 @@ export function ExerciseChart({ points, unit, summary, minSpan }: { points: Char
               <p className="font-semibold">
                 {formatNumber(current.value, current.value % 1 ? 1 : 0)} {unit}, {formatDayShort(current.date).toLocaleLowerCase('fr-FR')}
               </p>
-              <p className="text-cendre">{current.detail}</p>
+              <p className="text-cendre">
+                {current.detail}
+                {points.length > 1 && selected === best ? ', meilleur point de la période' : ''}
+              </p>
             </>
           ) : (
             <p className="text-cendre">Touche la courbe pour voir une séance.</p>
@@ -80,7 +84,19 @@ export function ExerciseChart({ points, unit, summary, minSpan }: { points: Char
                 </text>
               </g>
             ))}
-            {points.length > 1 && <path d={path} fill="none" stroke="var(--forge-module)" strokeWidth={2} strokeLinejoin="round" strokeLinecap="round" />}
+            {points.length > 1 && (
+              <path
+                key={`${first.date}-${points.length}`}
+                className="motion-draw"
+                pathLength={1}
+                d={path}
+                fill="none"
+                stroke="var(--forge-module)"
+                strokeWidth={2}
+                strokeLinejoin="round"
+                strokeLinecap="round"
+              />
+            )}
             {current && <line x1={x(current.date)} x2={x(current.date)} y1={TOP} y2={BOTTOM} stroke="var(--color-craie)" strokeOpacity={0.35} />}
             {points.map((p, i) => (
               <circle
@@ -91,8 +107,22 @@ export function ExerciseChart({ points, unit, summary, minSpan }: { points: Char
                 fill={selected === i ? 'var(--color-craie)' : 'var(--forge-module)'}
                 stroke="var(--color-anthracite)"
                 strokeWidth={2}
+                className="animate-fade-in"
               />
             ))}
+            {/* Le meilleur point est cerclé : c'est le record de la période affichée. */}
+            {points.length > 1 && (
+              <circle
+                className="motion-pop"
+                cx={x(points[best]!.date)}
+                cy={y(points[best]!.value)}
+                r={8.5}
+                fill="none"
+                stroke="var(--forge-accent)"
+                strokeWidth={1.5}
+                style={{ transformBox: 'fill-box', transformOrigin: 'center', animationDelay: 'var(--forge-duration-draw)' }}
+              />
+            )}
             <text x={0} y={HEIGHT - 4} fill="var(--color-cendre)" fontSize={11}>
               {formatDayMonth(first.date)}
             </text>

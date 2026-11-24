@@ -23,7 +23,7 @@ export function LinkCard({ to, title, label, children, className = '', aside, mo
       viewTransition
       aria-label={label}
       data-module={module}
-      className={`flex flex-col gap-3 rounded-[22px] bg-anthracite p-[18px] transition-transform duration-150 active:scale-[0.985] ${className}`}
+      className={`flex flex-col gap-3 rounded-[22px] bg-anthracite p-[18px] transition-transform duration-[var(--forge-duration-press)] active:scale-[0.985] ${className}`}
     >
       <div className="flex items-center justify-between gap-2">
         <h2 className="text-[13px] text-cendre">{title}</h2>

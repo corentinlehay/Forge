@@ -1,6 +1,6 @@
 # État du projet FORGE
 
-Mis à jour le 24 novembre 2026, identité visuelle FORGE SIGNATURE livrée sur la branche `signature-1` (après PULSE 1.2 sur `pulse-1-2`). Le détail de chaque livraison est dans docs/journal.md.
+Mis à jour le 25 novembre 2026, mouvement et interactions FORGE MOTION livrés sur la branche `motion-1` (après FORGE SIGNATURE sur `signature-1`). Le détail de chaque livraison est dans docs/journal.md.
 
 ## En production (branche `main`)
 
@@ -22,6 +22,7 @@ Chaque branche contient les précédentes. La mise en production se fait d'un bl
 | `mind-2` | Séances audio (stockage Cloudflare KV), lecteur complet, hors connexion, catégorie Hypnose, espace créateur privé |
 | `progression-2` | Moyenne de poids sur 7 jours, mensurations, photos du corps, comparaison de dates, suivi des douleurs sur silhouette |
 | `bilans-1` | Bilan de la semaine avec notes et historique, calendrier jour, semaine, mois, analyses croisées sans causalité, badges et régularité |
+| `motion-1` | FORGE MOTION : système de mouvement centralisé, transitions entre onglets, appui et sélection animés, score PULSE et dimensions qui apparaissent, compte à rebours circulaire, retour haptique, courbes tracées et meilleur point, écart avec aujourd'hui sur la courbe de poids, accueil adaptatif (séance, après séance, soir, après pesée) |
 | `signature-1` | FORGE SIGNATURE : nouvelle palette dans un système de couleurs unique (docs/design-system.md), couleur par espace pour les graphiques, indicateurs et l'onglet actif, vert FORGE pour toutes les actions principales, rouge d'alerte distinct de l'orange Nutrition, icône de l'app aux nouvelles couleurs |
 | `pulse-1-2` | PULSE 1.2 : plan du jour par module avec « Pourquoi ? », rubrique Sommeil, proposition à valider (accepter, garder, modifier, reporter, revenir en arrière), version allégée appliquée par Training, bilan du soir, historique des décisions et des bilans |
 | `pulse-1` | PULSE 1 et 1.1 : indicateur expliqué en 5 dimensions et lu en 4 niveaux, couverture, évolution sur 7 et 30 jours, analyse du jour, Nutrition Status séparé, règles de sécurité, proposition de séance qui garde toujours « Garder », check-in passable en 5 questions, historique par période, réglages |
@@ -86,9 +87,9 @@ Document complet, avec l'architecture, les cinq scénarios et le plan : https://
 
 ## Reste à faire
 
-1. **Valider PULSE 1.1, PULSE 1.2 et FORGE SIGNATURE sur ton iPhone** (versions de test `pulse-1`, `pulse-1-2` et `signature-1`).
+1. **Valider PULSE 1.1, PULSE 1.2, FORGE SIGNATURE et FORGE MOTION sur ton iPhone** (versions de test `pulse-1`, `pulse-1-2`, `signature-1` et `motion-1`).
 2. **Logo : choisir parmi les pistes proposées** (aucune modification du dessin sans ton accord).
-3. **Mise en production de la pile actuelle** (treize versions de test, de nutrition-1 à signature-1), sur ton « mets en production », pour ne pas empiler davantage.
+3. **Mise en production de la pile actuelle** (quatorze versions de test, de nutrition-1 à motion-1), sur ton « mets en production », pour ne pas empiler davantage.
 4. **Tes séances audio.** Le code d'administration est en place (Secrets Store du compte, secret `ADMIN_CODE`) : il reste à ajouter tes enregistrements depuis l'espace créateur.
 5. **PULSE 2 : connecteurs.** Raccourci Apple Santé prêt à installer, bouton « Importer depuis Santé », registre de connecteurs, provenance, dédoublonnage, données contradictoires. Seulement après ta validation explicite.
 6. **PULSE 3 : apprentissage personnel.** Préférences apprises, consultables et modifiables, analyse des résultats des recommandations, semaine de décharge proposée, notification du matin en option.
@@ -112,5 +113,7 @@ Document complet, avec l'architecture, les cinq scénarios et le plan : https://
 - **Bleu Progression et violet Mind proches.** Écart perçu 11,6 (sous le seuil de 15), 4,2 pour un daltonien deutéranope. Sans conséquence tant qu'ils ne sont pas côte à côte sans libellé ; seul le calendrier des bilans les montre ensemble, avec une place fixe et une légende. Un bleu plus cyan (#52CBD6) réglerait l'écart si tu le souhaites.
 - **Planche visuelle (artefact) pas encore mise à jour** avec FORGE SIGNATURE ; la référence est docs/design-system.md.
 - **Icône de l'app sur l'iPhone.** Elle ne change qu'en retirant puis en ajoutant de nouveau l'app à l'écran d'accueil ; l'écart de couleur est minime.
-- **Production en retard.** Treize versions de test attendent une validation : plus l'écart grandit, plus la mise en production sera grosse. La mise à jour depuis la production garde les données (testé à chaque livraison).
+- **Retour haptique sur iPhone.** Il passe par l'interrupteur système de Safari (iOS 18 et plus), seulement pendant un geste. Il n'a pas pu être vérifié ici, faute d'iPhone : à confirmer sur ton téléphone. Sans effet sur les versions plus anciennes.
+- **Accueil adaptatif.** L'ordre change selon l'heure, la séance et la pesée du jour ; PULSE reste toujours en tête et la barre d'onglets ne bouge pas.
+- **Production en retard.** Quatorze versions de test attendent une validation : plus l'écart grandit, plus la mise en production sera grosse. La mise à jour depuis la production garde les données (testé à chaque livraison).
 - **Mise en forme du code.** Pas de configuration Prettier dans le dépôt ; quelques anciens fichiers ne suivent pas le format du reste.

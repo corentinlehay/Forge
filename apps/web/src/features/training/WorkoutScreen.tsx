@@ -1,5 +1,5 @@
 import { useLiveQuery } from 'dexie-react-hooks';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router';
 import { repos, useAllTemplates, useExercises, useWorkouts, useWorkoutSets } from '../../db/hooks';
 import type { TemplateExercise, Workout, WorkoutSet } from '../../db/types';
@@ -13,6 +13,8 @@ import { formatClock, formatRest, moveItem, nextSet, restFor } from '../../domai
 import { nowIso } from '../../lib/ids';
 import { formatDayShort, formatNumber } from '../../lib/format';
 import { unlockAudio } from '../../services/beep';
+import { haptic } from '../../services/haptics';
+import { prefersReducedMotion } from '../../lib/motion';
 import { Button } from '../../ui/Button';
 import { Icon } from '../../ui/Icon';
 import { Screen } from '../../ui/Screen';
@@ -110,6 +112,23 @@ function LiveWorkout({ workout, workouts, sets, targets }: { workout: Workout; w
     const bestToday = Math.max(...mine.filter((x) => x.exerciseId === s.exerciseId).map((x) => e1rm(x.weightKg, x.reps)));
     return value > before + 1e-9 && value === bestToday;
   };
+
+  // Après une série : un record est confirmé (badge et retour haptique) et, si l'exercice est fini, le suivant vient à l'écran.
+  const nextId = next?.exerciseId ?? null;
+  const lastNext = useRef(nextId);
+  useEffect(() => {
+    if (!stamped) return;
+    const saved = mine.find((x) => x.id === stamped);
+    if (saved && isRecord(saved)) haptic('success');
+    // isRecord dépend des séries affichées : on ne réagit qu'à une nouvelle série.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [stamped]);
+  useEffect(() => {
+    const before = lastNext.current;
+    lastNext.current = nextId;
+    if (!stamped || !nextId || before === nextId) return;
+    document.querySelector(`[data-exercise="${CSS.escape(nextId)}"]`)?.scrollIntoView({ behavior: prefersReducedMotion() ? 'auto' : 'smooth', block: 'start' });
+  }, [nextId, stamped]);
 
   const prefill = (exerciseId: string) => {
     const lastToday = mine.filter((s) => s.exerciseId === exerciseId).at(-1);
@@ -239,7 +258,8 @@ function LiveWorkout({ workout, workouts, sets, targets }: { workout: Workout; w
           <section
             key={exerciseId}
             aria-label={nameOf(exerciseId)}
-            className={`flex flex-col gap-2 rounded-[22px] bg-anthracite p-4 ${isNext ? 'outline-2 outline-citron/60' : ''}`}
+            data-exercise={exerciseId}
+            className={`flex scroll-mt-24 flex-col gap-2 rounded-[22px] bg-anthracite p-4 ${isNext ? 'motion-attention outline-2 outline-citron/60' : ''}`}
           >
             <div className="flex items-start gap-3">
               {item && (
@@ -296,7 +316,9 @@ function LiveWorkout({ workout, workouts, sets, targets }: { workout: Workout; w
                       </span>
                       {s.rir !== null && s.rir !== undefined && <span className="text-[13px] text-cendre">RIR {s.rir === 5 ? '5+' : s.rir}</span>}
                       {isRecord(s) && (
-                        <span className="flex items-center gap-1 rounded-full bg-citron px-2 py-0.5 text-[12px] font-semibold text-noir shadow-[0_0_10px_color-mix(in_oklab,var(--forge-accent)_40%,transparent)]">
+                        <span
+                          className={`flex items-center gap-1 rounded-full bg-citron px-2 py-0.5 text-[12px] font-semibold text-noir shadow-[0_0_10px_color-mix(in_oklab,var(--forge-accent)_40%,transparent)] ${stamped === s.id ? 'motion-pop' : ''}`}
+                        >
                           <Icon name="trophy" size={13} strokeWidth={2.2} />
                           Record
                         </span>
@@ -435,35 +457,68 @@ function LiveWorkout({ workout, workouts, sets, targets }: { workout: Workout; w
   );
 }
 
+/** Compte à rebours circulaire : l'anneau se vide au rythme réel du repos (mis à jour 4 fois par seconde). */
+function RestRing({ fraction, done }: { fraction: number; done: boolean }) {
+  const size = 64;
+  const stroke = 6;
+  const r = (size - stroke) / 2;
+  const c = 2 * Math.PI * r;
+  return (
+    <svg width={size} height={size} className={`shrink-0 -rotate-90 ${done ? 'motion-pop' : ''}`} aria-hidden="true">
+      <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="var(--forge-surface-secondary)" strokeWidth={stroke} />
+      <circle
+        cx={size / 2}
+        cy={size / 2}
+        r={r}
+        fill="none"
+        stroke="var(--forge-accent)"
+        strokeWidth={stroke}
+        strokeLinecap="round"
+        strokeDasharray={c}
+        strokeDashoffset={c * (1 - fraction)}
+        style={{ transition: 'stroke-dashoffset 250ms linear' }}
+      />
+    </svg>
+  );
+}
+
 function RestBar({ timer, label }: { timer: ReturnType<typeof useRestTimer>; label: string }) {
   const total = timer.state?.totalSec ?? 1;
   const shown = Math.min(timer.remaining, total);
-  const progress = 1 - shown / total;
+  const left = timer.done ? 1 : shown / total;
   return (
-    <div role="timer" aria-label={timer.done ? 'Repos terminé' : `Repos après ${label} : ${formatClock(shown)} restantes`} className="flex flex-col gap-2">
-      <div className="flex items-center gap-3">
-        <Icon name="timer" size={20} className={timer.done ? 'text-citron' : 'text-cendre'} />
-        <div className="min-w-0 flex-1">
-          <p className={`font-metal text-[30px] leading-none tabular-nums ${timer.done ? 'text-citron' : ''}`}>{timer.done ? 'C’est reparti' : formatClock(shown)}</p>
-          <p className="truncate text-[12px] text-cendre">{timer.done ? 'Repos terminé' : 'Repos'}</p>
-        </div>
-        {!timer.done && (
-          <>
-            <button type="button" onClick={() => timer.adjust(-15)} aria-label="Retirer 15 secondes" className="h-11 rounded-full bg-graphite px-3 text-[15px] font-semibold">
-              −15 s
-            </button>
-            <button type="button" onClick={() => timer.adjust(15)} aria-label="Ajouter 15 secondes" className="h-11 rounded-full bg-graphite px-3 text-[15px] font-semibold">
-              +15 s
-            </button>
-          </>
-        )}
-        <button type="button" onClick={timer.stop} className="h-11 rounded-full px-2 text-[15px] text-cendre">
-          {timer.done ? 'OK' : 'Passer'}
-        </button>
+    <div role="timer" aria-label={timer.done ? 'Repos terminé' : `Repos après ${label} : ${formatClock(shown)} restantes`} className="flex items-center gap-3">
+      <div className="relative">
+        <RestRing fraction={left} done={timer.done} />
+        <Icon name={timer.done ? 'check' : 'timer'} size={20} className={`absolute inset-0 m-auto ${timer.done ? 'text-citron' : 'text-cendre'}`} />
       </div>
-      <div className="h-1 overflow-hidden rounded-full bg-graphite" aria-hidden="true">
-        <div className="h-full rounded-full bg-citron transition-[width] duration-300 ease-linear" style={{ width: `${progress * 100}%` }} />
+      <div className="min-w-0 flex-1">
+        <p className={`font-metal text-[30px] leading-none tabular-nums ${timer.done ? 'motion-pop text-citron' : ''}`}>{timer.done ? 'C’est reparti' : formatClock(shown)}</p>
+        <p className="truncate text-[12px] text-cendre">{timer.done ? 'Repos terminé' : 'Repos'}</p>
       </div>
+      {!timer.done && (
+        <>
+          <button
+            type="button"
+            onClick={() => timer.adjust(-15)}
+            aria-label="Retirer 15 secondes"
+            className="motion-press h-11 rounded-full bg-graphite px-3 text-[15px] font-semibold"
+          >
+            −15
+          </button>
+          <button
+            type="button"
+            onClick={() => timer.adjust(15)}
+            aria-label="Ajouter 15 secondes"
+            className="motion-press h-11 rounded-full bg-graphite px-3 text-[15px] font-semibold"
+          >
+            +15
+          </button>
+        </>
+      )}
+      <button type="button" onClick={timer.stop} className="motion-press h-11 rounded-full px-2 text-[15px] text-cendre">
+        {timer.done ? 'OK' : 'Passer'}
+      </button>
     </div>
   );
 }

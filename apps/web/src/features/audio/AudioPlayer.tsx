@@ -404,7 +404,7 @@ export function MiniPlayer({ withTabBar }: { withTabBar: boolean }) {
           <Icon name="close" size={18} />
         </button>
         <span className="absolute inset-x-0 bottom-0 h-[2px] bg-brume/20" aria-hidden="true">
-          <span className="block h-full bg-brume" style={{ width: `${Math.round(progress * 1000) / 10}%` }} />
+          <span className="block h-full w-full origin-left bg-brume transition-transform duration-[250ms] ease-linear" style={{ scale: `${progress} 1` }} />
         </span>
       </div>
     </div>

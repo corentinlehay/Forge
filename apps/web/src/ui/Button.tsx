@@ -26,7 +26,7 @@ export function Button({ variant = 'primary', size = 'large', className = '', ty
   return (
     <button
       type={type}
-      className={`inline-flex items-center justify-center gap-2 transition-colors active:opacity-80 disabled:cursor-not-allowed ${variants[variant]} ${quietSize} ${className}`}
+      className={`motion-press inline-flex items-center justify-center gap-2 active:opacity-90 disabled:cursor-not-allowed ${variants[variant]} ${quietSize} ${className}`}
       {...rest}
     />
   );

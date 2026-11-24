@@ -20,6 +20,7 @@ import { TextArea } from '../../ui/TextArea';
 import { useToast } from '../../ui/Toast';
 import { saveReview } from './pulseActions';
 import type { PulseModel } from './usePulse';
+import { haptic } from '../../services/haptics';
 
 type Draft = Omit<PulseReview, 'at'>;
 
@@ -101,6 +102,7 @@ function ReviewForm({ model, row, onDone }: { model: PulseModel; row: PulseDay; 
 
   const save = async () => {
     setBusy(true);
+    haptic('success');
     try {
       await saveReview(row.date, { ...draft, note: draft.note?.trim() || undefined });
       toast.show('Bilan enregistré');

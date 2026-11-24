@@ -7,6 +7,7 @@ import { formatDayLong, formatDayMonth, formatDayShort } from '../../lib/format'
 import { BarChart } from '../../ui/BarChart';
 import { Button } from '../../ui/Button';
 import { Icon, type IconName } from '../../ui/Icon';
+import { LiveValue } from '../../ui/LiveValue';
 import { Ring } from '../../ui/Ring';
 import { Card, Screen } from '../../ui/Screen';
 import { StatusChip } from '../../ui/StatusChip';
@@ -172,7 +173,9 @@ function ScoreCard({ model }: { model: Model }) {
       <h2 className="text-[13px] text-cendre">Indicateur PULSE, disponibilité physique et mentale</h2>
       <div className="flex items-center gap-4">
         <Ring value={rd.score / 100} size={112} label={`Indicateur PULSE : ${shown} sur 100`}>
-          <span className="font-metal text-[38px] leading-none">{shown}</span>
+          <LiveValue value={rd.score} className="font-metal text-[38px] leading-none">
+            {shown}
+          </LiveValue>
           <span className="text-[12px] text-cendre">sur 100</span>
         </Ring>
         <div className="flex min-w-0 flex-col items-start gap-1.5">
@@ -231,15 +234,15 @@ function DimensionsSection({ model }: { model: Model }) {
     <Card label="Les cinq dimensions">
       <h2 className="text-[17px] font-semibold">Les cinq dimensions</h2>
       <ul className="flex flex-col divide-y divide-graphite">
-        {rd.components.map((c) => (
-          <li key={c.key} className="flex flex-col gap-1 py-2.5 first:pt-0 last:pb-0">
+        {rd.components.map((c, i) => (
+          <li key={c.key} className="motion-rise flex flex-col gap-1 py-2.5 first:pt-0 last:pb-0" style={{ ['--i' as string]: i }}>
             <div className="flex items-baseline justify-between gap-3">
               <span className="text-[15px] font-semibold">{c.label}</span>
               <span className="text-[15px] tabular-nums">{c.baseWeight === 0 ? 'ignorée' : c.score === null ? 'pas de donnée' : `${c.score}/100`}</span>
             </div>
             {c.score !== null && (
               <div className="h-1.5 overflow-hidden rounded-full bg-graphite" aria-hidden="true">
-                <span className="block h-full rounded-full bg-citron" style={{ width: `${c.score}%` }} />
+                <span className="motion-grow-x block h-full rounded-full bg-citron" style={{ width: `${c.score}%`, ['--i' as string]: i + 2 }} />
               </div>
             )}
             <p className="text-[12px] leading-snug text-cendre">

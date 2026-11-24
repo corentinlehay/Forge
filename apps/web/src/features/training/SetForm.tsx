@@ -5,6 +5,7 @@ import { formatNumber, parseDecimal } from '../../lib/format';
 import { Button } from '../../ui/Button';
 import { Icon } from '../../ui/Icon';
 import { Keypad } from '../../ui/Keypad';
+import { haptic } from '../../services/haptics';
 
 type FieldName = 'weight' | 'reps';
 const RIR_VALUES = [0, 1, 2, 3, 4, 5];
@@ -62,6 +63,7 @@ export function SetForm({ initialWeight, initialReps, initialRir, suggestion, ta
     if (w === null || w < 0 || w > 500) return setError('Charge entre 0 et 500 kg (0 pour le poids du corps).');
     if (!Number.isInteger(r) || r < 1 || r > 100) return setError('Entre 1 et 100 répétitions.');
     setBusy(true);
+    haptic('light');
     try {
       await onSave(w, r, rir);
     } catch (e) {

@@ -19,6 +19,8 @@ import { CoachButton } from '../../ui/CoachButton';
 import { BackupReminder } from './BackupReminder';
 import { WeekCard } from '../review/WeekCard';
 import { PulseCard } from '../pulse/PulseCard';
+import { LiveValue } from '../../ui/LiveValue';
+import { homeFocus } from '../../domain/homeFocus';
 
 const kcal = (v: number) => `${formatNumber(v, 0)} kcal`;
 
@@ -63,6 +65,14 @@ function DashboardSkeleton() {
 }
 
 function Dashboard({ data }: { data: DashboardData }) {
+  const now = new Date();
+  const focus = homeFocus({
+    minutes: now.getHours() * 60 + now.getMinutes(),
+    plannedToday: Boolean(data.training.plannedToday),
+    inProgress: Boolean(data.training.inProgress),
+    doneToday: Boolean(data.training.doneToday),
+    weighInTime: data.weighedToday?.time ?? null,
+  });
   const { openNew } = useWeighInSheet();
   const { openCheckIn } = useCheckInSheet();
   const todo = [
@@ -83,15 +93,23 @@ function Dashboard({ data }: { data: DashboardData }) {
         </div>
       )}
       <PulseCard />
-      <SessionHero data={data} />
-      <NutritionCard data={data} />
-      <PhysiqueCard data={data} />
-      <div className="grid grid-cols-2 gap-3">
-        <RecoveryTile data={data} />
-        <WeekTile data={data} />
-      </div>
-      <TrainingCard data={data} />
-      <WeekCard />
+      {focus.reason && <p className="motion-rise -mt-1 text-[13px] text-cendre">{focus.reason}</p>}
+      {focus.order.map((card, i) => (
+        <div key={card} className="motion-rise flex flex-col" style={{ ['--i' as string]: i + 1 }}>
+          {card === 'session' && <SessionHero data={data} />}
+          {card === 'nutrition' && <NutritionCard data={data} />}
+          {card === 'physique' && <PhysiqueCard data={data} />}
+          {card === 'tiles' && (
+            <div className="grid grid-cols-2 gap-3">
+              <RecoveryTile data={data} />
+              <WeekTile data={data} />
+            </div>
+          )}
+          {card === 'training' && <TrainingCard data={data} />}
+          {card === 'week' && <WeekCard />}
+          {card === 'evening' && <EveningCard />}
+        </div>
+      ))}
       <CoachCard data={data} />
       <BackupReminder />
     </>
@@ -105,7 +123,9 @@ function NutritionCard({ data }: { data: DashboardData }) {
     <LinkCard to="/nutrition" module="nutrition" title="Nutrition" label={`Nutrition : ${kcal(totals.kcal)} consommées. Ouvrir Nutrition`}>
       <div className="flex items-center gap-5">
         <Ring value={progress?.kcal ?? 0} size={112} label={targets ? `${kcal(totals.kcal)} sur ${kcal(targets.kcal)}` : `${kcal(totals.kcal)}`} overTone="alert">
-          <span className="font-metal text-[28px]">{formatNumber(totals.kcal, 0)}</span>
+          <LiveValue value={totals.kcal} className="font-metal text-[28px]">
+            {formatNumber(totals.kcal, 0)}
+          </LiveValue>
           <span className="text-[11px] text-cendre">{targets ? `sur ${formatNumber(targets.kcal, 0)}` : 'kcal'}</span>
         </Ring>
         <div className="flex min-w-0 flex-1 flex-col gap-1">
@@ -364,5 +384,27 @@ function CoachCard({ data }: { data: DashboardData }) {
       )}
       <p className="text-[12px] text-cendre">Calculée sur ton appareil à partir de tes données. Sans IA pour l’instant.</p>
     </LinkCard>
+  );
+}
+
+/** Le soir : le rituel et le sommeil, à portée de main (Mind). */
+function EveningCard() {
+  return (
+    <section aria-label="Ce soir" data-module="mind" className="flex flex-col gap-3 rounded-[22px] bg-anthracite p-[18px]">
+      <h2 className="flex items-center gap-2 text-[13px] text-cendre">
+        <Icon name="moon" size={16} className="text-module" />
+        Ce soir
+      </h2>
+      <div className="grid grid-cols-2 gap-2">
+        <Link to="/mind/routine/soir" viewTransition className="motion-press flex min-h-[72px] flex-col justify-between rounded-[16px] bg-graphite p-3">
+          <span className="text-[15px] font-semibold">Rituel du soir</span>
+          <span className="text-[12px] text-cendre">Ralentir avant de dormir</span>
+        </Link>
+        <Link to="/mind/sommeil" viewTransition className="motion-press flex min-h-[72px] flex-col justify-between rounded-[16px] bg-graphite p-3">
+          <span className="text-[15px] font-semibold">Sommeil</span>
+          <span className="text-[12px] text-cendre">Tes nuits et ton heure de coucher</span>
+        </Link>
+      </div>
+    </section>
   );
 }

@@ -1,5 +1,57 @@
 # Journal des versions
 
+## FORGE MOTION : mouvement et interactions (version de test, branche `motion-1`)
+
+### Fait
+- **Audit :**
+    - existaient déjà : fondu entre écrans, feuilles qui montent, série « frappée », jauges qui se remplissent, cercle de respiration au rythme réel, appui des cartes ;
+    - pas de retour à l'appui des boutons et des puces, barre de repos linéaire, courbes affichées d'un bloc, aucun retour haptique sur iPhone.
+- **Système de mouvement centralisé** (`design/tokens.css`, `lib/motion.ts`, `docs/design-system.md`) : durées, courbes, décalage, utilitaires, et réduction des animations respectée partout.
+- **Micro-interactions :**
+    - appui sur les boutons, puces, échelles, pavé et onglets ;
+    - le fond de l'option choisie glisse d'une option à l'autre dans les sélecteurs ;
+    - l'icône de l'onglet choisi répond ;
+    - le message de confirmation descend avec sa coche ;
+    - le fond des feuilles apparaît en fondu.
+- **Navigation :** glissement court dans le sens de la barre entre deux onglets ; la barre et le bandeau restent fixes.
+- **PULSE :**
+    - le score apparaît frappé puis arrive par le haut ou le bas quand il change, toujours à sa vraie valeur ;
+    - l'anneau se remplit, les cinq dimensions et leurs barres apparaissent l'une après l'autre ;
+    - les barres des 14 jours montent depuis leur base ;
+    - les recommandations prioritaires ont un liseré vert, et un halo unique signale la proposition à valider.
+- **Séance :**
+    - compte à rebours circulaire au rythme réel du repos ;
+    - retour haptique à la validation d'une série ;
+    - badge record qui répond, avec un retour haptique ;
+    - quand un exercice est fini, le suivant vient à l'écran et s'éclaire une fois.
+- **Nutrition :**
+    - anneaux et barres de macros qui se remplissent (par transformation, plus fluide) ;
+    - calories, reste et eau qui arrivent par le haut ou le bas quand ils changent ;
+    - retour haptique à l'ajout d'un aliment et pour un repas prévu marqué mangé.
+- **Mind :**
+    - étapes qui apparaissent en douceur ;
+    - barres de progression (étapes et audio) fluides ;
+    - coche de fin de pratique, avec un retour haptique ;
+    - le cercle de respiration garde son rythme réel.
+- **Progression :**
+    - la courbe de poids et celle d'un exercice se tracent à l'affichage et à chaque changement de période ;
+    - les points apparaissent en fondu ;
+    - le meilleur point de la période est cerclé ;
+    - en touchant un point, l'écart avec aujourd'hui s'affiche (« Jusqu'au 24 nov. : +0,4 kg »).
+- **Accueil adaptatif** (`domain/homeFocus.ts`, testé) : PULSE reste en tête, et l'accueil dit pourquoi une carte passe devant.
+    - Avant la séance et pendant : la séance d'abord.
+    - Après la séance : récupération et bilan de la semaine.
+    - Le soir, à partir de 19 h : nouvelle carte « Ce soir » (rituel du soir, sommeil).
+    - Dans les 2 heures après une pesée : la carte Physique.
+- **Retour haptique** quand la plateforme le permet : Android, ou iPhone avec iOS 18 et plus. Sinon rien, sans gêne.
+- **Vérifications :**
+    - 302 tests et compilation ;
+    - parcours PULSE complet et accueil le soir ou après une pesée, au format iPhone ;
+    - mode « réduire les animations » : tout visible tout de suite, courbe déjà tracée ;
+    - fluidité mesurée avec un processeur 4 fois plus lent, équivalente à avant ;
+    - vidéo avant/après de six interactions.
+- Aucune logique métier, aucun calcul PULSE ni aucune donnée modifiés.
+
 ## FORGE SIGNATURE : identité visuelle (version de test, branche `signature-1`)
 
 ### Fait

@@ -38,7 +38,7 @@ export function Ring({ value, size = 112, stroke = 10, label, children, overTone
           strokeLinecap="round"
           strokeDasharray={c}
           strokeDashoffset={c * (1 - shown)}
-          style={{ transition: 'stroke-dashoffset 700ms cubic-bezier(0.2, 0.8, 0.2, 1)' }}
+          style={{ transition: 'stroke-dashoffset var(--forge-duration-fill) var(--forge-ease-enter)' }}
         />
       </svg>
       <div className="absolute inset-0 flex flex-col items-center justify-center text-center">{children}</div>

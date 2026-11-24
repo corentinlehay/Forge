@@ -59,6 +59,24 @@
   --forge-danger-2: color-mix(in oklab, var(--forge-danger) 70%, var(--forge-surface-secondary));
   --forge-neutral-mark: color-mix(in oklab, var(--forge-text-secondary) 45%, var(--forge-surface));
 
+  /*
+   * Mouvement (FORGE MOTION) : chaque animation a une fonction (confirmer, guider, montrer un changement).
+   * Seulement transform et opacity pour ce qui bouge, jamais d'effet permanent ; tout est coupé si l'iPhone demande
+   * moins de mouvement. Les mêmes valeurs existent côté code dans lib/motion.ts.
+   */
+  --forge-ease-standard: cubic-bezier(0.2, 0, 0, 1);
+  --forge-ease-enter: cubic-bezier(0.05, 0.7, 0.1, 1);
+  --forge-ease-exit: cubic-bezier(0.3, 0, 0.8, 0.15);
+  --forge-ease-spring: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --forge-duration-press: 110ms;
+  --forge-duration-fast: 180ms;
+  --forge-duration-base: 260ms;
+  --forge-duration-slow: 420ms;
+  --forge-duration-fill: 700ms;
+  --forge-duration-draw: 800ms;
+  --forge-stagger: 40ms;
+  --forge-press-scale: 0.97;
+
   /* Couleur du module affiché : posée par l'app selon l'écran (attribut data-module) */
   --forge-module: var(--forge-accent);
 }
@@ -111,6 +129,7 @@
   --radius-control: 14px;
 
   --animate-sheet-in: sheet-in 280ms cubic-bezier(0.2, 0.8, 0.2, 1);
+  --animate-toast-in: toast-in var(--forge-duration-base) var(--forge-ease-enter);
   --animate-fade-in: fade-in 200ms ease-out;
   --animate-pulse-once: pulse-once 900ms ease-out;
   --animate-frappe: frappe 460ms cubic-bezier(0.2, 0.8, 0.2, 1);
@@ -128,6 +147,10 @@
   @keyframes fade-in {
     from { opacity: 0; }
     to { opacity: 1; }
+  }
+  @keyframes toast-in {
+    from { opacity: 0; transform: translateY(-12px) scale(0.98); }
+    to { opacity: 1; transform: none; }
   }
   /* Le point du jour s'éclaire un instant après une pesée. */
   @keyframes pulse-once {
@@ -199,14 +222,125 @@ body {
   }
 }
 
-/* Transitions entre écrans : un fondu court (navigateurs compatibles). */
+/*
+ * Transitions entre écrans (navigateurs compatibles, dont Safari sur iPhone) : un fondu court ;
+ * entre deux onglets, un glissement de 24 px dans le sens de la barre. La barre d'onglets et le bandeau
+ * de démonstration ne bougent pas.
+ */
 ::view-transition-old(root),
 ::view-transition-new(root) {
-  animation-duration: 180ms;
+  animation-duration: var(--forge-duration-fast);
+}
+html[data-nav='forward']::view-transition-old(root) {
+  animation: var(--forge-duration-fast) var(--forge-ease-exit) both vt-out-left;
+}
+html[data-nav='forward']::view-transition-new(root) {
+  animation: var(--forge-duration-base) var(--forge-ease-enter) both vt-in-right;
+}
+html[data-nav='backward']::view-transition-old(root) {
+  animation: var(--forge-duration-fast) var(--forge-ease-exit) both vt-out-right;
+}
+html[data-nav='backward']::view-transition-new(root) {
+  animation: var(--forge-duration-base) var(--forge-ease-enter) both vt-in-left;
+}
+::view-transition-group(forge-tabbar),
+::view-transition-group(forge-banner) {
+  animation: none;
+}
+@keyframes vt-out-left {
+  to { opacity: 0; transform: translateX(-24px); }
+}
+@keyframes vt-in-right {
+  from { opacity: 0; transform: translateX(24px); }
+}
+@keyframes vt-out-right {
+  to { opacity: 0; transform: translateX(24px); }
+}
+@keyframes vt-in-left {
+  from { opacity: 0; transform: translateX(-24px); }
+}
+
+/* Appui : l'élément s'enfonce légèrement, puis revient (boutons, cartes, puces). */
+@utility motion-press {
+  transition-property: transform, opacity, background-color, color;
+  transition-duration: var(--forge-duration-press);
+  transition-timing-function: var(--forge-ease-standard);
+  &:active:not(:disabled) {
+    transform: scale(var(--forge-press-scale));
+  }
+}
+/* Apparition d'un élément dans une liste, décalée selon --i (0, 1, 2…). */
+@utility motion-rise {
+  animation: rise var(--forge-duration-base) var(--forge-ease-enter) both;
+  animation-delay: calc(var(--i, 0) * var(--forge-stagger));
+}
+/* Validation : l'élément « répond » une fois (coche, badge record, onglet choisi). */
+@utility motion-pop {
+  animation: pop 360ms var(--forge-ease-spring) both;
+}
+/* Tracé d'une courbe : il faut pathLength="1" sur le chemin. */
+@utility motion-draw {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  animation: draw var(--forge-duration-draw) var(--forge-ease-standard) forwards;
+}
+/* Barres qui montent depuis la base, décalées selon --i. */
+@utility motion-grow {
+  transform-origin: bottom;
+  animation: grow var(--forge-duration-slow) var(--forge-ease-enter) both;
+  animation-delay: calc(var(--i, 0) * 18ms);
+}
+/* Barre horizontale qui se remplit depuis la gauche à l'affichage, décalée selon --i. */
+@utility motion-grow-x {
+  transform-origin: left;
+  animation: grow-x var(--forge-duration-fill) var(--forge-ease-enter) both;
+  animation-delay: calc(var(--i, 0) * var(--forge-stagger));
+}
+/* Mise en évidence d'une action à faire : un halo, une seule fois. */
+@utility motion-attention {
+  animation: attention 1400ms var(--forge-ease-standard) 200ms both;
+}
+/* Changement de valeur : la nouvelle valeur arrive par le haut (hausse) ou par le bas (baisse). */
+@utility motion-value-up {
+  animation: value-up var(--forge-duration-base) var(--forge-ease-enter) both;
+}
+@utility motion-value-down {
+  animation: value-down var(--forge-duration-base) var(--forge-ease-enter) both;
+}
+@keyframes rise {
+  from { opacity: 0; transform: translateY(10px); }
+}
+@keyframes pop {
+  0% { transform: scale(0.7); opacity: 0; }
+  60% { transform: scale(1.08); opacity: 1; }
+  100% { transform: scale(1); }
+}
+@keyframes draw {
+  to { stroke-dashoffset: 0; }
+}
+@keyframes grow {
+  from { transform: scaleY(0); }
+}
+@keyframes grow-x {
+  from { transform: scaleX(0); }
+}
+@keyframes attention {
+  0% { box-shadow: 0 0 0 0 color-mix(in oklab, var(--forge-accent) 0%, transparent); }
+  35% { box-shadow: 0 0 0 5px color-mix(in oklab, var(--forge-accent) 30%, transparent); }
+  100% { box-shadow: 0 0 0 0 color-mix(in oklab, var(--forge-accent) 0%, transparent); }
+}
+@keyframes value-up {
+  from { opacity: 0; transform: translateY(40%); }
+}
+@keyframes value-down {
+  from { opacity: 0; transform: translateY(-40%); }
 }
 
 dialog::backdrop {
   background: var(--forge-scrim);
+}
+dialog[open]::backdrop {
+  animation: fade-in var(--forge-duration-base) ease-out;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -214,7 +348,13 @@ dialog::backdrop {
   *::before,
   *::after {
     animation-duration: 1ms !important;
+    animation-delay: 0ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 1ms !important;
+  }
+  ::view-transition-group(*),
+  ::view-transition-old(*),
+  ::view-transition-new(*) {
+    animation: none !important;
   }
 }

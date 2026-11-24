@@ -4,7 +4,7 @@ import { Icon } from '../../ui/Icon';
 
 const PRIORITY_TONE: Record<PlanItem['priority'], string> = { haute: 'text-craie', moyenne: 'text-cendre', basse: 'text-cendre' };
 
-function PlanRow({ item }: { item: PlanItem }) {
+function PlanRow({ item, index }: { item: PlanItem; index: number }) {
   const head = (
     <span className="flex min-w-0 flex-1 flex-col gap-1">
       <span className="flex items-start justify-between gap-2">
@@ -20,7 +20,10 @@ function PlanRow({ item }: { item: PlanItem }) {
     </span>
   );
   return (
-    <li className="flex flex-col gap-1.5 rounded-[16px] bg-anthracite p-3.5">
+    <li
+      className={`motion-rise flex flex-col gap-1.5 rounded-[16px] bg-anthracite p-3.5 ${item.priority === 'haute' ? 'border-l-2 border-citron' : ''}`}
+      style={{ ['--i' as string]: Math.min(index, 8) }}
+    >
       {item.to ? (
         <Link to={item.to} viewTransition className="flex active:opacity-80">
           {head}
@@ -74,8 +77,8 @@ export function PlanSection({ plan }: { plan: PlanItem[] }) {
           <div key={m} className="flex flex-col gap-2">
             <h3 className="text-[13px] font-semibold text-cendre">{PLAN_MODULE_LABELS[m]}</h3>
             <ul className="flex flex-col gap-2">
-              {items.map((it) => (
-                <PlanRow key={it.id} item={it} />
+              {items.map((it, i) => (
+                <PlanRow key={it.id} item={it} index={i} />
               ))}
             </ul>
           </div>

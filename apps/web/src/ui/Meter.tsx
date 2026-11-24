@@ -36,7 +36,10 @@ export function Meter({ label, value, target, unit = 'g', decimals = 0 }: MeterP
           aria-valuemax={target}
           aria-valuenow={Math.round(value)}
         >
-          <div className="h-full rounded-full bg-module transition-[width] duration-700 ease-out" style={{ width: `${ratio * 100}%` }} />
+          <div
+            className="motion-grow-x h-full w-full origin-left rounded-full bg-module transition-transform duration-[var(--forge-duration-fill)] ease-[var(--forge-ease-enter)]"
+            style={{ scale: `${ratio} 1` }}
+          />
         </div>
       ) : null}
     </div>

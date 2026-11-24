@@ -10,6 +10,7 @@ import { Keypad } from '../../ui/Keypad';
 import { Segmented } from '../../ui/Segmented';
 import { Sheet } from '../../ui/Sheet';
 import { useToast } from '../../ui/Toast';
+import { haptic } from '../../services/haptics';
 
 interface WeighInSheetApi {
   openNew: () => void;
@@ -101,6 +102,7 @@ function WeighInForm({ editing, onDone }: { editing: WeighIn | null; onDone: (sa
       return;
     }
     setBusy(true);
+    haptic('success');
     try {
       const input = { date, time, weightKg, context };
       const saved = editing ? await repos.weighIns.update(editing.id, input) : await repos.weighIns.add(input);

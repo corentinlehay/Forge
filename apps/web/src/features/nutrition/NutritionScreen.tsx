@@ -22,6 +22,7 @@ import { FoodForm, TargetsForm } from './FoodSheet';
 import { choiceFromFood, copyEntries, saveAsTemplate, type FoodChoice } from './foodActions';
 import { CoachButton } from '../../ui/CoachButton';
 import { QuantityForm } from './QuantityForm';
+import { LiveValue } from '../../ui/LiveValue';
 
 type SheetState =
   | { kind: 'none' }
@@ -102,14 +103,18 @@ export function NutritionScreen() {
       <Card label="Bilan du jour">
         <div className="flex items-center gap-5">
           <Ring value={progress?.kcal ?? 0} size={124} label={targets ? `${totals.kcal} kcal sur ${targets.kcal}` : `${totals.kcal} kcal`} overTone="alert">
-            <span className="font-metal text-[32px]">{formatNumber(totals.kcal, 0)}</span>
+            <LiveValue value={totals.kcal} className="font-metal text-[32px]">
+              {formatNumber(totals.kcal, 0)}
+            </LiveValue>
             <span className="text-[11px] text-cendre">{targets ? `sur ${formatNumber(targets.kcal, 0)} kcal` : 'kcal'}</span>
           </Ring>
           <div className="flex flex-col gap-1">
             {remainingKcal !== null ? (
               <>
                 <p className="text-[13px] text-cendre">{remainingKcal >= 0 ? 'Restant' : 'Au-delà de l’objectif'}</p>
-                <p className="font-metal text-[36px]">{formatNumber(Math.abs(remainingKcal), 0)}</p>
+                <p className="font-metal text-[36px]">
+                  <LiveValue value={remainingKcal}>{formatNumber(Math.abs(remainingKcal), 0)}</LiveValue>
+                </p>
                 <p className="text-[13px] text-cendre">kcal</p>
               </>
             ) : (
@@ -158,7 +163,9 @@ export function NutritionScreen() {
           </button>
         </div>
         <p>
-          <span className="font-metal text-[36px]">{litres(waterMl)}</span>
+          <LiveValue value={waterMl} className="font-metal text-[36px]">
+            {litres(waterMl)}
+          </LiveValue>
           {targets?.waterMl ? <span className="text-[15px] text-cendre"> / {litres(targets.waterMl)}</span> : null}
         </p>
         {targets?.waterMl ? (

@@ -22,6 +22,9 @@ function useWidth<T extends HTMLElement>() {
   return [ref, width] as const;
 }
 
+/** Écart de poids signé : « +0,4 kg », « −1,2 kg ». */
+const signedKg = (d: number) => `${d > 0.05 ? '+' : d < -0.05 ? '−' : ''}${formatNumber(Math.abs(d), 1)} kg`;
+
 /**
  * Pesées (points), poids tendance (ligne citron) et fourchette visée (zone).
  * Glisser le doigt sur la courbe affiche le détail du jour.
@@ -40,6 +43,7 @@ export function WeightChart({ model, pulseKey }: { model: WeightChartModel; puls
     ? [...model.band.map((b) => `${x(b.date).toFixed(1)},${y(b.highKg).toFixed(1)}`), ...[...model.band].reverse().map((b) => `${x(b.date).toFixed(1)},${y(b.lowKg).toFixed(1)}`)].join(' ')
     : '';
   const last = model.points.at(-1);
+  const drawKey = `${model.startDate}-${model.spanDays}`;
   const tickDecimals = model.ticks.some((t) => !Number.isInteger(t)) ? 1 : 0;
 
   const inspect = (e: PointerEvent<SVGRectElement>) => {
@@ -59,12 +63,17 @@ export function WeightChart({ model, pulseKey }: { model: WeightChartModel; puls
         {selected && (
           <div
             aria-live="polite"
-            className="pointer-events-none absolute top-0 z-10 rounded-[12px] bg-graphite/95 px-3 py-2 text-[13px] whitespace-nowrap shadow-lg"
+            className="pointer-events-none absolute top-0 z-10 animate-fade-in rounded-[12px] bg-graphite/95 px-3 py-2 text-[13px] whitespace-nowrap shadow-lg"
             style={x(selected.date) > plotW / 2 ? { left: 0 } : { right: GUTTER }}
           >
             <p className="font-semibold">{formatDayShort(selected.date)}</p>
             <p className="text-cendre">{selected.measured ? `Pesée ${formatMeasuredKg(selected.weightKg)}` : 'Pas de pesée ce jour'}</p>
             <p>Tendance {formatKg(selected.trendKg)}</p>
+            {last && last.date !== selected.date && (
+              <p className="text-cendre">
+                Jusqu’au {formatDayMonth(last.date)} : {signedKg(last.trendKg - selected.trendKg)}
+              </p>
+            )}
           </div>
         )}
         {width > 0 && (
@@ -82,15 +91,16 @@ export function WeightChart({ model, pulseKey }: { model: WeightChartModel; puls
                 </text>
               </g>
             ))}
-            {band && <polygon points={band} fill="var(--forge-module)" fillOpacity={0.1} clipPath="url(#plot-area)" />}
-            <g fill="var(--color-cendre)" fillOpacity={0.55}>
+            {band && <polygon key={`band-${drawKey}`} className="animate-fade-in" points={band} fill="var(--forge-module)" fillOpacity={0.1} clipPath="url(#plot-area)" />}
+            <g key={`points-${drawKey}`} className="animate-fade-in" fill="var(--color-cendre)" fillOpacity={0.55}>
               {model.points
                 .filter((p) => p.measured)
                 .map((p) => (
                   <circle key={p.date} cx={x(p.date)} cy={y(p.weightKg)} r={2.5} />
                 ))}
             </g>
-            <path d={trendPath} fill="none" stroke="var(--forge-module)" strokeWidth={2} strokeLinejoin="round" strokeLinecap="round" />
+            {/* La tendance se trace à l'affichage et à chaque changement de période. */}
+            <path key={`trend-${drawKey}`} className="motion-draw" pathLength={1} d={trendPath} fill="none" stroke="var(--forge-module)" strokeWidth={2} strokeLinejoin="round" strokeLinecap="round" />
             {selected && (
               <g>
                 <line x1={x(selected.date)} x2={x(selected.date)} y1={PLOT_TOP} y2={PLOT_BOTTOM} stroke="var(--color-craie)" strokeOpacity={0.35} />

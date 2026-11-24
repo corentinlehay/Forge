@@ -51,8 +51,8 @@ export function BarChart({ bars, target, targetLabel = 'Objectif', height = 132,
               className="flex h-full min-w-0 flex-1 items-end"
             >
               <span
-                className={`block w-full rounded-t-[4px] transition-[height,background-color] duration-500 ease-out ${i === selected ? (tone === 'brume' ? 'bg-brume' : tone === 'citron' ? 'bg-citron' : 'bg-module') : 'bg-cendre/35'}`}
-                style={{ height: `${Math.max(bar.value > 0 ? 3 : 0, (bar.value / max) * 100)}%` }}
+                className={`motion-grow block w-full rounded-t-[4px] transition-[height,background-color] duration-500 ease-out ${i === selected ? (tone === 'brume' ? 'bg-brume' : tone === 'citron' ? 'bg-citron' : 'bg-module') : 'bg-cendre/35'}`}
+                style={{ height: `${Math.max(bar.value > 0 ? 3 : 0, (bar.value / max) * 100)}%`, ['--i' as string]: i }}
               />
             </button>
           ))}

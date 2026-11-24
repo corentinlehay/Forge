@@ -28,8 +28,10 @@ export function ToastProvider({ children }: { children: ReactNode }) {
       {children}
       <div aria-live="polite" className="pointer-events-none fixed inset-x-0 top-[calc(env(safe-area-inset-top)+8px+var(--demo-offset,0px))] z-50 flex justify-center px-4">
         {toast && (
-          <p key={toast.key} role="status" className="flex animate-fade-in items-center gap-2 rounded-full bg-graphite px-4 py-2.5 text-[15px] shadow-xl">
-            <Icon name="check" size={16} strokeWidth={3} className="text-citron" />
+          <p key={toast.key} role="status" className="flex animate-toast-in items-center gap-2 rounded-full bg-graphite px-4 py-2.5 text-[15px] shadow-xl">
+            <span className="motion-pop">
+              <Icon name="check" size={16} strokeWidth={3} className="text-citron" />
+            </span>
             {toast.text}
           </p>
         )}

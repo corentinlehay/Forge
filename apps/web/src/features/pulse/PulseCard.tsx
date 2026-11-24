@@ -4,6 +4,7 @@ import { LEVEL_LABELS } from '../../domain/pulse/settings';
 import { Button } from '../../ui/Button';
 import { Icon } from '../../ui/Icon';
 import { LinkCard } from '../../ui/LinkCard';
+import { LiveValue } from '../../ui/LiveValue';
 import { Ring } from '../../ui/Ring';
 import { Card } from '../../ui/Screen';
 import { StatusChip } from '../../ui/StatusChip';
@@ -51,7 +52,9 @@ export function PulseCard() {
     <LinkCard to="/pulse" title="PULSE du jour" label={`PULSE du jour : ${shown} sur 100, ${LEVEL_LABELS[level].toLocaleLowerCase('fr-FR')}. Ouvrir le détail`}>
       <div className="flex items-center gap-4">
         <Ring value={readiness.score / 100} size={92} stroke={9} label={`Indicateur PULSE : ${shown} sur 100`}>
-          <span className="font-metal text-[30px] leading-none">{shown}</span>
+          <LiveValue value={readiness.score} className="font-metal text-[30px] leading-none">
+            {shown}
+          </LiveValue>
         </Ring>
         <div className="flex min-w-0 flex-col items-start gap-1.5">
           <StatusChip icon={chip.icon} tone={chip.tone} label={LEVEL_LABELS[level]} />

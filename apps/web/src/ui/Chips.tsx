@@ -32,7 +32,7 @@ export function Chips<T extends string | number>({ label, options, selected, onT
               type="button"
               aria-pressed={on}
               onClick={() => onToggle(o.value)}
-              className={`h-10 shrink-0 rounded-full px-4 text-[15px] whitespace-nowrap transition-colors ${on ? (tone === 'brume' ? 'bg-brume' : 'bg-citron') + ' font-semibold text-noir' : 'bg-graphite text-craie'}`}
+              className={`motion-press h-10 shrink-0 rounded-full px-4 text-[15px] whitespace-nowrap ${on ? (tone === 'brume' ? 'bg-brume' : 'bg-citron') + ' font-semibold text-noir' : 'bg-graphite text-craie'}`}
             >
               {o.label}
             </button>

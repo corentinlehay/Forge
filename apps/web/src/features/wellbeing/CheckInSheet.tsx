@@ -13,6 +13,7 @@ import { ScaleChips } from '../../ui/ScaleChips';
 import { Sheet } from '../../ui/Sheet';
 import { Stepper } from '../../ui/Stepper';
 import { useToast } from '../../ui/Toast';
+import { haptic } from '../../services/haptics';
 
 interface CheckInApi {
   openCheckIn: (date?: string) => void;
@@ -108,6 +109,7 @@ function CheckInForm({ date, onDone, existing, mood, pains }: { date: string; on
 
   const save = async () => {
     setBusy(true);
+    haptic('success');
     try {
       const time = (v: string) => (/^\d{2}:\d{2}$/.test(v) ? v : null);
       const input = { date, sleepHours, energy, fatigue, soreness, unusualPain, bedTime: time(bedTime), wakeTime: time(wakeTime), awakenings, sleepQuality: quality };

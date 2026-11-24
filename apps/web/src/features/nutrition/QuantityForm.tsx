@@ -10,6 +10,7 @@ import { Keypad } from '../../ui/Keypad';
 import { Segmented } from '../../ui/Segmented';
 import { useToast } from '../../ui/Toast';
 import { addWeighedEntry, ensureFood, updateWeighedEntry, type FoodChoice } from './foodActions';
+import { haptic } from '../../services/haptics';
 
 export const MEAL_OPTIONS = [
   { value: 'breakfast', label: 'Petit-déj.' },
@@ -59,6 +60,7 @@ export function QuantityForm({ choice, date, meal: initialMeal, editing, onDone 
   const save = async () => {
     if (grams <= 0 || grams > 5000) return setError(`Quantité entre 0,1 et 5 000 ${unit}.`);
     setBusy(true);
+    haptic('success');
     try {
       if (editing) {
         await updateWeighedEntry(editing, grams, meal);

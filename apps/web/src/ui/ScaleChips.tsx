@@ -25,7 +25,7 @@ export function ScaleChips({ label, value, onChange, low, high, tone = 'citron',
             aria-pressed={value === n}
             aria-label={`${label} : ${n} sur 5`}
             onClick={() => (onClear && value === n ? onClear() : onChange(n))}
-            className={`h-12 rounded-[12px] font-display text-[20px] font-semibold transition-colors ${value === n ? (tone === 'brume' ? 'bg-brume text-noir' : 'bg-citron text-noir') : 'bg-graphite text-craie'}`}
+            className={`motion-press h-12 rounded-[12px] font-display text-[20px] font-semibold ${value === n ? (tone === 'brume' ? 'bg-brume text-noir' : 'bg-citron text-noir') : 'bg-graphite text-craie'}`}
           >
             {n}
           </button>

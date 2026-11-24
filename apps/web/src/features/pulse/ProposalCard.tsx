@@ -13,6 +13,7 @@ import { useToast } from '../../ui/Toast';
 import { startWorkout } from '../training/workoutActions';
 import { decideProposal, revertChoice } from './pulseActions';
 import type { PulseModel } from './usePulse';
+import { haptic } from '../../services/haptics';
 
 const hour = (iso: string) => formatTime(toLocalTimeKey(new Date(iso)));
 
@@ -37,6 +38,7 @@ export function ProposalCard({ model }: { model: PulseModel }) {
 
   const run = async (fn: () => Promise<void>, done: string) => {
     setBusy(true);
+    haptic('light');
     try {
       await fn();
       toast.show(done);
@@ -62,7 +64,7 @@ export function ProposalCard({ model }: { model: PulseModel }) {
   return (
     <section id="a-valider" aria-label="À valider" className="flex flex-col gap-2">
       <h2 className="text-[17px] font-semibold">À valider</h2>
-      <div className="flex flex-col gap-3 rounded-[18px] border-l-2 border-citron bg-anthracite p-4">
+      <div className={`flex flex-col gap-3 rounded-[18px] border-l-2 border-citron bg-anthracite p-4 ${choice ? '' : 'motion-attention'}`}>
         {p && <ProposalDetails p={p} collapsed={!!choice} />}
         {!choice && p && (
           <div className="flex flex-col gap-2">

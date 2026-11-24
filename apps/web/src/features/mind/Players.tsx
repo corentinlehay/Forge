@@ -113,11 +113,11 @@ function StepsPlayer({ exercise, elapsed, running, sound, onSeek, onComplete }: 
         <span className="tabular-nums">reste {clock(total - elapsed)}</span>
       </div>
       {step.cue && <p className={`text-[15px] font-semibold ${step.cue === 'tension' ? 'text-craie' : 'text-brume'}`}>{step.cue === 'tension' ? 'Contracte' : 'Relâche'}</p>}
-      <p key={pos.index} className="animate-fade-in min-h-[180px] text-[24px] leading-snug" aria-live="polite">
+      <p key={pos.index} className="motion-rise min-h-[180px] text-[24px] leading-snug" aria-live="polite">
         {step.text}
       </p>
       <div className="h-1 overflow-hidden rounded-full bg-graphite" aria-hidden="true">
-        <div className="h-full rounded-full bg-brume" style={{ width: `${Math.round(stepProgress * 100)}%` }} />
+        <div className="h-full w-full origin-left rounded-full bg-brume transition-transform duration-[250ms] ease-linear" style={{ scale: `${stepProgress} 1` }} />
       </div>
       <div className="flex justify-between">
         <button

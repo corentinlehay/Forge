@@ -11,6 +11,7 @@ import { ScaleChips } from '../../ui/ScaleChips';
 import { useWakeLock } from '../training/useWakeLock';
 import { ExercisePlayer } from './Players';
 import { useClock } from './useClock';
+import { haptic } from '../../services/haptics';
 
 export interface PracticeItem {
   exercise: MindExercise;
@@ -64,6 +65,7 @@ export function Practice({ kind, refId, title, items, tensionBefore, sound, onCl
         ...(tensionBefore ? { tensionBefore } : {}),
       });
       setSaved({ id: record.id, durationSec: Math.round(durationSec), completed });
+      if (completed) haptic('success');
     },
     [kind, refId, title, tensionBefore],
   );
@@ -152,6 +154,11 @@ export function Practice({ kind, refId, title, items, tensionBefore, sound, onCl
         ) : (
           <div className="flex flex-1 flex-col justify-center gap-6 pb-6">
             <div className="flex flex-col gap-2">
+              {saved?.completed && (
+                <span className="motion-pop mb-2 flex h-16 w-16 items-center justify-center rounded-full bg-brume/15 text-brume" aria-hidden="true">
+                  <Icon name="check" size={30} strokeWidth={2.6} />
+                </span>
+              )}
               <p className="font-metal text-[44px] leading-none">{saved?.completed === false ? 'Arrêté' : 'Terminé'}</p>
               <p className="text-[17px] text-cendre">
                 {saved ? `Pratique enregistrée : ${formatDuration(saved.durationSec)}${saved.completed ? '' : ', arrêtée avant la fin'}.` : 'Enregistrement…'}

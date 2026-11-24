@@ -13,7 +13,7 @@ export function Keypad({ onKey }: { onKey: (key: KeypadKey) => void }) {
           type="button"
           onClick={() => onKey(key)}
           aria-label={key === 'back' ? 'Effacer' : key === ',' ? 'Virgule' : key}
-          className="flex h-[58px] items-center justify-center rounded-[14px] bg-graphite font-display text-[28px] font-semibold transition-colors active:bg-cendre/40"
+          className="flex h-[58px] items-center justify-center rounded-[14px] bg-graphite font-display text-[28px] font-semibold motion-press active:bg-cendre/40"
         >
           {key === 'back' ? <Icon name="backspace" size={26} /> : key}
         </button>

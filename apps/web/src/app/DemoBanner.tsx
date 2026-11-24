@@ -7,6 +7,7 @@ export function DemoBanner() {
   return (
     <div
       role="status"
+      style={{ viewTransitionName: 'forge-banner' }}
       className="fixed inset-x-0 top-0 z-40 flex h-[calc(env(safe-area-inset-top)+40px)] items-end justify-center bg-citron-voile px-4 pb-2 text-[13px] text-citron"
     >
       <span className="flex items-center gap-3">

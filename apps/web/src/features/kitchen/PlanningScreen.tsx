@@ -16,6 +16,7 @@ import { createShoppingList, markPlanEaten, portionsText } from './kitchenAction
 import { PlanPanel } from './RecipeScreen';
 import { RecipeChooser } from './RecipeChooser';
 import { useKitchen } from './useKitchen';
+import { haptic } from '../../services/haptics';
 
 const MEAL_ORDER: MealSlot[] = ['breakfast', 'lunch', 'snack', 'dinner'];
 
@@ -122,7 +123,14 @@ export function PlanningScreen() {
                   ) : (
                     <>
                       {r && (
-                        <Button size="small" variant="secondary" onClick={() => void markPlanEaten(p, r, kitchen.prices).then(() => toast.show('Ajouté au journal'))}>
+                        <Button
+                          size="small"
+                          variant="secondary"
+                          onClick={() => {
+                            haptic('success');
+                            void markPlanEaten(p, r, kitchen.prices).then(() => toast.show('Ajouté au journal'));
+                          }}
+                        >
                           J’ai mangé
                         </Button>
                       )}
