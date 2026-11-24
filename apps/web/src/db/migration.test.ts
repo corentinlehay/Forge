@@ -1,7 +1,7 @@
 import Dexie from 'dexie';
 import { afterEach, describe, expect, it } from 'vitest';
 import { ForgeDB, SCHEMA_VERSION } from './schema';
-import { createCheckInRepo, createExerciseRepo, createFoodRepo, createSetRepo, createWeekNoteRepo, DataError } from './repositories/entities';
+import { createCheckInRepo, createExerciseRepo, createFoodRepo, createPulseDayRepo, createSetRepo, createWeekNoteRepo, DataError } from './repositories/entities';
 
 const names: string[] = [];
 afterEach(async () => {
@@ -367,6 +367,62 @@ describe('notes de semaine', () => {
     expect(list).toHaveLength(1);
     expect(list[0]?.intention).toBe('Dormir plus tôt');
     await expect(notes.save('2026-11-23', { toAdjust: 'x'.repeat(601) })).rejects.toBeInstanceOf(DataError);
+    db.close();
+  });
+});
+
+describe('migration v10 → v11', () => {
+  it('ajoute le journal PULSE sans toucher aux séances ni aux notes de semaine', async () => {
+    const name = `migration11-${crypto.randomUUID()}`;
+    names.push(name);
+    const v10 = new Dexie(name);
+    v10.version(1).stores({ profile: 'id, updatedAt', weighIns: 'id, date, [date+time], updatedAt', meta: 'key' });
+    v10.version(2).stores({
+      foodEntries: 'id, date, updatedAt',
+      exercises: 'id, name, updatedAt',
+      workoutTemplates: 'id, updatedAt',
+      workouts: 'id, date, updatedAt',
+      workoutSets: 'id, workoutId, exerciseId, updatedAt',
+      checkIns: 'id, date, updatedAt',
+    });
+    v10.version(3).stores({ foods: 'id, [source+sourceId], name, updatedAt', mealTemplates: 'id, updatedAt', waterLogs: 'id, date, updatedAt' });
+    v10.version(4).stores({ programs: 'id, updatedAt' });
+    v10.version(5).stores({ recipes: 'id, updatedAt', recipePhotos: 'id, recipeKey, updatedAt', mealPlans: 'id, date, updatedAt', shoppingLists: 'id, updatedAt', prices: 'id, key, updatedAt' });
+    v10.version(6).stores({ targetChanges: 'id, date, updatedAt' });
+    v10.version(7).stores({ moodLogs: 'id, date, updatedAt', mindSessions: 'id, date, updatedAt' });
+    v10.version(8).stores({ audioStates: 'id, updatedAt', audioDownloads: 'id' });
+    v10.version(9).stores({ measurements: 'id, date, updatedAt', bodyPhotos: 'id, date, updatedAt', pains: 'id, updatedAt' });
+    v10.version(10).stores({ weekNotes: 'id, weekStart, updatedAt' });
+    await v10.table('workouts').put({ id: 'w1', createdAt: 'a', updatedAt: 'a', deletedAt: null, date: '2026-11-20', name: 'Push A', templateId: 't', exerciseIds: ['dc'], startedAt: 'a', endedAt: 'b' });
+    await v10.table('weekNotes').put({ id: 'n1', createdAt: 'a', updatedAt: 'a', deletedAt: null, weekStart: '2026-11-16', intention: 'Dormir plus tôt' });
+    v10.close();
+    const db = new ForgeDB(name);
+    await db.open();
+    expect(db.verno).toBe(SCHEMA_VERSION);
+    expect((await db.workouts.get('w1'))?.name).toBe('Push A');
+    expect((await db.weekNotes.get('n1'))?.intention).toBe('Dormir plus tôt');
+    expect(await db.pulseDays.count()).toBe(0);
+    db.close();
+  });
+});
+
+describe('journal PULSE', () => {
+  it('garde une ligne par jour, ne réécrit que si le résultat change, et garde le choix', async () => {
+    const name = `pulse-${crypto.randomUUID()}`;
+    names.push(name);
+    const db = new ForgeDB(name);
+    const repo = createPulseDayRepo(db);
+    const snap = { date: '2026-11-25', engineVersion: 1, readiness: 45, confidence: 'moyenne' as const, mode: 'allege' as const, components: [], nutritionKind: 'incomplet' as const, nutritionScore: null, rules: [], plannedTemplateId: 't' };
+    const first = await repo.saveSnapshot(snap, new Date('2026-11-25T07:00:00Z'));
+    const same = await repo.saveSnapshot(snap, new Date('2026-11-25T08:00:00Z'));
+    expect(same.updatedAt).toBe(first.updatedAt);
+    await repo.choose('2026-11-25', 'alleger', new Date('2026-11-25T08:05:00Z'));
+    const changed = await repo.saveSnapshot({ ...snap, readiness: 52 }, new Date('2026-11-25T09:00:00Z'));
+    expect(changed.readiness).toBe(52);
+    expect(changed.choice).toBe('alleger');
+    expect(await repo.listActive()).toHaveLength(1);
+    await expect(repo.choose('2026-11-26', 'garder')).rejects.toBeInstanceOf(DataError);
+    await expect(repo.saveSnapshot({ ...snap, date: '2026-11-27', readiness: 140 })).rejects.toBeInstanceOf(DataError);
     db.close();
   });
 });

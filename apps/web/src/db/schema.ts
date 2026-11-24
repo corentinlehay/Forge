@@ -1,6 +1,6 @@
 import Dexie, { type EntityTable } from 'dexie';
 import { activeDbName } from './dataMode';
-import type { AudioDownload, AudioState, BodyPhoto, Measurement, Pain, WeekNote, MindSession, MoodLog, TargetChange, CheckIn, Exercise, Food, FoodEntry, MealPlan, MealTemplate, MetaEntry, PriceRecord, Profile, Program, RecipePhoto, RecipeRecord, ShoppingList, WaterLog, WeighIn, Workout, WorkoutSet, WorkoutTemplate } from './types';
+import type { AudioDownload, AudioState, BodyPhoto, Measurement, Pain, PulseDay, WeekNote, MindSession, MoodLog, TargetChange, CheckIn, Exercise, Food, FoodEntry, MealPlan, MealTemplate, MetaEntry, PriceRecord, Profile, Program, RecipePhoto, RecipeRecord, ShoppingList, WaterLog, WeighIn, Workout, WorkoutSet, WorkoutTemplate } from './types';
 import { newId, nowIso } from '../lib/ids';
 
 /**
@@ -15,9 +15,9 @@ import { newId, nowIso } from '../lib/ids';
  * v5 : + recettes perso, photos de recettes, planning des repas, listes de courses, prix des ingrédients (tables ajoutées).
  * v6 : + historique des objectifs nutritionnels (table ajoutée).
  * v7 : + journal émotionnel, pratiques Mind. v8 : + état et téléchargements des séances audio.
- * v9 : + mensurations, photos du corps, douleurs. v10 : + notes de semaine des bilans (tables ajoutées).
+ * v9 : + mensurations, photos du corps, douleurs. v10 : + notes de semaine des bilans. v11 : + journal PULSE (tables ajoutées).
  */
-export const SCHEMA_VERSION = 10;
+export const SCHEMA_VERSION = 11;
 
 export class ForgeDB extends Dexie {
   profile!: EntityTable<Profile, 'id'>;
@@ -47,6 +47,7 @@ export class ForgeDB extends Dexie {
   bodyPhotos!: EntityTable<BodyPhoto, 'id'>;
   pains!: EntityTable<Pain, 'id'>;
   weekNotes!: EntityTable<WeekNote, 'id'>;
+  pulseDays!: EntityTable<PulseDay, 'id'>;
 
   constructor(name = 'forge') {
     super(name);
@@ -93,6 +94,7 @@ export class ForgeDB extends Dexie {
     this.version(8).stores({ audioStates: 'id, updatedAt', audioDownloads: 'id' });
     this.version(9).stores({ measurements: 'id, date, updatedAt', bodyPhotos: 'id, date, updatedAt', pains: 'id, updatedAt' });
     this.version(10).stores({ weekNotes: 'id, weekStart, updatedAt' });
+    this.version(11).stores({ pulseDays: 'id, date, updatedAt' });
   }
 }
 

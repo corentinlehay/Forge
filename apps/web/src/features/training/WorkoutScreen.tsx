@@ -4,7 +4,8 @@ import { Link, useNavigate, useParams } from 'react-router';
 import { repos, useAllTemplates, useExercises, useWorkouts, useWorkoutSets } from '../../db/hooks';
 import type { TemplateExercise, Workout, WorkoutSet } from '../../db/types';
 import { buildCatalog, catalogItem, type CatalogItem } from '../../domain/exerciseCatalog';
-import { exerciseSessions, parseRepRange, suggestNext, type Suggestion } from '../../domain/progression';
+import { exerciseSessions, holdLoad, parseRepRange, suggestNext, type Suggestion } from '../../domain/progression';
+import { adjustTargets } from '../../domain/pulse/pulse';
 import { bestE1rm, e1rm, lastPerformance, workoutStats } from '../../domain/training';
 import { formatClock, formatRest, moveItem, nextSet, restFor } from '../../domain/workoutFlow';
 import { nowIso } from '../../lib/ids';
@@ -67,7 +68,7 @@ export function WorkoutScreen() {
         <BackLink />
       </Screen>
     );
-  const targets = templates.find((t) => t.id === workout.templateId)?.exercises ?? [];
+  const targets = adjustTargets(templates.find((t) => t.id === workout.templateId)?.exercises ?? [], workout.adjustment);
   return <LiveWorkout workout={workout} workouts={workouts} sets={sets} targets={targets} />;
 }
 
@@ -93,7 +94,11 @@ function LiveWorkout({ workout, workouts, sets, targets }: { workout: Workout; w
   const itemOf = (exerciseId: string): CatalogItem | undefined => catalogItem(catalog, exerciseId);
   const nameOf = (exerciseId: string) => itemOf(exerciseId)?.name ?? exerciseOf(exerciseId)?.name ?? 'Exercice';
   const targetOf = (exerciseId: string) => targets.find((t) => t.exerciseId === exerciseId);
-  const suggestionFor = (exerciseId: string): Suggestion | null => suggestNext(exerciseSessions(exerciseId, workouts, sets, workout.id), parseRepRange(targetOf(exerciseId)?.reps));
+  const suggestionFor = (exerciseId: string): Suggestion | null => {
+    const sessions = exerciseSessions(exerciseId, workouts, sets, workout.id);
+    const s = suggestNext(sessions, parseRepRange(targetOf(exerciseId)?.reps));
+    return workout.adjustment ? holdLoad(s, sessions.at(-1)?.maxLoad ?? null) : s;
+  };
 
   /** Une série est un record si elle bat le meilleur 1RM estimé des autres séances (et est la meilleure du jour). */
   const isRecord = (s: WorkoutSet) => {
@@ -186,6 +191,12 @@ function LiveWorkout({ workout, workouts, sets, targets }: { workout: Workout; w
           </div>
         ))}
       </dl>
+
+      {workout.adjustment && (
+        <p className="rounded-[18px] border-l-2 border-brume bg-anthracite p-3.5 text-[15px] leading-snug">
+          Version allégée proposée par PULSE : {-workout.adjustment.setsDelta} série{-workout.adjustment.setsDelta > 1 ? 's' : ''} de moins par exercice, {workout.adjustment.rirDelta} répétitions en réserve de plus, pas de record visé.
+        </p>
+      )}
 
       {order.length === 0 && <p className="text-[15px] text-cendre">Ajoute un premier exercice pour commencer.</p>}
 

@@ -195,6 +195,13 @@ export interface WorkoutTemplate extends SyncFields {
   programId?: string | null;
 }
 
+/** Version allégée d'une séance, proposée par PULSE et acceptée : séries en moins, répétitions en réserve en plus. */
+export interface WorkoutAdjustment {
+  source: 'pulse';
+  setsDelta: number;
+  rirDelta: number;
+}
+
 /** Une séance réalisée (ou en cours tant que endedAt est vide). */
 export interface Workout extends SyncFields {
   date: string;
@@ -207,6 +214,8 @@ export interface Workout extends SyncFields {
   note?: string;
   /** Notes par exercice pendant la séance. */
   exerciseNotes?: Record<string, string>;
+  /** Séance allégée sur proposition de PULSE (absente : séance du programme telle quelle). */
+  adjustment?: WorkoutAdjustment | null;
 }
 
 export interface WorkoutSet extends SyncFields {
@@ -404,6 +413,31 @@ export interface WeekNote extends SyncFields {
   wentWell?: string;
   toAdjust?: string;
   intention?: string;
+}
+
+export type PulseComponentKey = 'sommeil' | 'physiologie' | 'ressenti' | 'charge' | 'mental';
+export type PulseMode = 'feu-vert' | 'normal' | 'allege' | 'recuperation';
+export type PulseConfidence = 'haute' | 'moyenne' | 'basse';
+export type NutritionKind = 'coherent' | 'sous' | 'au-dessus' | 'incomplet' | 'sans-objectif';
+export type PulseChoice = 'alleger' | 'garder' | 'deplacer';
+
+/**
+ * Journal PULSE : le résultat du jour tel qu'il a été montré, et ton choix sur la séance.
+ * Une ligne par jour ; les règles changent de version sans réécrire le passé.
+ */
+export interface PulseDay extends SyncFields {
+  date: string;
+  engineVersion: number;
+  readiness: number | null;
+  confidence: PulseConfidence | null;
+  mode: PulseMode | null;
+  components: { key: PulseComponentKey; score: number | null; weight: number }[];
+  nutritionKind: NutritionKind;
+  nutritionScore: number | null;
+  rules: string[];
+  plannedTemplateId?: string | null;
+  choice?: PulseChoice | null;
+  choiceAt?: string | null;
 }
 
 export interface PainLog {

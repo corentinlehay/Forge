@@ -16,6 +16,7 @@ import type {
   Scale5,
   WaterLog,
   WeekNote,
+  PulseDay,
   WeighIn,
   Workout,
   WorkoutSet,
@@ -301,6 +302,7 @@ export interface DemoTables {
   measurements: Measurement[];
   pains: Pain[];
   weekNotes: WeekNote[];
+  pulseDays: PulseDay[];
 }
 
 function localIso(dateKey: string, hour: number, minute = 0): string {
@@ -663,5 +665,6 @@ export function generateDemoData(today: string, now: Date): DemoTables {
     measurements,
     pains,
     weekNotes,
+    pulseDays: [],
   };
 }

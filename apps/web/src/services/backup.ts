@@ -215,6 +215,7 @@ const workoutSchema = z.object({
   endedAt: z.string().nullable().optional(),
   note: z.string().max(2000).optional(),
   exerciseNotes: z.record(z.string(), z.string().max(1000)).optional(),
+  adjustment: z.object({ source: z.literal('pulse'), setsDelta: z.number().int().min(-5).max(0), rirDelta: z.number().int().min(0).max(5) }).nullable().optional(),
 });
 
 const setSchema = z.object({
@@ -277,6 +278,22 @@ const painSchema = z.object({
 });
 const longText = z.string().max(600).optional();
 const weekNoteSchema = z.object({ ...syncFields, weekStart: dateKey, wentWell: longText, toAdjust: longText, intention: longText });
+const pulseKey = z.enum(['sommeil', 'physiologie', 'ressenti', 'charge', 'mental']);
+const pulseDaySchema = z.object({
+  ...syncFields,
+  date: dateKey,
+  engineVersion: z.number().int().min(1),
+  readiness: z.number().min(0).max(100).nullable(),
+  confidence: z.enum(['haute', 'moyenne', 'basse']).nullable(),
+  mode: z.enum(['feu-vert', 'normal', 'allege', 'recuperation']).nullable(),
+  components: z.array(z.object({ key: pulseKey, score: z.number().min(0).max(100).nullable(), weight: z.number().min(0).max(100) })).max(10),
+  nutritionKind: z.enum(['coherent', 'sous', 'au-dessus', 'incomplet', 'sans-objectif']),
+  nutritionScore: z.number().min(0).max(100).nullable(),
+  rules: z.array(z.string().max(40)).max(20),
+  plannedTemplateId: z.string().nullable().optional(),
+  choice: z.enum(['alleger', 'garder', 'deplacer']).nullable().optional(),
+  choiceAt: z.string().nullable().optional(),
+});
 const audioStateSchema = z.object({
   id: z.string().min(1).max(40),
   position: z.number().min(0).max(4 * 3600),
@@ -330,6 +347,7 @@ export const backupSchema = z.object({
     measurements: z.array(measurementSchema).default([]),
     pains: z.array(painSchema).default([]),
     weekNotes: z.array(weekNoteSchema).default([]),
+    pulseDays: z.array(pulseDaySchema).default([]),
   }),
 });
 
@@ -369,6 +387,7 @@ const TABLES = [
   ['measurements', 'id'],
   ['pains', 'id'],
   ['weekNotes', 'id'],
+  ['pulseDays', 'id'],
 ] as const;
 
 type TableName = (typeof TABLES)[number][0];

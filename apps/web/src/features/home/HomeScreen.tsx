@@ -18,6 +18,7 @@ import { SessionHero } from '../training/SessionHero';
 import { CoachButton } from '../../ui/CoachButton';
 import { BackupReminder } from './BackupReminder';
 import { WeekCard } from '../review/WeekCard';
+import { PulseCard } from '../pulse/PulseCard';
 
 const kcal = (v: number) => `${formatNumber(v, 0)} kcal`;
 
@@ -81,6 +82,7 @@ function Dashboard({ data }: { data: DashboardData }) {
           ))}
         </div>
       )}
+      <PulseCard />
       <SessionHero data={data} />
       <NutritionCard data={data} />
       <PhysiqueCard data={data} />

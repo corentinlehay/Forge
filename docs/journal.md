@@ -1,5 +1,39 @@
 # Journal des versions
 
+## PULSE 1 : moteur de décision sur les données FORGE (version de test, branche `pulse-1`)
+
+### Fait
+- Deux indicateurs séparés :
+    - **Readiness Score** sur 100, la disponibilité physique et mentale, en cinq composantes : Sommeil, Physiologie, Ressenti, Charge, Mental ;
+    - **Nutrition Status**, la cohérence des apports des 3 derniers jours notés avec l'objectif en vigueur. Il ne change jamais le Readiness Score.
+- Chaque composante est expliquée : sa note, son poids réel, sa source (déclarée, mesurée ou calculée) et le calcul en clair.
+- Une donnée manquante n'est jamais inventée : son poids est réparti sur les autres composantes et le niveau de confiance (haute, moyenne, basse) le dit.
+- Références personnelles :
+    - pour la VFC et la fréquence cardiaque au repos, 14 jours minimum sur les 28 derniers, prêtes pour PULSE 2 ;
+    - pour la charge, 4 semaines de séances avant d'en juger.
+- Fiabilité des sources : un sommeil mesuré par une montre passe avant le sommeil déclaré.
+- Modes du jour (Feu vert, Normal, Allégé, Récupération) fixés par le score. Les règles de sécurité et de tendance passent avant :
+    - pas de plan avant 18 ans ;
+    - douleur dans la poitrine : aucun entraînement ;
+    - douleur avec signe d'alerte : séance suspendue si elle sollicite la zone ;
+    - nuit de moins de 5 h : au plus Allégé ;
+    - fatigue qui s'installe (VFC basse 3 jours, ou fatigue et courbatures fortes 3 jours, avec une charge en hausse) : Récupération ;
+    - moral au plus bas : rappel du 3114 ;
+    - apport très bas : retour à l'objectif ;
+    - poids déjà bas : aucun déficit.
+- Recommandations Training, Nutrition, Mind et Recovery, avec leur raison et leur source vérifiée (Watson 2015, Craven 2022, Drake 2013, Brooks et Lack 2006, Kiviniemi 2007, Plews 2013, Meeusen 2013, Impellizzeri 2020, Morton 2018). Les recommandations Mind ne pointent que vers des exercices et routines qui existent.
+- Séance du jour en un geste, seulement si tu valides :
+    - « Démarrer la version allégée » : une série de moins par exercice, 2 répétitions en réserve de plus, aucune hausse de charge proposée pendant la séance ;
+    - « Garder la séance prévue » ;
+    - « Déplacer à demain » : PULSE la propose le lendemain.
+- Réglages PULSE : poids des composantes, seuils des modes, sommeil visé, nuit courte, seuils de charge, seuils du Nutrition Status. Ils sont bornés, gardés dans la base locale et la sauvegarde, avec « Revenir aux valeurs de départ ».
+- Carte « PULSE du jour » en tête de l'accueil : score, mode, confiance, Nutrition Status, première recommandation ou alerte. Sans check-in, elle propose de le faire.
+- Journal PULSE : une ligne par jour avec le résultat montré et ton choix, réécrite seulement si le résultat change. C'est le socle de l'historique de PULSE 3.
+- Base locale v11 : table `pulseDays` (migration v10 vers v11 testée). Les séances peuvent porter une version allégée, comprise dans la sauvegarde.
+- Préparé pour le multi-utilisateur sans rien en construire : moteur en fonctions pures, données et réglages dans la base de l'utilisateur, identifiants et dates de synchronisation sur chaque ligne, aucune donnée sur un serveur.
+- Les cinq scénarios de l'audit sont des tests automatiques. Ils donnent les mêmes décisions, avec deux écarts d'arrondi corrigés dans l'audit : Sommeil 93 au lieu de 92, et scénario 4 à 82 au lieu de 80.
+- 262 tests. Parcours vérifié au format iPhone : carte de l'accueil, écran PULSE, passage en Allégé par les réglages, séance allégée démarrée, choix gardé au journal, retour aux valeurs de départ, compte vide sans check-in.
+
 ## Bilans 1 : bilan de la semaine, calendrier, analyses croisées, badges (version de test, branche `bilans-1`)
 
 ### Fait

@@ -1,6 +1,6 @@
 import type { EntityTable, Table } from 'dexie';
 import type { ForgeDB } from '../schema';
-import type { BodyPhoto, CheckIn, Exercise, Food, FoodEntry, MealPlan, MealTemplate, Measurement, MindSession, MoodLog, Pain, Per100, PriceRecord, Program, RecipePhoto, RecipeRecord, ShoppingList, SyncFields, TargetChange, WaterLog, WeekNote, Workout, WorkoutSet, WorkoutTemplate } from '../types';
+import type { BodyPhoto, CheckIn, Exercise, Food, FoodEntry, MealPlan, MealTemplate, Measurement, MindSession, MoodLog, Pain, Per100, PriceRecord, Program, RecipePhoto, RecipeRecord, PulseChoice, PulseDay, ShoppingList, SyncFields, TargetChange, WaterLog, WeekNote, Workout, WorkoutSet, WorkoutTemplate } from '../types';
 import type { LibraryExercise } from '../../data/exerciseLibrary';
 import { isDateKey, isTimeKey } from '../../lib/dates';
 import { newId, nowIso } from '../../lib/ids';
@@ -362,6 +362,34 @@ export function createBodyPhotoRepo(db: ForgeDB) {
     if (i.pose !== undefined) check(['face', 'profil', 'dos'].includes(i.pose), 'Pose invalide.');
     if (i.dataUrl !== undefined) check(i.dataUrl.startsWith('data:image/') && i.dataUrl.length <= 3_000_000, 'Image invalide ou trop lourde.');
   });
+}
+
+/**
+ * Journal PULSE : une ligne par jour. Le résultat n'est réécrit que s'il change ;
+ * ton choix sur la séance est gardé à part et n'est jamais écrasé par un nouveau calcul.
+ */
+export function createPulseDayRepo(db: ForgeDB) {
+  const base = entityRepo<PulseDay>(db.pulseDays, (i) => {
+    if (i.date !== undefined) check(isDateKey(i.date), 'Date invalide.');
+    if (i.readiness !== undefined && i.readiness !== null) check(i.readiness >= 0 && i.readiness <= 100, 'Score hors de 0 à 100.');
+  });
+  const byDate = async (date: string) => (await db.pulseDays.where('date').equals(date).toArray()).find((r) => !r.deletedAt) ?? null;
+  return {
+    ...base,
+    byDate,
+    async saveSnapshot(snapshot: Omit<PulseDay, keyof SyncFields | 'choice' | 'choiceAt'>, now: Date = new Date()): Promise<PulseDay> {
+      const existing = await byDate(snapshot.date);
+      if (!existing) return base.add({ ...snapshot, choice: null, choiceAt: null } as Input<PulseDay>, now);
+      const keys = Object.keys(snapshot) as (keyof typeof snapshot)[];
+      const same = keys.every((k) => JSON.stringify(existing[k] ?? null) === JSON.stringify(snapshot[k] ?? null));
+      return same ? existing : base.update(existing.id, snapshot, now);
+    },
+    async choose(date: string, choice: PulseChoice, now: Date = new Date()): Promise<PulseDay> {
+      const existing = await byDate(date);
+      if (!existing) throw new DataError('Le résultat PULSE du jour n’est pas encore enregistré.');
+      return base.update(existing.id, { choice, choiceAt: now.toISOString() }, now);
+    },
+  };
 }
 
 /** Notes de semaine : une par semaine ; une nouvelle saisie remplace la précédente. */

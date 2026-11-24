@@ -122,6 +122,12 @@ export function suggestNext(sessions: readonly SessionPerf[], range: RepRange | 
   };
 }
 
+/** Séance allégée par PULSE : pas d'augmentation de charge, on garde la dernière charge. */
+export function holdLoad(s: Suggestion | null, lastLoad: number | null): Suggestion | null {
+  if (!s || lastLoad === null || s.weightKg <= lastLoad) return s;
+  return { weightKg: lastLoad, reps: s.reps, reason: `Séance allégée : garde ${kg(lastLoad)} et vise ${s.reps} répétitions, sans chercher de record.` };
+}
+
 export type TrendKind = 'progression' | 'stagnation' | 'regression' | 'irregular' | 'insufficient';
 
 export interface Trend {
