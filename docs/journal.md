@@ -1,6 +1,6 @@
 # Journal des versions
 
-## Répartition sur 3 jours (version de test, branche `repartition-1`)
+## Répartition sur 3 jours (branche `repartition-1`, en production le 25 novembre 2026)
 
 - **Pourquoi :** sur 3 jours, FORGE ne proposait que du corps entier, avec des jambes à chaque séance. Certains préfèrent une séance jambes à part.
 - **Questionnaire, écran « Ta semaine d'entraînement » :** avec 3 jours choisis, une question de plus.

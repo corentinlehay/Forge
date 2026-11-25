@@ -1,6 +1,6 @@
 # État du projet FORGE
 
-Mis à jour le 25 novembre 2026 : mise en production de toute la pile, de nutrition-1 à motion-1, puis zone « Épaules » renforcée (`epaules-1`), aussi en production. Volume d'une séance en grand (`volume-1`), en production le même jour. Répartition « haut, bas, haut » sur 3 jours en version de test (`repartition-1`). Le détail de chaque livraison est dans docs/journal.md.
+Mis à jour le 25 novembre 2026 : mise en production de toute la pile, de nutrition-1 à motion-1, puis zone « Épaules » renforcée (`epaules-1`), aussi en production. Volume d'une séance en grand (`volume-1`), en production le même jour. Répartition « haut, bas, haut » sur 3 jours (`repartition-1`), en production le même jour. Le détail de chaque livraison est dans docs/journal.md.
 
 ## En production (branche `main`, depuis le 25 novembre 2026)
 
@@ -22,17 +22,12 @@ Base de données locale : version 11. Une base de la production précédente (ve
 | `motion-1` | FORGE MOTION : système de mouvement centralisé, transitions entre onglets, appui et sélection animés, score PULSE et dimensions qui apparaissent, compte à rebours circulaire, retour haptique, courbes tracées et meilleur point, écart avec aujourd'hui sur la courbe de poids, accueil adaptatif (séance, après séance, soir, après pesée) |
 | `epaules-1` | Questionnaire, zone « Épaules » renforcée : plus aucun développé au-dessus de la tête, tractions, dips, écartés, développé incliné ni extension triceps au-dessus de la tête ; développé au sol, puis machine et haltères en premier ; consigne « élévations latérales jusqu'à hauteur d'épaule ». Conseils de matériel exacts (FORGE ne propose plus un matériel que tu as déjà) |
 | `volume-1` | Volume d'une séance en grand : le bloc Volume se touche, une vue plein écran compte le total pendant que chaque série se pose, avec record, palier, comparaison avec la séance précédente du même type, total depuis la première séance, graphique des dernières séances et phrase FORGE. Rien n'est inventé : chaque phrase vient des séances enregistrées |
+| `repartition-1` | Questionnaire, 3 jours par semaine : choix entre « Corps entier à chaque séance » et « Haut, bas, haut » (une séance jambes complète avec une ou deux séries d'épaules, deux séances haut du corps). Séances du haut jamais deux jours de suite. Avertissement quand deux séances corps entier se suivent |
 | `signature-1` | FORGE SIGNATURE : nouvelle palette dans un système de couleurs unique (docs/design-system.md), couleur par espace pour les graphiques, indicateurs et l'onglet actif, vert FORGE pour toutes les actions principales, rouge d'alerte distinct de l'orange Nutrition, icône de l'app aux nouvelles couleurs |
 | `pulse-1-2` | PULSE 1.2 : plan du jour par module avec « Pourquoi ? », rubrique Sommeil, proposition à valider (accepter, garder, modifier, reporter, revenir en arrière), version allégée appliquée par Training, bilan du soir, historique des décisions et des bilans |
 | `pulse-1` | PULSE 1 et 1.1 : indicateur expliqué en 5 dimensions et lu en 4 niveaux, couverture, évolution sur 7 et 30 jours, analyse du jour, Nutrition Status séparé, règles de sécurité, proposition de séance qui garde toujours « Garder », check-in passable en 5 questions, historique par période, réglages |
 
 Base de données locale : version 11. Serveur : relais Open Food Facts et séances audio (Workers KV `forge-audio`). Chaque changement de schéma a son test de migration sans perte.
-
-## En attente de validation (version de test)
-
-| Branche | Contenu |
-|---|---|
-| `repartition-1` | Questionnaire, 3 jours par semaine : choix entre « Corps entier à chaque séance » et « Haut, bas, haut » (une séance jambes complète avec une ou deux séries d'épaules, deux séances haut du corps). Séances du haut jamais deux jours de suite. Avertissement quand deux séances corps entier se suivent |
 
 ## Audit FORGE PULSE (24 novembre 2026)
 
@@ -92,17 +87,16 @@ Document complet, avec l'architecture, les cinq scénarios et le plan : https://
 
 ## Reste à faire
 
-1. **Valider `repartition-1`** (répartition sur 3 jours), puis mise en production.
-2. **Ton ami** : refaire le questionnaire (Réglages, Refaire le questionnaire) en cochant « Épaules » pour recevoir le nouveau programme.
-3. **Vérifier la production sur ton iPhone** :
+1. **Tes amis** : refaire le questionnaire (Réglages, Refaire le questionnaire) pour recevoir les nouveaux programmes (zone « Épaules » cochée ; « Haut, bas, haut » sur 3 jours).
+2. **Vérifier la production sur ton iPhone** :
     - la mise à jour de l'app et la reprise de tes données ;
     - le retour haptique (iOS 18 et plus).
-4. **Logo : choisir parmi les pistes proposées** (aucune modification du dessin sans ton accord).
-5. **Tes séances audio.** Le code d'administration est en place (Secrets Store du compte, secret `ADMIN_CODE`) : il reste à ajouter tes enregistrements depuis l'espace créateur.
-6. **PULSE 2 : connecteurs.** Raccourci Apple Santé prêt à installer, bouton « Importer depuis Santé », registre de connecteurs, provenance, dédoublonnage, données contradictoires. Seulement après ta validation explicite.
-7. **PULSE 3 : apprentissage personnel.** Préférences apprises, consultables et modifiables, analyse des résultats des recommandations, semaine de décharge proposée, notification du matin en option.
-8. **IA transversale (dont la couche IA de PULSE et le « Pourquoi ? »).** Coach Claude avec le contexte de tous les modules, explication du score sans décision ni levée de garde-fou, mémoire et préférences modifiables, recommandations limitées aux contenus qui existent, données transmises réduites au nécessaire, plafond de coût par utilisateur. Nécessite ta clé API dans les secrets Cloudflare.
-9. **Compte et paiement.** Modèle à décider, compte léger, prestataire de paiement, pages légales ; avec la décision app native ou API Oura et WHOOP.
+3. **Logo : choisir parmi les pistes proposées** (aucune modification du dessin sans ton accord).
+4. **Tes séances audio.** Le code d'administration est en place (Secrets Store du compte, secret `ADMIN_CODE`) : il reste à ajouter tes enregistrements depuis l'espace créateur.
+5. **PULSE 2 : connecteurs.** Raccourci Apple Santé prêt à installer, bouton « Importer depuis Santé », registre de connecteurs, provenance, dédoublonnage, données contradictoires. Seulement après ta validation explicite.
+6. **PULSE 3 : apprentissage personnel.** Préférences apprises, consultables et modifiables, analyse des résultats des recommandations, semaine de décharge proposée, notification du matin en option.
+7. **IA transversale (dont la couche IA de PULSE et le « Pourquoi ? »).** Coach Claude avec le contexte de tous les modules, explication du score sans décision ni levée de garde-fou, mémoire et préférences modifiables, recommandations limitées aux contenus qui existent, données transmises réduites au nécessaire, plafond de coût par utilisateur. Nécessite ta clé API dans les secrets Cloudflare.
+8. **Compte et paiement.** Modèle à décider, compte léger, prestataire de paiement, pages légales ; avec la décision app native ou API Oura et WHOOP.
 
 ## Problèmes et limites techniques connus
 
