@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { libraryExercise } from '../data/exerciseLibrary';
 import { TRAITS } from '../data/exerciseTraits';
-import { activityFactor, ageOn, bmrMifflin, nutritionPlan, trainingPlan, ZONE_EXCLUSIONS, type PlanAnswers } from './plan';
+import { activityFactor, ageOn, backToBack, bmrMifflin, nutritionPlan, trainingPlan, upperLowerDays, ZONE_EXCLUSIONS, type PlanAnswers } from './plan';
 
 const base: PlanAnswers = {
   goal: 'muscle',
@@ -112,6 +112,51 @@ describe('programme d’entraînement', () => {
     for (const id of [...ZONE_EXCLUSIONS.dos, ...ZONE_EXCLUSIONS.genoux]) expect(used).not.toContain(id);
     expect(p.excluded).toContain(libraryExercise('barbell_deadlift')!.name);
     expect(p.warnings.join(' ')).toContain('professionnel de santé');
+  });
+
+  it('3 jours, « haut, bas, haut » : jambes dans une seule séance, avec une ou deux séries d’épaules', () => {
+    const lower = new Set(['squat', 'fente', 'charniere', 'iso-quadriceps', 'iso-ischios', 'iso-fessiers', 'iso-mollets']);
+    const shoulders = new Set(['iso-epaules', 'iso-arriere-epaules']);
+    for (const sessionMinutes of [45, 60, 75, 90] as const) {
+      const p = trainingPlan({ ...base, weekdays: [1, 3, 4], sessionMinutes, split: 'haut-bas' });
+      expect(p.splitLabel).toBe('haut, bas, haut');
+      expect(p.sessions.map((s) => [s.name, s.weekday])).toEqual([
+        ['Haut du corps A', 1],
+        ['Bas du corps et épaules', 3],
+        ['Haut du corps B', 4],
+      ]);
+      const [upperA, legs, upperB] = p.sessions;
+      for (const s of [upperA!, upperB!]) expect(s.exercises.filter((e) => lower.has(TRAITS[e.libraryId]!.pattern))).toEqual([]);
+      const legPatterns = legs!.exercises.map((e) => TRAITS[e.libraryId]!.pattern);
+      expect(legPatterns.filter((x) => lower.has(x)).length).toBeGreaterThanOrEqual(3);
+      expect(legPatterns.filter((x) => shoulders.has(x)).length).toBeGreaterThanOrEqual(1);
+      expect(legPatterns.filter((x) => shoulders.has(x)).length).toBeLessThanOrEqual(2);
+    }
+  });
+
+  it('« haut, bas, haut » : les deux séances du haut ne tombent jamais deux jours de suite', () => {
+    const p = trainingPlan({ ...base, weekdays: [1, 6, 7], split: 'haut-bas' });
+    expect(p.sessions.map((s) => [s.name, s.weekday])).toEqual([
+      ['Haut du corps A', 1],
+      ['Haut du corps B', 6],
+      ['Bas du corps et épaules', 7],
+    ]);
+    expect(upperLowerDays([2, 4, 6])).toEqual([2, 4, 6]);
+  });
+
+  it('sans choix, 3 jours restent en corps entier ; deux séances corps entier qui se suivent sont signalées', () => {
+    expect(trainingPlan({ ...base, weekdays: [1, 3, 5] }).splitLabel).toBe('corps entier');
+    const close = trainingPlan({ ...base, weekdays: [1, 3, 4], split: 'corps-entier' }).warnings;
+    expect(close).toContain(
+      'Mercredi et jeudi se suivent : en corps entier, les mêmes muscles travaillent deux jours de suite. Laisse si possible un jour entre deux séances, ou choisis « Haut, bas, haut ».',
+    );
+    expect(trainingPlan({ ...base, weekdays: [1, 3, 5] }).warnings.join(' ')).not.toContain('se suivent');
+    expect(trainingPlan({ ...base, weekdays: [1, 3, 4], split: 'haut-bas' }).warnings.join(' ')).not.toContain('se suivent');
+    expect(backToBack([1, 7])).toEqual([7, 1]);
+    expect(backToBack([1, 3, 5])).toBeNull();
+    expect(trainingPlan({ ...base, weekdays: [2, 3] }).warnings[0]).toBe(
+      'Mardi et mercredi se suivent : en corps entier, les mêmes muscles travaillent deux jours de suite. Laisse si possible un jour entre deux séances.',
+    );
   });
 
   it('épaules à ménager : ni développé au-dessus de la tête, ni tractions, ni dips, ni écartés, quel que soit le cadre', () => {

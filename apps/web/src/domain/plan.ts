@@ -28,7 +28,12 @@ export interface PlanAnswers {
   /** Matériel à la maison. */
   equipment: Need[];
   zones: Zone[];
+  /** Répartition sur 3 jours (absente : corps entier). */
+  split?: ThreeDaySplit;
 }
+
+/** Sur 3 jours : corps entier à chaque séance, ou une séance jambes et deux séances haut du corps. */
+export type ThreeDaySplit = 'corps-entier' | 'haut-bas';
 
 export const GOAL_LABELS: Record<Goal, string> = {
   muscle: 'Prendre du muscle',
@@ -247,6 +252,20 @@ const LOWER = (v: number, name: string): SessionModel => ({
         [S.quadri, 0],
       ],
 });
+/** Séance jambes complète, avec une ou deux séries d'épaules selon la durée (répartition « haut, bas, haut »). */
+const LOWER_SHOULDERS: SessionModel = {
+  name: 'Bas du corps et épaules',
+  slots: [
+    [S.squat, 0],
+    [S.charniere, 0],
+    [S.fente, 0],
+    [S.epaules, 0],
+    [S.ischios, 0],
+    [S.arriere, 1],
+    [S.mollets, 0],
+    [S.abdos, 0],
+  ],
+};
 const PUSH = (v: number, name: string): SessionModel => ({
   name,
   slots: [
@@ -284,14 +303,22 @@ const LEGS = (v: number, name: string): SessionModel => ({
   ],
 });
 
-export function splitFor(days: number): { label: string; sessions: SessionModel[] } {
+/**
+ * Répartition de la semaine. Sur 3 jours, deux choix :
+ * - corps entier : chaque muscle 2 fois par semaine ou plus, ce que recommande l'ACSM (position 2026) ;
+ * - haut, bas, haut : le haut du corps 2 fois, les jambes 1 fois. À volume égal, la fréquence pèse peu
+ *   (Grgic, Schoenfeld et Latella 2019, J Sci Med Sport 22(3):361-370), mais une seule séance jambes en donne moins.
+ */
+export function splitFor(days: number, three: ThreeDaySplit = 'corps-entier'): { label: string; sessions: SessionModel[] } {
   switch (Math.max(1, Math.min(6, days))) {
     case 1:
       return { label: 'corps entier', sessions: [FULL_A] };
     case 2:
       return { label: 'corps entier', sessions: [FULL_A, FULL_B] };
     case 3:
-      return { label: 'corps entier', sessions: [FULL_A, FULL_B, FULL_C] };
+      return three === 'haut-bas'
+        ? { label: 'haut, bas, haut', sessions: [UPPER(0, 'Haut du corps A'), LOWER_SHOULDERS, UPPER(1, 'Haut du corps B')] }
+        : { label: 'corps entier', sessions: [FULL_A, FULL_B, FULL_C] };
     case 4:
       return { label: 'haut et bas du corps', sessions: [UPPER(0, 'Haut du corps A'), LOWER(0, 'Bas du corps A'), UPPER(1, 'Haut du corps B'), LOWER(1, 'Bas du corps B')] };
     case 5:
@@ -411,6 +438,38 @@ const NEED_LABELS: [Need, string][] = [
   ['barre', 'une barre'],
 ];
 
+const DAY_NAMES_FR = ['lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi', 'dimanche'] as const;
+const capitalizeDay = (d: number) => DAY_NAMES_FR[d - 1]!.charAt(0).toUpperCase() + DAY_NAMES_FR[d - 1]!.slice(1);
+
+/**
+ * Premiers jours d'entraînement qui se suivent, dimanche puis lundi compris (la semaine recommence).
+ * Garder 48 h entre deux séances des mêmes muscles : Garber et al. 2011 (ACSM, Med Sci Sports Exerc 43(7):1334-59).
+ */
+export function backToBack(days: readonly number[]): [number, number] | null {
+  const sorted = [...new Set(days)].sort((x, y) => x - y);
+  if (sorted.length < 2) return null;
+  for (let i = 0; i < sorted.length; i++) {
+    const d = sorted[i]!;
+    const next = sorted[(i + 1) % sorted.length]!;
+    if (next === d + 1 || (d === 7 && next === 1)) return [d, next];
+  }
+  return null;
+}
+
+const follows = (x: number, y: number) => y === x + 1 || (x === 7 && y === 1) || x === y + 1 || (y === 7 && x === 1);
+
+/**
+ * Jours de [Haut A, Bas, Haut B] : la séance jambes au milieu, sauf si les deux séances du haut tomberaient
+ * alors deux jours de suite (dimanche puis lundi, par exemple).
+ */
+export function upperLowerDays(days: readonly number[]): number[] {
+  const options = [1, 0, 2].map((k) => {
+    const rest = days.filter((_, j) => j !== k);
+    return [rest[0]!, days[k]!, rest[1]!];
+  });
+  return options.find((o) => !follows(o[0]!, o[2]!)) ?? options[0]!;
+}
+
 const EXERCISES_PER_MINUTES: Record<PlanAnswers['sessionMinutes'], number> = { 45: 4, 60: 5, 75: 6, 90: 7 };
 const TIMED = new Set(['plank', 'side_bridge']);
 
@@ -439,7 +498,8 @@ function prescription(id: string, index: number, a: Pick<PlanAnswers, 'goal' | '
 
 export function trainingPlan(a: PlanAnswers): TrainingPlan {
   const days = [...new Set(a.weekdays)].filter((d) => d >= 1 && d <= 7).sort();
-  const split = splitFor(days.length);
+  const split = splitFor(days.length, a.split);
+  const weekdays = split.label === 'haut, bas, haut' ? upperLowerDays(days) : days;
   const gym = a.place === 'salle';
   const available = new Set<Need>(a.equipment);
   const excludedIds = new Set(a.zones.flatMap((z) => ZONE_EXCLUSIONS[z]));
@@ -475,8 +535,9 @@ export function trainingPlan(a: PlanAnswers): TrainingPlan {
       if (pick) chosen.push(pick);
       else missing.add(slot[0]!);
     }
-    return { name: model.name, weekday: days[i] ?? days[i % Math.max(1, days.length)] ?? 1, exercises: chosen.map((id, index) => prescription(id, index, a)) };
+    return { name: model.name, weekday: weekdays[i] ?? days[i % Math.max(1, days.length)] ?? 1, exercises: chosen.map((id, index) => prescription(id, index, a)) };
   });
+  if (split.label === 'haut, bas, haut') sessions.sort((x, y) => x.weekday - y.weekday);
 
   /** Matériel qui ajouterait un exercice de ces schémas, sans revenir sur les zones à ménager (deux idées au plus). */
   const unlocking = (patterns: Pattern[]): string => {
@@ -501,6 +562,11 @@ export function trainingPlan(a: PlanAnswers): TrainingPlan {
   const warnings: string[] = [];
   if (missing.has('tirage-v') || missing.has('tirage-h')) warnings.push(shortage(['tirage-v', 'tirage-h'], 'de tirage pour le dos', true));
   if (missing.has('charniere') || missing.has('iso-ischios')) warnings.push(shortage(['charniere', 'iso-ischios'], 'pour l’arrière des cuisses', false));
+  const pair = split.label === 'corps entier' ? backToBack(days) : null;
+  if (pair)
+    warnings.push(
+      `${capitalizeDay(pair[0])} et ${DAY_NAMES_FR[pair[1] - 1]} se suivent : en corps entier, les mêmes muscles travaillent deux jours de suite. Laisse si possible un jour entre deux séances${days.length === 3 ? ', ou choisis « Haut, bas, haut »' : ''}.`,
+    );
   for (const z of a.zones) if (ZONE_ADVICE[z]) warnings.push(ZONE_ADVICE[z]);
   if (a.zones.length)
     warnings.push(

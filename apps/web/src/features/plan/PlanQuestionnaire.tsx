@@ -6,10 +6,23 @@ import { adoptPlan, QUESTIONNAIRE_KEY, type QuestionnaireRecord } from '../../db
 import { repos, useMeta, useProfile, useToday, useWeighIns } from '../../db/hooks';
 import { getDb } from '../../db/schema';
 import type { Experience, Sex } from '../../db/types';
-import { ageOn, GOAL_LABELS, MIN_AGE, nutritionPlan, trainingPlan, ZONE_LABELS, type DailyActivity, type Goal, type PlanAnswers, type Zone } from '../../domain/plan';
+import {
+  ageOn,
+  backToBack,
+  GOAL_LABELS,
+  MIN_AGE,
+  nutritionPlan,
+  trainingPlan,
+  ZONE_LABELS,
+  type DailyActivity,
+  type Goal,
+  type PlanAnswers,
+  type ThreeDaySplit,
+  type Zone,
+} from '../../domain/plan';
 import { formatRest } from '../../domain/workoutFlow';
 import { isDateKey } from '../../lib/dates';
-import { formatNumber, parseDecimal, WEIGHT_MAX_KG, WEIGHT_MIN_KG } from '../../lib/format';
+import { capitalize, formatNumber, parseDecimal, WEIGHT_MAX_KG, WEIGHT_MIN_KG } from '../../lib/format';
 import { Button } from '../../ui/Button';
 import { Chips } from '../../ui/Chips';
 import { Field } from '../../ui/Field';
@@ -58,6 +71,8 @@ interface Draft {
   returning: boolean;
   weekdays: number[];
   sessionMinutes: PlanAnswers['sessionMinutes'] | null;
+  /** Seulement pour 3 jours par semaine. */
+  split: ThreeDaySplit | null;
   place: 'salle' | 'maison' | null;
   equipment: Need[];
   zones: Zone[];
@@ -91,6 +106,7 @@ export function PlanQuestionnaire({ mode, onFinished, onCancel, onSkip }: { mode
     returning: p?.returning ?? profile?.returningAfterBreak ?? false,
     weekdays: p?.weekdays ?? [],
     sessionMinutes: p?.sessionMinutes ?? null,
+    split: p?.split ?? null,
     place: p?.place ?? null,
     equipment: p?.equipment ?? [],
     zones: p?.zones ?? [],
@@ -161,7 +177,8 @@ function Flow({
       case 'semaine':
         if (!draft.weekdays.length) return 'Choisis au moins un jour.';
         if (draft.weekdays.length > 6) return 'Garde au moins un jour de repos par semaine.';
-        return draft.sessionMinutes ? null : 'Choisis la durée d’une séance.';
+        if (!draft.sessionMinutes) return 'Choisis la durée d’une séance.';
+        return draft.weekdays.length === 3 && !draft.split ? 'Choisis comment répartir tes 3 séances.' : null;
       case 'lieu':
         return draft.place ? null : 'Choisis où tu t’entraînes.';
       default:
@@ -291,6 +308,7 @@ function Flow({
               selected={draft.sessionMinutes ? [draft.sessionMinutes] : []}
               onToggle={(m) => set({ sessionMinutes: m })}
             />
+            {draft.weekdays.length === 3 && <ThreeDays split={draft.split} weekdays={draft.weekdays} onChange={(split) => set({ split })} />}
           </Question>
         )}
 
@@ -368,6 +386,7 @@ function toAnswers(d: Draft, firstName?: string): PlanAnswers {
     returning: d.returning,
     weekdays: d.weekdays,
     sessionMinutes: d.sessionMinutes!,
+    ...(d.weekdays.length === 3 && d.split ? { split: d.split } : {}),
     place: d.place!,
     equipment: d.place === 'maison' ? d.equipment : [],
     zones: d.zones,
@@ -381,6 +400,33 @@ function Question({ title, hint, children }: { title: string; hint?: string; chi
       {hint && <p className="text-[15px] leading-snug text-cendre">{hint}</p>}
       <div className="mt-1 flex flex-col gap-3">{children}</div>
     </section>
+  );
+}
+
+/** Sur 3 jours : corps entier ou « haut, bas, haut », avec ce que chaque choix implique. */
+function ThreeDays({ split, weekdays, onChange }: { split: ThreeDaySplit | null; weekdays: number[]; onChange: (s: ThreeDaySplit) => void }) {
+  const pair = backToBack(weekdays);
+  return (
+    <fieldset className="m-0 flex flex-col gap-2 border-0 p-0">
+      <legend className="mb-2 text-[13px] text-cendre">Répartition de tes 3 séances</legend>
+      <Choice
+        title="Corps entier à chaque séance"
+        text="Chaque muscle travaille 3 fois par semaine, avec un peu de jambes à chaque séance."
+        selected={split === 'corps-entier'}
+        onClick={() => onChange('corps-entier')}
+      />
+      <Choice
+        title="Haut, bas, haut"
+        text="Une séance jambes complète avec des épaules, et deux séances haut du corps. Les jambes ne travaillent qu’une fois par semaine."
+        selected={split === 'haut-bas'}
+        onClick={() => onChange('haut-bas')}
+      />
+      {pair && (
+        <p className="text-[13px] leading-snug text-cendre">
+          {capitalize(DAY_NAMES[pair[0] - 1]!)} et {DAY_NAMES[pair[1] - 1]} se suivent : avec « Haut, bas, haut », ce ne sont pas les mêmes muscles deux jours de suite.
+        </p>
+      )}
+    </fieldset>
   );
 }
 

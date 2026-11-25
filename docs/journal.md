@@ -1,5 +1,21 @@
 # Journal des versions
 
+## Répartition sur 3 jours (version de test, branche `repartition-1`)
+
+- **Pourquoi :** sur 3 jours, FORGE ne proposait que du corps entier, avec des jambes à chaque séance. Certains préfèrent une séance jambes à part.
+- **Questionnaire, écran « Ta semaine d'entraînement » :** avec 3 jours choisis, une question de plus.
+    - « Corps entier à chaque séance » : chaque muscle 3 fois par semaine.
+    - « Haut, bas, haut » : Haut du corps A, Bas du corps et épaules, Haut du corps B. Les jambes ne travaillent qu'une fois par semaine, et le choix le dit.
+- **Séance « Bas du corps et épaules » :** squat, charnière, fente et ischios, avec une série d'élévations latérales (deux exercices d'épaules à partir de 75 min).
+- **Jours :** la séance jambes se place entre les deux séances du haut, sauf si celles-ci tomberaient alors deux jours de suite (dimanche puis lundi) : la séance jambes passe alors en dernier.
+- **Avertissement :** deux séances corps entier qui se suivent sont signalées dans le plan, avec le conseil de laisser un jour entre deux ou, sur 3 jours, de choisir « Haut, bas, haut ».
+- **Sources :**
+    - ACSM, position 2026 : travailler chaque grand groupe musculaire au moins deux fois par semaine ;
+    - Grgic, Schoenfeld et Latella 2019, *J Sci Med Sport* 22(3):361-370 : à volume égal, la fréquence pèse peu ;
+    - Garber et al. 2011 (ACSM), *Med Sci Sports Exerc* 43(7):1334-59 : 48 h entre deux séances des mêmes muscles.
+- **Sans réponse** (plan d'avant, sauvegarde ancienne) : corps entier, comme avant.
+- 3 nouveaux tests (326 pour l'app).
+
 ## Volume d'une séance en grand (branche `volume-1`, en production le 25 novembre 2026)
 
 - **Sur l'écran d'une séance :** les trois chiffres restent (séries, exercices, volume). Le bloc Volume porte une flèche et un léger fond vert : il se touche. Il n'est pas cliquable quand la séance n'a aucun kilo (poids du corps seul).
