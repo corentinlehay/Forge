@@ -361,6 +361,15 @@ const ZONE_FIRST: Partial<Record<Zone, Partial<Record<Pattern, string[]>>>> = {
   epaules: { 'pousse-h': ['dumbbell_floor_press', 'machine_bench_press', 'dumbbell_bench_press'] },
 };
 
+/**
+ * Emplacements remplacés quand une zone est à ménager.
+ * Épaules : la place du développé au-dessus de la tête va à l'arrière de l'épaule (rotateurs externes, renforcement
+ * conseillé par Kolber et al. 2010), plutôt qu'à une deuxième série d'élévations latérales dans la même séance.
+ */
+const ZONE_SLOTS: Partial<Record<Zone, [from: Slot, to: Slot][]>> = {
+  epaules: [[S.pousseV, ['iso-arriere-epaules', 'iso-epaules']]],
+};
+
 /** Consigne propre à une zone, affichée avec le programme. Épaules : Kolber et al. 2014 (J Strength Cond Res 28(4):1081-9). */
 const ZONE_ADVICE: Partial<Record<Zone, string>> = {
   epaules: 'Épaules : pas de développé au-dessus de la tête, de tractions, de dips ni d’écartés. Élévations latérales jusqu’à hauteur d’épaule, pas au-dessus.',
@@ -451,7 +460,8 @@ export function trainingPlan(a: PlanAnswers): TrainingPlan {
     for (const [slot, variant] of model.slots) {
       if (chosen.length >= perSession) break;
       let pick: string | undefined;
-      for (const pattern of slot) {
+      const patterns = a.zones.flatMap((z) => ZONE_SLOTS[z] ?? []).find(([from]) => from === slot)?.[1] ?? slot;
+      for (const pattern of patterns) {
         const all = candidates(pattern).filter((id) => !chosen.includes(id));
         // Avec du matériel, les exercices chargés passent avant ceux sans matériel.
         const equipped = all.filter((id) => TRAITS[id]!.needs.length > 0);

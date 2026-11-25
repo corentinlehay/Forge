@@ -135,6 +135,9 @@ describe('programme d’entraînement', () => {
     expect(upperA!.exercises[0]!.libraryId).toBe('dumbbell_floor_press');
     expect(upperB!.exercises[0]!.libraryId).toBe('machine_bench_press');
     expect(ids(trainingPlan({ ...base, zones: ['epaules'] }))).toContain('wide-grip_lat_pulldown');
+    expect(upperA!.exercises.map((e) => e.libraryId)).toContain('face_pull');
+    for (const s of trainingPlan({ ...base, zones: ['epaules'], weekdays: [1, 2, 3, 5, 6] }).sessions)
+      expect(s.exercises.filter((e) => ['side_lateral_raise', 'cable_seated_lateral_raise'].includes(e.libraryId)).length).toBeLessThanOrEqual(1);
     expect(trainingPlan({ ...base, zones: ['genoux'] }).warnings.join(' ')).not.toContain('hauteur d’épaule');
   });
 

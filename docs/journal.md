@@ -11,7 +11,7 @@
     - développé au sol aux haltères en premier, puis à la machine et aux haltères ;
     - tirage à la poulie devant la poitrine à la place des tractions ;
     - élévations latérales avec la consigne « jusqu'à hauteur d'épaule, pas au-dessus » ;
-    - face pull et oiseau pour l'arrière de l'épaule.
+    - la place du développé au-dessus de la tête va à l'arrière de l'épaule (face pull, oiseau), que Kolber et al. 2010 conseillent de renforcer, plutôt qu'à une deuxième série d'élévations latérales.
 - **Sources :**
     - Kolber et al. 2010, *J Strength Cond Res* 24(6):1696-1704 (développés au-dessus de la tête et derrière la nuque, dips, écartés, développé incliné, limiter la descente du développé, tirage devant la poitrine) ;
     - Kolber et al. 2014, *J Strength Cond Res* 28(4):1081-9 (élévations latérales au-dessus de 90°).
