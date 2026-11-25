@@ -372,7 +372,8 @@ const ZONE_SLOTS: Partial<Record<Zone, [from: Slot, to: Slot][]>> = {
 
 /** Consigne propre à une zone, affichée avec le programme. Épaules : Kolber et al. 2014 (J Strength Cond Res 28(4):1081-9). */
 const ZONE_ADVICE: Partial<Record<Zone, string>> = {
-  epaules: 'Épaules : pas de développé au-dessus de la tête, de tractions, de dips ni d’écartés. Élévations latérales jusqu’à hauteur d’épaule, pas au-dessus.',
+  epaules:
+    'Épaules : pas de développé au-dessus de la tête, de tractions, de dips ni d’écartés. Élévations latérales jusqu’à hauteur d’épaule, pas au-dessus. Repères : Kolber et al. (2010, 2014).',
 };
 
 export const ZONE_LABELS: Record<Zone, string> = { epaules: 'Épaules', genoux: 'Genoux', dos: 'Bas du dos' };
