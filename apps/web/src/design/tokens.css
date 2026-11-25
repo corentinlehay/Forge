@@ -307,6 +307,23 @@ html[data-nav='backward']::view-transition-new(root) {
 @utility motion-value-down {
   animation: value-down var(--forge-duration-base) var(--forge-ease-enter) both;
 }
+/* Volume d'une séance : chaque série se pose comme une brique, de gauche à droite. */
+@utility motion-brick {
+  transform-origin: left center;
+  animation: brick var(--forge-duration-base) var(--forge-ease-spring) both;
+}
+/* Fin du compteur : le chiffre encaisse le dernier ajout. */
+@utility motion-impact {
+  animation: impact 560ms var(--forge-ease-spring) both;
+}
+@keyframes brick {
+  from { transform: scaleX(0.15); opacity: 0.2; }
+}
+@keyframes impact {
+  0% { transform: scale(1); }
+  35% { transform: scale(1.035); text-shadow: 0 0 28px color-mix(in oklab, var(--forge-accent) 45%, transparent); }
+  100% { transform: scale(1); text-shadow: 0 0 0 transparent; }
+}
 @keyframes rise {
   from { opacity: 0; transform: translateY(10px); }
 }

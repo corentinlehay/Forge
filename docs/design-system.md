@@ -68,6 +68,8 @@ S'y ajoutent `training`, `nutrition`, `mind`, `progression`, et `module` pour la
 
 Chaque animation a une fonction : confirmer une action, guider vers la suite, montrer un changement. Rien ne bouge en permanence, et une donnée n'est jamais modifiée pour animer : un score ou un total apparaît directement à sa vraie valeur, sans compteur qui fait défiler de faux chiffres.
 
+Une seule exception, voulue : le volume d'une séance en grand (`features/training/VolumeMoment.tsx`). Le compteur y additionne la séance et chaque série se pose quand il l'atteint. Le lecteur d'écran reçoit tout de suite le vrai total, un toucher sur le chiffre l'affiche aussitôt, et avec « réduire les animations » le total s'affiche d'emblée.
+
 ### Jetons (`design/tokens.css`, et `lib/motion.ts` côté code)
 
 | Jeton | Valeur | Usage |
@@ -90,6 +92,8 @@ Chaque animation a une fonction : confirmer une action, guider vers la suite, mo
 - `motion-draw` : tracé d'une courbe ; il faut `pathLength={1}` sur le chemin.
 - `motion-attention` : un halo unique sur ce qui attend une action (proposition PULSE, exercice suivant).
 - `motion-value-up` et `motion-value-down` : la nouvelle valeur arrive par le haut si elle monte, par le bas si elle baisse. Le composant `LiveValue` les applique tout seul.
+- `motion-brick` : une série qui se pose, de gauche à droite (volume d'une séance).
+- `motion-impact` : le chiffre encaisse la fin du compteur (volume d'une séance).
 
 ### Navigation
 
@@ -103,7 +107,8 @@ Chaque animation a une fonction : confirmer une action, guider vers la suite, mo
     - validation d'une série et record ;
     - aliment ajouté, repas prévu marqué mangé, pesée ;
     - check-in, bilan du soir, décision PULSE ;
-    - fin d'une pratique Mind.
+    - fin d'une pratique Mind ;
+    - ouverture du volume d'une séance.
 - **Comment, selon l'appareil :**
     - Android : l'API de vibration ;
     - iPhone (Safari, iOS 18 et plus) : le retour natif d'un interrupteur système, seulement pendant un geste ;

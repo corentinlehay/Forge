@@ -1,5 +1,25 @@
 # Journal des versions
 
+## Volume d'une séance en grand (version de test, branche `volume-1`)
+
+- **Sur l'écran d'une séance :** les trois chiffres restent (séries, exercices, volume). Le bloc Volume porte une flèche et un léger fond vert : il se touche. Il n'est pas cliquable quand la séance n'a aucun kilo (poids du corps seul).
+- **La vue plein écran :**
+    - « Tu as déplacé », puis le total qui se compte ;
+    - « Série après série » : une ligne par exercice, chaque série posée comme une brique quand le compteur l'atteint (largeur proportionnelle à son volume) ;
+    - à la fin : badge record ou palier, phrase sur la séance, comparaisons, graphique des dernières séances du même type, phrase FORGE.
+- **Ce que les phrases utilisent, seulement quand la donnée existe :**
+    - record de volume, toutes séances ou même type de séance (même modèle du programme, sinon même nom) ;
+    - palier d'une séance franchi pour la première fois (1 t, 2,5 t, 5 t, 7,5 t, 10 t…) ;
+    - palier du total depuis la première séance (10 t, 25 t, 50 t, 100 t…) ;
+    - écart avec la séance précédente du même type ; séance allégée par PULSE ;
+    - première séance, ou première séance de ce type : la référence est posée.
+- **Variété :** plusieurs formulations par situation et sept phrases FORGE. Le choix est stable pour une séance (même texte à chaque ouverture) et change d'une séance à l'autre.
+- **Séance en cours :** « Tu as déjà déplacé », et ce qu'il reste pour égaler la séance précédente du même type. Pas de badge avant la fin.
+- **Une ancienne séance** parle au passé de son record (« ce jour-là »).
+- **Mouvement :** compteur et briques synchronisés, chiffre qui « encaisse » la fin, badges et textes qui arrivent ensuite. Toucher le chiffre affiche tout de suite le total. Avec « réduire les animations », tout est affiché d'emblée. Nouveaux utilitaires `motion-brick` et `motion-impact`.
+- **Rien d'autre ne change :** calcul du volume identique (charge × répétitions), suivi des séries intact, autres écrans inchangés.
+- 17 nouveaux tests (323 pour l'app).
+
 ## Zone « Épaules » renforcée (branche `epaules-1`, en production le 25 novembre 2026)
 
 - **Pourquoi :** avec « Épaules » coché, le programme gardait le développé épaules assis, les élévations frontales, les écartés et le développé incliné. Trop pour quelqu'un qui a mal aux épaules.

@@ -28,6 +28,7 @@ import { IconButton } from './TemplateScreen';
 import { useRestTimer } from './useRestTimer';
 import { TrainingMindLinks } from '../mind/LibraryScreens';
 import { useWakeLock } from './useWakeLock';
+import { VolumeMomentSheet } from './VolumeMoment';
 
 const kgText = (v: number) => formatNumber(v, v % 1 ? (Math.round(v * 100) % 10 ? 2 : 1) : 0);
 
@@ -84,6 +85,7 @@ function LiveWorkout({ workout, workouts, sets, targets }: { workout: Workout; w
   const [sheet, setSheet] = useState<SheetState>({ kind: 'none' });
   const [stamped, setStamped] = useState<string | null>(null);
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [volumeOpen, setVolumeOpen] = useState(false);
   const ended = Boolean(workout.endedAt);
   const timer = useRestTimer(workout.id);
   const minutes = useMinutesSince(workout.startedAt, !ended);
@@ -204,13 +206,37 @@ function LiveWorkout({ workout, workouts, sets, targets }: { workout: Workout; w
         {[
           ['Séries', formatNumber(stats.setCount, 0)],
           ['Exercices', formatNumber(stats.exerciseCount, 0)],
-          ['Volume', `${formatNumber(stats.volumeKg, 0)} kg`],
         ].map(([label, value]) => (
           <div key={label}>
             <dt className="text-[12px] text-cendre">{label}</dt>
             <dd className="font-metal text-[26px] whitespace-nowrap">{value}</dd>
           </div>
         ))}
+        {/* Le volume s'ouvre en grand : seulement quand il y a des kilos à raconter. */}
+        <div
+          className={
+            stats.volumeKg > 0
+              ? 'relative -m-1.5 rounded-[12px] bg-citron/[0.07] p-1.5 transition-transform duration-[var(--forge-duration-press)] has-[button:active]:scale-[0.96]'
+              : ''
+          }
+        >
+          <dt className="flex items-center gap-0.5 text-[12px] text-cendre">
+            Volume
+            {stats.volumeKg > 0 && <Icon name="chevron" size={13} strokeWidth={2.4} className="text-citron" />}
+          </dt>
+          <dd className="font-metal text-[26px] whitespace-nowrap">{formatNumber(stats.volumeKg, 0)} kg</dd>
+          {stats.volumeKg > 0 && (
+            <button
+              type="button"
+              aria-label={`Voir ton volume en grand : ${formatNumber(stats.volumeKg, 0)} kg`}
+              className="absolute inset-0 rounded-[12px]"
+              onClick={() => {
+                haptic('light');
+                setVolumeOpen(true);
+              }}
+            />
+          )}
+        </div>
       </dl>
 
       {workout.adjustment && (
@@ -390,6 +416,8 @@ function LiveWorkout({ workout, workouts, sets, targets }: { workout: Workout; w
           </div>
         </>
       )}
+
+      <VolumeMomentSheet open={volumeOpen} onClose={() => setVolumeOpen(false)} workout={workout} workouts={workouts} sets={sets} nameOf={nameOf} />
 
       <Sheet open={sheet.kind !== 'none'} title={sheetTitle} onClose={() => setSheet({ kind: 'none' })}>
         {sheet.kind === 'add' && (
