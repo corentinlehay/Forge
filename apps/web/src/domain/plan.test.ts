@@ -114,6 +114,39 @@ describe('programme d’entraînement', () => {
     expect(p.warnings.join(' ')).toContain('professionnel de santé');
   });
 
+  it('épaules à ménager : ni développé au-dessus de la tête, ni tractions, ni dips, ni écartés, quel que soit le cadre', () => {
+    const cadres: Partial<PlanAnswers>[] = [
+      ...[[1], [1, 4], [1, 3, 5], [1, 2, 4, 5], [1, 2, 3, 5, 6], [1, 2, 3, 4, 5, 6]].map((weekdays) => ({ weekdays })),
+      { place: 'maison', equipment: ['halteres', 'banc'] },
+      { place: 'maison', equipment: ['halteres', 'traction'] },
+      { place: 'maison', equipment: [] },
+    ];
+    for (const cadre of cadres) {
+      const p = trainingPlan({ ...base, ...cadre, zones: ['epaules'] });
+      const used = ids(p);
+      for (const id of ZONE_EXCLUSIONS.epaules) expect(used).not.toContain(id);
+      if (cadre.equipment?.length !== 0) for (const s of p.sessions) expect(s.exercises.length).toBeGreaterThanOrEqual(3);
+      expect(p.warnings.join(' ')).toContain('hauteur d’épaule');
+    }
+  });
+
+  it('épaules à ménager : le développé au sol passe en premier, la poulie remplace les tractions', () => {
+    const [upperA, , upperB] = trainingPlan({ ...base, zones: ['epaules'] }).sessions;
+    expect(upperA!.exercises[0]!.libraryId).toBe('dumbbell_floor_press');
+    expect(upperB!.exercises[0]!.libraryId).toBe('machine_bench_press');
+    expect(ids(trainingPlan({ ...base, zones: ['epaules'] }))).toContain('wide-grip_lat_pulldown');
+    expect(trainingPlan({ ...base, zones: ['genoux'] }).warnings.join(' ')).not.toContain('hauteur d’épaule');
+  });
+
+  it('ne suggère que du matériel que tu n’as pas, sans revenir sur les zones à ménager', () => {
+    const bare = trainingPlan({ ...base, place: 'maison', equipment: [] });
+    expect(bare.warnings[0]).toBe('Aucun exercice de tirage pour le dos avec ton matériel. Pour compléter le programme : une barre de traction ou des haltères.');
+    const shoulders = trainingPlan({ ...base, place: 'maison', equipment: ['halteres', 'traction'], zones: ['epaules'] }).warnings;
+    expect(shoulders[0]).toBe('Peu d’exercices de tirage pour le dos avec ton matériel. Pour compléter le programme : un banc ou une barre.');
+    expect(shoulders[1]).toBe('Peu d’exercices pour l’arrière des cuisses avec ton matériel. Pour compléter le programme : un kettlebell ou une barre.');
+    expect(shoulders.join(' ')).not.toContain('barre de traction');
+  });
+
   it('prescrit séries, répétitions, repos et RIR selon l’objectif et le niveau', () => {
     const force = trainingPlan({ ...base, goal: 'force', experience: 'advanced' }).sessions[0]!.exercises;
     expect(force[0]).toMatchObject({ reps: '3-6', sets: 4, rir: 1 });

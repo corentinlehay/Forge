@@ -1,5 +1,24 @@
 # Journal des versions
 
+## Zone « Épaules » renforcée (version de test, branche `epaules-1`)
+
+- **Pourquoi :** avec « Épaules » coché, le programme gardait le développé épaules assis, les élévations frontales, les écartés et le développé incliné. Trop pour quelqu'un qui a mal aux épaules.
+- **Mouvements écartés :**
+    - tous les développés au-dessus de la tête (barre, haltères, Arnold, machine) ;
+    - tractions pronation et supination, extensions triceps au-dessus de la tête ;
+    - dips (trois versions), écartés (poulie, machine, haltères), développés inclinés, pompes pieds surélevés, élévations frontales.
+- **Gardés ou mis en avant :**
+    - développé au sol aux haltères en premier, puis à la machine et aux haltères ;
+    - tirage à la poulie devant la poitrine à la place des tractions ;
+    - élévations latérales avec la consigne « jusqu'à hauteur d'épaule, pas au-dessus » ;
+    - face pull et oiseau pour l'arrière de l'épaule.
+- **Sources :**
+    - Kolber et al. 2010, *J Strength Cond Res* 24(6):1696-1704 (développés au-dessus de la tête et derrière la nuque, dips, écartés, développé incliné, limiter la descente du développé, tirage devant la poitrine) ;
+    - Kolber et al. 2014, *J Strength Cond Res* 28(4):1081-9 (élévations latérales au-dessus de 90°).
+- **Conseils de matériel :** FORGE ne suggère plus un matériel que tu as déjà, ni un mouvement écarté pour tes zones. Exemple, haltères et barre de traction avec épaules à ménager : « un banc ou une barre » au lieu de « une barre de traction ou des haltères ».
+- **Rien ne change pour un programme déjà adopté** : refaire le questionnaire (Réglages) donne le nouveau programme.
+- 306 tests.
+
 ## Mise en production du 25 novembre 2026
 
 - **Fusion dans `main`** de toute la pile validée par Coz : nutrition-1, training-1, depart-1, muscles-1, kitchen-1, budget-1, mind-1, mind-2, progression-2, bilans-1, pulse-1 (PULSE 1 et 1.1), pulse-1-2, signature-1 et motion-1.

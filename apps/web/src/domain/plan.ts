@@ -331,12 +331,39 @@ const PREFERENCES: Partial<Record<Pattern, string[]>> = {
   abdos: ['hanging_leg_raise', 'cable_crunch', 'plank', 'dead_bug', 'crunches', 'side_bridge', 'russian_twist', 'ab_roller', 'oblique_crunches_-_on_the_floor'],
 };
 
-/** Mouvements écartés quand une zone est à ménager (les plus exigeants pour elle). */
+/**
+ * Mouvements écartés quand une zone est à ménager (les plus exigeants pour elle).
+ * Épaules, d'après Kolber et al. 2010 (J Strength Cond Res 24(6):1696-1704) : développés au-dessus de la tête,
+ * dips, écartés, développé incliné et position bras écarté en rotation externe sont mis en cause.
+ * Tractions écartées (tout le poids du corps, bras au-dessus de la tête) ; le tirage à la poulie devant la poitrine,
+ * à charge réglable, reste l'alternative proposée par la même revue.
+ */
 // prettier-ignore
 export const ZONE_EXCLUSIONS: Record<Zone, string[]> = {
-  epaules: ['dips_-_chest_version', 'dips_-_triceps_version', 'bench_dips', 'arnold_dumbbell_press', 'standing_military_press'],
+  epaules: [
+    'standing_military_press', 'seated_dumbbell_press', 'standing_dumbbell_press', 'arnold_dumbbell_press', 'machine_shoulder_military_press',
+    'cable_rope_overhead_triceps_extension', 'standing_dumbbell_triceps_extension', 'pullups', 'chin-up',
+    'dips_-_chest_version', 'dips_-_triceps_version', 'bench_dips',
+    'cable_crossover', 'butterfly', 'dumbbell_flyes', 'barbell_incline_bench_press_-_medium_grip', 'incline_dumbbell_press',
+    'front_dumbbell_raise', 'decline_push-up',
+  ],
   genoux: ['barbell_squat', 'front_barbell_squat', 'hack_squat', 'barbell_lunge', 'dumbbell_lunges', 'bodyweight_walking_lunge', 'split_squat_with_dumbbells', 'leg_extensions'],
   dos: ['barbell_deadlift', 'good_morning', 'romanian_deadlift', 'stiff-legged_barbell_deadlift', 'stiff-legged_dumbbell_deadlift', 'sumo_deadlift', 'one-arm_kettlebell_swings', 'bent_over_barbell_row', 'bent_over_two-dumbbell_row', 't-bar_row_with_handle', 'barbell_squat', 'front_barbell_squat', 'standing_military_press', 'hyperextensions_back_extensions'],
+};
+
+/**
+ * Variantes mises en premier quand une zone est à ménager.
+ * Épaules : développé au sol (la descente s'arrête au sol, comme le rouleau conseillé par Kolber et al. 2010),
+ * puis machine et haltères, plutôt que la barre.
+ */
+// prettier-ignore
+const ZONE_FIRST: Partial<Record<Zone, Partial<Record<Pattern, string[]>>>> = {
+  epaules: { 'pousse-h': ['dumbbell_floor_press', 'machine_bench_press', 'dumbbell_bench_press'] },
+};
+
+/** Consigne propre à une zone, affichée avec le programme. Épaules : Kolber et al. 2014 (J Strength Cond Res 28(4):1081-9). */
+const ZONE_ADVICE: Partial<Record<Zone, string>> = {
+  epaules: 'Épaules : pas de développé au-dessus de la tête, de tractions, de dips ni d’écartés. Élévations latérales jusqu’à hauteur d’épaule, pas au-dessus.',
 };
 
 export const ZONE_LABELS: Record<Zone, string> = { epaules: 'Épaules', genoux: 'Genoux', dos: 'Bas du dos' };
@@ -363,6 +390,16 @@ export interface TrainingPlan {
   excluded: string[];
   warnings: string[];
 }
+
+/** Matériel à suggérer à la maison, dans l'ordre de préférence. */
+const NEED_LABELS: [Need, string][] = [
+  ['traction', 'une barre de traction'],
+  ['halteres', 'des haltères'],
+  ['banc', 'un banc'],
+  ['kettlebell', 'un kettlebell'],
+  ['charge', 'des haltères ou un kettlebell'],
+  ['barre', 'une barre'],
+];
 
 const EXERCISES_PER_MINUTES: Record<PlanAnswers['sessionMinutes'], number> = { 45: 4, 60: 5, 75: 6, 90: 7 };
 const TIMED = new Set(['plank', 'side_bridge']);
@@ -400,7 +437,12 @@ export function trainingPlan(a: PlanAnswers): TrainingPlan {
     const traits = TRAITS[id];
     return Boolean(traits && libraryExercise(id) && !excludedIds.has(id) && canDo(traits.needs, available, gym));
   };
-  const candidates = (pattern: Pattern) => (PREFERENCES[pattern] ?? EXERCISE_LIBRARY.filter((e) => TRAITS[e.id]?.pattern === pattern).map((e) => e.id)).filter(usable);
+  const zoneFirst = (pattern: Pattern) => a.zones.flatMap((z) => ZONE_FIRST[z]?.[pattern] ?? []);
+  const candidates = (pattern: Pattern) => {
+    const list = (PREFERENCES[pattern] ?? EXERCISE_LIBRARY.filter((e) => TRAITS[e.id]?.pattern === pattern).map((e) => e.id)).filter(usable);
+    const first = zoneFirst(pattern).filter((id) => list.includes(id));
+    return [...first, ...list.filter((id) => !first.includes(id))];
+  };
   const perSession = Math.max(3, EXERCISES_PER_MINUTES[a.sessionMinutes] - (a.goal === 'force' ? 1 : 0));
   const missing = new Set<string>();
 
@@ -425,11 +467,30 @@ export function trainingPlan(a: PlanAnswers): TrainingPlan {
     return { name: model.name, weekday: days[i] ?? days[i % Math.max(1, days.length)] ?? 1, exercises: chosen.map((id, index) => prescription(id, index, a)) };
   });
 
+  /** Matériel qui ajouterait un exercice de ces schémas, sans revenir sur les zones à ménager (deux idées au plus). */
+  const unlocking = (patterns: Pattern[]): string => {
+    const options: { needs: Need[]; rank: number }[] = [];
+    for (const [id, traits] of Object.entries(TRAITS)) {
+      if (!patterns.includes(traits.pattern) || excludedIds.has(id) || !libraryExercise(id) || canDo(traits.needs, available, gym)) continue;
+      const needs = traits.needs.filter((n) => !canDo([n], available, gym));
+      if (needs.includes('salle')) continue;
+      options.push({ needs, rank: needs.length * 10 + Math.max(...needs.map((n) => NEED_LABELS.findIndex(([k]) => k === n))) });
+    }
+    const phrases = [...new Set(options.sort((x, y) => x.rank - y.rank).map((o) => o.needs.map((n) => NEED_LABELS.find(([k]) => k === n)![1]).join(' et ')))];
+    return phrases.slice(0, 2).join(' ou ');
+  };
+  /** « Aucun » seulement pour le dos : l'arrière des cuisses travaille aussi dans les ponts et les fentes. */
+  const shortage = (patterns: Pattern[], subject: string, canBeNone: boolean) => {
+    const none = canBeNone && !sessions.some((s) => s.exercises.some((e) => patterns.includes(TRAITS[e.libraryId]!.pattern)));
+    const head = `${none ? 'Aucun exercice' : 'Peu d’exercices'} ${subject} avec ton matériel`;
+    const extra = unlocking(patterns);
+    return extra ? `${head}. Pour compléter le programme : ${extra}.` : `${head} et tes zones à ménager.`;
+  };
+
   const warnings: string[] = [];
-  if (missing.has('tirage-v') || missing.has('tirage-h'))
-    warnings.push('Aucun exercice de tirage pour le dos avec ton matériel : une barre de traction ou des haltères compléteraient le programme.');
-  if (missing.has('charniere') || missing.has('iso-ischios'))
-    warnings.push('Peu d’exercices pour l’arrière des cuisses avec ton matériel : des haltères ou un kettlebell compléteraient le programme.');
+  if (missing.has('tirage-v') || missing.has('tirage-h')) warnings.push(shortage(['tirage-v', 'tirage-h'], 'de tirage pour le dos', true));
+  if (missing.has('charniere') || missing.has('iso-ischios')) warnings.push(shortage(['charniere', 'iso-ischios'], 'pour l’arrière des cuisses', false));
+  for (const z of a.zones) if (ZONE_ADVICE[z]) warnings.push(ZONE_ADVICE[z]);
   if (a.zones.length)
     warnings.push(
       'Zones à ménager : FORGE écarte les mouvements les plus exigeants pour elles. Ça ne remplace pas l’avis d’un professionnel de santé ; arrête un exercice qui fait mal.',

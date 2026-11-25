@@ -1,6 +1,6 @@
 # État du projet FORGE
 
-Mis à jour le 25 novembre 2026 : mise en production de toute la pile, de nutrition-1 à motion-1, sur la demande de Coz. Le détail de chaque livraison est dans docs/journal.md.
+Mis à jour le 25 novembre 2026 : mise en production de toute la pile, de nutrition-1 à motion-1, puis zone « Épaules » renforcée sur la version de test `epaules-1`. Le détail de chaque livraison est dans docs/journal.md.
 
 ## En production (branche `main`, depuis le 25 novembre 2026)
 
@@ -25,6 +25,12 @@ Base de données locale : version 11. Une base de la production précédente (ve
 | `pulse-1` | PULSE 1 et 1.1 : indicateur expliqué en 5 dimensions et lu en 4 niveaux, couverture, évolution sur 7 et 30 jours, analyse du jour, Nutrition Status séparé, règles de sécurité, proposition de séance qui garde toujours « Garder », check-in passable en 5 questions, historique par période, réglages |
 
 Base de données locale : version 11. Serveur : relais Open Food Facts et séances audio (Workers KV `forge-audio`). Chaque changement de schéma a son test de migration sans perte.
+
+## En attente de validation (version de test)
+
+| Branche | Contenu |
+|---|---|
+| `epaules-1` | Questionnaire, zone « Épaules » renforcée : plus aucun développé au-dessus de la tête, tractions, dips, écartés, développé incliné ni extension triceps au-dessus de la tête ; développé au sol, puis machine et haltères en premier ; consigne « élévations latérales jusqu'à hauteur d'épaule ». Conseils de matériel exacts (FORGE ne propose plus un matériel que tu as déjà) |
 
 ## Audit FORGE PULSE (24 novembre 2026)
 
@@ -84,15 +90,16 @@ Document complet, avec l'architecture, les cinq scénarios et le plan : https://
 
 ## Reste à faire
 
-1. **Vérifier la production sur ton iPhone** :
+1. **Valider `epaules-1`** (zone « Épaules » renforcée), puis mise en production. Ton ami devra ensuite refaire le questionnaire (Réglages, Refaire le questionnaire) pour recevoir le nouveau programme.
+2. **Vérifier la production sur ton iPhone** :
     - la mise à jour de l'app et la reprise de tes données ;
     - le retour haptique (iOS 18 et plus).
-2. **Logo : choisir parmi les pistes proposées** (aucune modification du dessin sans ton accord).
-3. **Tes séances audio.** Le code d'administration est en place (Secrets Store du compte, secret `ADMIN_CODE`) : il reste à ajouter tes enregistrements depuis l'espace créateur.
-4. **PULSE 2 : connecteurs.** Raccourci Apple Santé prêt à installer, bouton « Importer depuis Santé », registre de connecteurs, provenance, dédoublonnage, données contradictoires. Seulement après ta validation explicite.
-5. **PULSE 3 : apprentissage personnel.** Préférences apprises, consultables et modifiables, analyse des résultats des recommandations, semaine de décharge proposée, notification du matin en option.
-6. **IA transversale (dont la couche IA de PULSE et le « Pourquoi ? »).** Coach Claude avec le contexte de tous les modules, explication du score sans décision ni levée de garde-fou, mémoire et préférences modifiables, recommandations limitées aux contenus qui existent, données transmises réduites au nécessaire, plafond de coût par utilisateur. Nécessite ta clé API dans les secrets Cloudflare.
-7. **Compte et paiement.** Modèle à décider, compte léger, prestataire de paiement, pages légales ; avec la décision app native ou API Oura et WHOOP.
+3. **Logo : choisir parmi les pistes proposées** (aucune modification du dessin sans ton accord).
+4. **Tes séances audio.** Le code d'administration est en place (Secrets Store du compte, secret `ADMIN_CODE`) : il reste à ajouter tes enregistrements depuis l'espace créateur.
+5. **PULSE 2 : connecteurs.** Raccourci Apple Santé prêt à installer, bouton « Importer depuis Santé », registre de connecteurs, provenance, dédoublonnage, données contradictoires. Seulement après ta validation explicite.
+6. **PULSE 3 : apprentissage personnel.** Préférences apprises, consultables et modifiables, analyse des résultats des recommandations, semaine de décharge proposée, notification du matin en option.
+7. **IA transversale (dont la couche IA de PULSE et le « Pourquoi ? »).** Coach Claude avec le contexte de tous les modules, explication du score sans décision ni levée de garde-fou, mémoire et préférences modifiables, recommandations limitées aux contenus qui existent, données transmises réduites au nécessaire, plafond de coût par utilisateur. Nécessite ta clé API dans les secrets Cloudflare.
+8. **Compte et paiement.** Modèle à décider, compte léger, prestataire de paiement, pages légales ; avec la décision app native ou API Oura et WHOOP.
 
 ## Problèmes et limites techniques connus
 
