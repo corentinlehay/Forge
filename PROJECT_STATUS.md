@@ -1,6 +1,6 @@
 # État du projet FORGE
 
-Mis à jour le 25 novembre 2026 : mise en production de toute la pile, de nutrition-1 à motion-1, puis zone « Épaules » renforcée sur la version de test `epaules-1`. Le détail de chaque livraison est dans docs/journal.md.
+Mis à jour le 25 novembre 2026 : mise en production de toute la pile, de nutrition-1 à motion-1, puis zone « Épaules » renforcée (`epaules-1`), aussi en production. Le détail de chaque livraison est dans docs/journal.md.
 
 ## En production (branche `main`, depuis le 25 novembre 2026)
 
@@ -20,17 +20,12 @@ Base de données locale : version 11. Une base de la production précédente (ve
 | `progression-2` | Moyenne de poids sur 7 jours, mensurations, photos du corps, comparaison de dates, suivi des douleurs sur silhouette |
 | `bilans-1` | Bilan de la semaine avec notes et historique, calendrier jour, semaine, mois, analyses croisées sans causalité, badges et régularité |
 | `motion-1` | FORGE MOTION : système de mouvement centralisé, transitions entre onglets, appui et sélection animés, score PULSE et dimensions qui apparaissent, compte à rebours circulaire, retour haptique, courbes tracées et meilleur point, écart avec aujourd'hui sur la courbe de poids, accueil adaptatif (séance, après séance, soir, après pesée) |
+| `epaules-1` | Questionnaire, zone « Épaules » renforcée : plus aucun développé au-dessus de la tête, tractions, dips, écartés, développé incliné ni extension triceps au-dessus de la tête ; développé au sol, puis machine et haltères en premier ; consigne « élévations latérales jusqu'à hauteur d'épaule ». Conseils de matériel exacts (FORGE ne propose plus un matériel que tu as déjà) |
 | `signature-1` | FORGE SIGNATURE : nouvelle palette dans un système de couleurs unique (docs/design-system.md), couleur par espace pour les graphiques, indicateurs et l'onglet actif, vert FORGE pour toutes les actions principales, rouge d'alerte distinct de l'orange Nutrition, icône de l'app aux nouvelles couleurs |
 | `pulse-1-2` | PULSE 1.2 : plan du jour par module avec « Pourquoi ? », rubrique Sommeil, proposition à valider (accepter, garder, modifier, reporter, revenir en arrière), version allégée appliquée par Training, bilan du soir, historique des décisions et des bilans |
 | `pulse-1` | PULSE 1 et 1.1 : indicateur expliqué en 5 dimensions et lu en 4 niveaux, couverture, évolution sur 7 et 30 jours, analyse du jour, Nutrition Status séparé, règles de sécurité, proposition de séance qui garde toujours « Garder », check-in passable en 5 questions, historique par période, réglages |
 
 Base de données locale : version 11. Serveur : relais Open Food Facts et séances audio (Workers KV `forge-audio`). Chaque changement de schéma a son test de migration sans perte.
-
-## En attente de validation (version de test)
-
-| Branche | Contenu |
-|---|---|
-| `epaules-1` | Questionnaire, zone « Épaules » renforcée : plus aucun développé au-dessus de la tête, tractions, dips, écartés, développé incliné ni extension triceps au-dessus de la tête ; développé au sol, puis machine et haltères en premier ; consigne « élévations latérales jusqu'à hauteur d'épaule ». Conseils de matériel exacts (FORGE ne propose plus un matériel que tu as déjà) |
 
 ## Audit FORGE PULSE (24 novembre 2026)
 
@@ -90,7 +85,7 @@ Document complet, avec l'architecture, les cinq scénarios et le plan : https://
 
 ## Reste à faire
 
-1. **Valider `epaules-1`** (zone « Épaules » renforcée), puis mise en production. Ton ami devra ensuite refaire le questionnaire (Réglages, Refaire le questionnaire) pour recevoir le nouveau programme.
+1. **Ton ami** : refaire le questionnaire (Réglages, Refaire le questionnaire) en cochant « Épaules » pour recevoir le nouveau programme.
 2. **Vérifier la production sur ton iPhone** :
     - la mise à jour de l'app et la reprise de tes données ;
     - le retour haptique (iOS 18 et plus).

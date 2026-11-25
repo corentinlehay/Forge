@@ -1,6 +1,6 @@
 # Journal des versions
 
-## Zone « Épaules » renforcée (version de test, branche `epaules-1`)
+## Zone « Épaules » renforcée (branche `epaules-1`, en production le 25 novembre 2026)
 
 - **Pourquoi :** avec « Épaules » coché, le programme gardait le développé épaules assis, les élévations frontales, les écartés et le développé incliné. Trop pour quelqu'un qui a mal aux épaules.
 - **Mouvements écartés :**
