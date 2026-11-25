@@ -1,17 +1,14 @@
 # État du projet FORGE
 
-Mis à jour le 25 novembre 2026, mouvement et interactions FORGE MOTION livrés sur la branche `motion-1` (après FORGE SIGNATURE sur `signature-1`). Le détail de chaque livraison est dans docs/journal.md.
+Mis à jour le 25 novembre 2026 : mise en production de toute la pile, de nutrition-1 à motion-1, sur la demande de Coz. Le détail de chaque livraison est dans docs/journal.md.
 
-## En production (branche `main`)
+## En production (branche `main`, depuis le 25 novembre 2026)
 
-- Interface V1 et tableau de bord : pesée, poids lissé, check-in, accueil, réglages, sauvegarde, installation sur iPhone.
-
-## Terminé, en attente de validation (versions de test, branches empilées)
-
-Chaque branche contient les précédentes. La mise en production se fait d'un bloc, sur ton « mets en production ».
+Base de données locale : version 11. Une base de la production précédente (version 2) passe directement en version 11, sans perte, ce qui est testé. Ce que la production contient, livraison par livraison :
 
 | Branche | Contenu |
 |---|---|
+| Interface V1 | Pesée, poids lissé, check-in, accueil et tableau de bord, réglages, sauvegarde, installation sur iPhone |
 | `nutrition-1` | Ajout d'aliments (recherche, Open Food Facts, scanner, table Ciqual hors ligne), journal, fibres, hydratation |
 | `training-1` | Séance en direct, programmes, bibliothèque de 91 exercices, surcharge progressive, minuteur de repos |
 | `depart-1` | Questionnaire de départ, plan nutrition et entraînement calculé par règles sourcées |
@@ -87,14 +84,15 @@ Document complet, avec l'architecture, les cinq scénarios et le plan : https://
 
 ## Reste à faire
 
-1. **Valider PULSE 1.1, PULSE 1.2, FORGE SIGNATURE et FORGE MOTION sur ton iPhone** (versions de test `pulse-1`, `pulse-1-2`, `signature-1` et `motion-1`).
+1. **Vérifier la production sur ton iPhone** :
+    - la mise à jour de l'app et la reprise de tes données ;
+    - le retour haptique (iOS 18 et plus).
 2. **Logo : choisir parmi les pistes proposées** (aucune modification du dessin sans ton accord).
-3. **Mise en production de la pile actuelle** (quatorze versions de test, de nutrition-1 à motion-1), sur ton « mets en production », pour ne pas empiler davantage.
-4. **Tes séances audio.** Le code d'administration est en place (Secrets Store du compte, secret `ADMIN_CODE`) : il reste à ajouter tes enregistrements depuis l'espace créateur.
-5. **PULSE 2 : connecteurs.** Raccourci Apple Santé prêt à installer, bouton « Importer depuis Santé », registre de connecteurs, provenance, dédoublonnage, données contradictoires. Seulement après ta validation explicite.
-6. **PULSE 3 : apprentissage personnel.** Préférences apprises, consultables et modifiables, analyse des résultats des recommandations, semaine de décharge proposée, notification du matin en option.
-7. **IA transversale (dont la couche IA de PULSE et le « Pourquoi ? »).** Coach Claude avec le contexte de tous les modules, explication du score sans décision ni levée de garde-fou, mémoire et préférences modifiables, recommandations limitées aux contenus qui existent, données transmises réduites au nécessaire, plafond de coût par utilisateur. Nécessite ta clé API dans les secrets Cloudflare.
-8. **Compte et paiement.** Modèle à décider, compte léger, prestataire de paiement, pages légales ; avec la décision app native ou API Oura et WHOOP.
+3. **Tes séances audio.** Le code d'administration est en place (Secrets Store du compte, secret `ADMIN_CODE`) : il reste à ajouter tes enregistrements depuis l'espace créateur.
+4. **PULSE 2 : connecteurs.** Raccourci Apple Santé prêt à installer, bouton « Importer depuis Santé », registre de connecteurs, provenance, dédoublonnage, données contradictoires. Seulement après ta validation explicite.
+5. **PULSE 3 : apprentissage personnel.** Préférences apprises, consultables et modifiables, analyse des résultats des recommandations, semaine de décharge proposée, notification du matin en option.
+6. **IA transversale (dont la couche IA de PULSE et le « Pourquoi ? »).** Coach Claude avec le contexte de tous les modules, explication du score sans décision ni levée de garde-fou, mémoire et préférences modifiables, recommandations limitées aux contenus qui existent, données transmises réduites au nécessaire, plafond de coût par utilisateur. Nécessite ta clé API dans les secrets Cloudflare.
+7. **Compte et paiement.** Modèle à décider, compte léger, prestataire de paiement, pages légales ; avec la décision app native ou API Oura et WHOOP.
 
 ## Problèmes et limites techniques connus
 
@@ -115,5 +113,5 @@ Document complet, avec l'architecture, les cinq scénarios et le plan : https://
 - **Icône de l'app sur l'iPhone.** Elle ne change qu'en retirant puis en ajoutant de nouveau l'app à l'écran d'accueil ; l'écart de couleur est minime.
 - **Retour haptique sur iPhone.** Il passe par l'interrupteur système de Safari (iOS 18 et plus), seulement pendant un geste. Il n'a pas pu être vérifié ici, faute d'iPhone : à confirmer sur ton téléphone. Sans effet sur les versions plus anciennes.
 - **Accueil adaptatif.** L'ordre change selon l'heure, la séance et la pesée du jour ; PULSE reste toujours en tête et la barre d'onglets ne bouge pas.
-- **Production en retard.** Quatorze versions de test attendent une validation : plus l'écart grandit, plus la mise en production sera grosse. La mise à jour depuis la production garde les données (testé à chaque livraison).
+- **Première mise à jour en production.** Elle saute de la base version 2 à la version 11 d'un coup, ce qui est testé. Par prudence, fais une sauvegarde (Réglages, Sauvegarde) depuis l'ancienne version, avant d'accepter la mise à jour proposée par l'app.
 - **Mise en forme du code.** Pas de configuration Prettier dans le dépôt ; quelques anciens fichiers ne suivent pas le format du reste.

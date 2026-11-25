@@ -57,6 +57,54 @@ describe('saisies v2', () => {
   });
 });
 
+describe('mise en production : base v2 → version actuelle en une fois', () => {
+  it('garde le profil, les pesées, les réglages, le journal, les séances, les séries et les check-ins', async () => {
+    const name = `prod-${crypto.randomUUID()}`;
+    names.push(name);
+    const v2 = new Dexie(name);
+    v2.version(1).stores({ profile: 'id, updatedAt', weighIns: 'id, date, [date+time], updatedAt', meta: 'key' });
+    v2.version(2).stores({
+      foodEntries: 'id, date, updatedAt',
+      exercises: 'id, name, updatedAt',
+      workoutTemplates: 'id, updatedAt',
+      workouts: 'id, date, updatedAt',
+      workoutSets: 'id, workoutId, exerciseId, updatedAt',
+      checkIns: 'id, date, updatedAt',
+    });
+    const sync = { createdAt: 'a', updatedAt: 'a', deletedAt: null };
+    await v2.table('profile').put({ ...sync, id: 'me', firstName: 'Coz', gainRate: { lowPctPerWeek: 0.25, highPctPerWeek: 0.5 } });
+    await v2.table('weighIns').bulkPut([
+      { ...sync, id: 'p1', date: '2026-11-20', time: '07:00', weightKg: 88.6 },
+      { ...sync, id: 'p2', date: '2026-11-24', time: '07:05', weightKg: 88.9 },
+    ]);
+    await v2.table('meta').put({ key: 'onboarding', value: { completedAt: 'a' }, updatedAt: 'a' });
+    await v2.table('exercises').put({ ...sync, id: 'squat', name: 'Squat', muscle: 'quadriceps' });
+    await v2.table('workoutTemplates').put({ ...sync, id: 't', name: 'Lower A', exercises: [{ exerciseId: 'squat', sets: 4, repsMin: 5, repsMax: 7, rir: 2, restSec: 180 }] });
+    await v2.table('workouts').put({ ...sync, id: 'w', date: '2026-11-23', name: 'Lower A', templateId: 't', exerciseIds: ['squat'], startedAt: 'a', endedAt: 'b' });
+    await v2.table('workoutSets').bulkPut([
+      { ...sync, id: 's1', workoutId: 'w', exerciseId: 'squat', weightKg: 112.5, reps: 7, rir: 2 },
+      { ...sync, id: 's2', workoutId: 'w', exerciseId: 'squat', weightKg: 112.5, reps: 6, rir: 2 },
+    ]);
+    await v2.table('checkIns').put({ ...sync, id: 'c', date: '2026-11-24', sleepHours: 7.5, energy: 4, fatigue: 2, soreness: 2 });
+    await v2.table('foodEntries').put({ ...sync, id: 'f', date: '2026-11-24', meal: 'lunch', name: 'Riz', kcal: 390, proteinG: 8, carbsG: 85, fatG: 1 });
+    v2.close();
+
+    const db = new ForgeDB(name);
+    await db.open();
+    expect(db.verno).toBe(SCHEMA_VERSION);
+    expect((await db.profile.get('me'))?.firstName).toBe('Coz');
+    expect((await db.weighIns.orderBy('date').toArray()).map((w) => w.weightKg)).toEqual([88.6, 88.9]);
+    expect(await db.meta.get('onboarding')).toBeTruthy();
+    expect((await db.exercises.get('squat'))?.name).toBe('Squat');
+    expect((await db.workouts.get('w'))?.templateId).toBe('t');
+    expect(await db.workoutSets.where('workoutId').equals('w').count()).toBe(2);
+    expect(await db.checkIns.get('c')).toMatchObject({ sleepHours: 7.5, energy: 4, fatigue: 2, soreness: 2 });
+    expect((await db.foodEntries.get('f'))?.kcal).toBe(390);
+    expect(await db.pulseDays.count()).toBe(0);
+    db.close();
+  });
+});
+
 describe('migration v2 → v3', () => {
   it('garde le journal et les séances, et ajoute aliments, repas habituels et hydratation', async () => {
     const name = `migration3-${crypto.randomUUID()}`;

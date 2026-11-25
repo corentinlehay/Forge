@@ -1,5 +1,14 @@
 # Journal des versions
 
+## Mise en production du 25 novembre 2026
+
+- **Fusion dans `main`** de toute la pile validée par Coz : nutrition-1, training-1, depart-1, muscles-1, kitchen-1, budget-1, mind-1, mind-2, progression-2, bilans-1, pulse-1 (PULSE 1 et 1.1), pulse-1-2, signature-1 et motion-1.
+- **Avant la fusion :**
+    - `main` n'avait pas bougé (Interface V1) ;
+    - la fusion se fait en avance rapide, sans conflit ;
+    - `npm run check` passe sur l'état exact mis en production.
+- **Nouveau test :** une base de la production précédente (version 2, avec profil, pesées, réglages, programme, séance, séries, check-in et journal) s'ouvre directement en version 11, sans perte.
+
 ## FORGE MOTION : mouvement et interactions (version de test, branche `motion-1`)
 
 ### Fait
