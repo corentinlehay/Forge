@@ -1,6 +1,6 @@
 # Journal des versions
 
-## Volume d'une séance en grand (version de test, branche `volume-1`)
+## Volume d'une séance en grand (branche `volume-1`, en production le 25 novembre 2026)
 
 - **Sur l'écran d'une séance :** les trois chiffres restent (séries, exercices, volume). Le bloc Volume porte une flèche et un léger fond vert : il se touche. Il n'est pas cliquable quand la séance n'a aucun kilo (poids du corps seul).
 - **La vue plein écran :**
