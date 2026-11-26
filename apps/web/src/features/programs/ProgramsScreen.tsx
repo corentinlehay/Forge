@@ -90,7 +90,11 @@ export function ProgramsScreen() {
         Un seul programme est actif : ses séances sont celles du jour. Les autres restent ici, en brouillon, en pause ou terminés.
       </p>
 
-      {groups.length === 0 && <p className="text-[17px] leading-snug">Aucun programme pour l’instant. Crée le tien, ou laisse FORGE t’en proposer un avec le questionnaire.</p>}
+      {groups.length === 0 && (
+        <p className="text-[17px] leading-snug">
+          Aucun programme pour l’instant. Crée le tien, ou laisse FORGE t’en proposer un : quelques questions, puis une proposition à valider.
+        </p>
+      )}
 
       {groups
         .filter((g) => g.status !== 'archive')
@@ -130,8 +134,9 @@ export function ProgramsScreen() {
           <Icon name="plus" size={18} />
           Nouveau programme
         </Link>
-        <Link to="/reglages/plan" viewTransition className="flex min-h-11 items-center justify-center text-[15px] text-cendre">
-          Ou génère-le avec le questionnaire FORGE
+        <Link to="/training/programmes/generer" viewTransition className="flex h-[52px] items-center justify-center gap-2 rounded-[16px] bg-graphite text-[17px] font-semibold">
+          <Icon name="sparkle" size={18} />
+          Générer avec FORGE
         </Link>
       </div>
     </Screen>

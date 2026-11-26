@@ -109,8 +109,12 @@ export function TrainingScreen() {
         {templates?.length === 0 && (
           <div className="flex flex-col gap-3 rounded-[18px] bg-anthracite p-4">
             <p className="text-[15px] leading-snug text-cendre">Aucune séance au programme. Ajoute tes séances et leurs jours : la séance du jour apparaîtra sur l’Accueil.</p>
-            <Link to="/reglages/plan" viewTransition className="flex h-[52px] items-center justify-center rounded-[16px] bg-citron text-[17px] font-semibold text-noir">
-              Construire mon programme avec le questionnaire
+            <Link
+              to="/training/programmes/generer"
+              viewTransition
+              className="flex h-[52px] items-center justify-center rounded-[16px] bg-citron text-[17px] font-semibold text-noir"
+            >
+              Construire mon programme avec FORGE
             </Link>
           </div>
         )}

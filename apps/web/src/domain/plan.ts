@@ -1,6 +1,8 @@
 import { EXERCISE_LIBRARY, libraryExercise } from '../data/exerciseLibrary';
 import { canDo, TRAITS, type Need, type Pattern } from '../data/exerciseTraits';
-import type { Experience, GainRate, NutritionTargets, Sex } from '../db/types';
+import { MUSCLE_LABELS, type MuscleGroup } from '../data/muscles';
+import type { Experience, GainRate, NutritionTargets, ProgramObjective, Sex } from '../db/types';
+import { VOLUME_REFERENCE } from './muscleVolume';
 
 /**
  * Plan de départ calculé à partir du questionnaire, sans IA, avec des règles explicites.
@@ -23,17 +25,34 @@ export interface PlanAnswers {
   returning: boolean;
   /** Jours d'entraînement (1 = lundi … 7 = dimanche). */
   weekdays: number[];
-  sessionMinutes: 45 | 60 | 75 | 90;
+  sessionMinutes: 30 | 45 | 60 | 75 | 90;
   place: 'salle' | 'maison';
   /** Matériel à la maison. */
   equipment: Need[];
   zones: Zone[];
   /** Répartition sur 3 jours (absente : corps entier). */
   split?: ThreeDaySplit;
+  /* Assistant de programme (FORGE PROGRAMS) : tout est facultatif ; absent, le questionnaire de départ s'applique tel quel. */
+  /** Objectif du programme : il choisit les répétitions à la place de `goal`. */
+  programGoal?: ProgramObjective;
+  /** Groupes musculaires à développer en priorité. */
+  priorities?: MuscleGroup[];
+  /** Exercices de la bibliothèque à éviter, et favoris à placer d'abord. */
+  avoid?: string[];
+  favorites?: string[];
+  /** Machines et poulies d'abord, ou poids libres d'abord. */
+  equipmentStyle?: 'machines' | 'libres' | null;
+  /** Séries plus courtes et plus lourdes, ou plus longues et plus légères. */
+  repStyle?: 'lourd' | 'leger' | null;
 }
 
-/** Sur 3 jours : corps entier à chaque séance, ou une séance jambes et deux séances haut du corps. */
-export type ThreeDaySplit = 'corps-entier' | 'haut-bas';
+type TrainingFields =
+  'experience' | 'returning' | 'weekdays' | 'sessionMinutes' | 'place' | 'equipment' | 'zones' | 'split' | 'priorities' | 'avoid' | 'favorites' | 'equipmentStyle' | 'repStyle';
+/** Ce que lit le moteur d'entraînement : ni le sexe, ni la taille, ni le poids. Sans objectif de programme, celui du questionnaire choisit les répétitions. */
+export type TrainingAnswers = Pick<PlanAnswers, TrainingFields> & ({ goal: Goal; programGoal?: ProgramObjective } | { goal?: Goal; programGoal: ProgramObjective });
+
+/** Sur 3 jours : corps entier à chaque séance, une séance jambes entre deux séances haut du corps, ou poussée, tirage, jambes. */
+export type ThreeDaySplit = 'corps-entier' | 'haut-bas' | 'ppl';
 
 export const GOAL_LABELS: Record<Goal, string> = {
   muscle: 'Prendre du muscle',
@@ -316,6 +335,7 @@ export function splitFor(days: number, three: ThreeDaySplit = 'corps-entier'): {
     case 2:
       return { label: 'corps entier', sessions: [FULL_A, FULL_B] };
     case 3:
+      if (three === 'ppl') return { label: 'poussée, tirage, jambes', sessions: [PUSH(0, 'Poussée'), PULL(0, 'Tirage'), LEGS(0, 'Jambes')] };
       return three === 'haut-bas'
         ? { label: 'haut, bas, haut', sessions: [UPPER(0, 'Haut du corps A'), LOWER_SHOULDERS, UPPER(1, 'Haut du corps B')] }
         : { label: 'corps entier', sessions: [FULL_A, FULL_B, FULL_C] };
@@ -417,15 +437,29 @@ export interface PlannedSession {
   name: string;
   weekday: number;
   exercises: PlannedExercise[];
+  /** Durée estimée, en minutes (échauffement compris), arrondie à 5. */
+  estimatedMinutes: number;
+}
+
+/** Séries par semaine d'un groupe musculaire : directes (muscle principal) et indirectes (secondaire, comptées pour moitié). */
+export interface PlannedVolume {
+  muscle: MuscleGroup;
+  direct: number;
+  indirect: number;
+  total: number;
 }
 
 export interface TrainingPlan {
   programName: string;
   splitLabel: string;
   sessions: PlannedSession[];
-  /** Noms des exercices écartés pour les zones à ménager. */
+  /** Noms des exercices écartés pour les zones à ménager ou à ta demande. */
   excluded: string[];
   warnings: string[];
+  /** Pourquoi ces choix : une phrase par décision, avec sa source quand il y en a une. */
+  reasons: string[];
+  /** Volume hebdomadaire des groupes musculaires proposés en priorité dans l'assistant. */
+  volume: PlannedVolume[];
 }
 
 /** Matériel à suggérer à la maison, dans l'ordre de préférence. */
@@ -470,21 +504,54 @@ export function upperLowerDays(days: readonly number[]): number[] {
   return options.find((o) => !follows(o[0]!, o[2]!)) ?? options[0]!;
 }
 
-const EXERCISES_PER_MINUTES: Record<PlanAnswers['sessionMinutes'], number> = { 45: 4, 60: 5, 75: 6, 90: 7 };
+const EXERCISES_PER_MINUTES: Record<PlanAnswers['sessionMinutes'], number> = { 30: 3, 45: 4, 60: 5, 75: 6, 90: 7 };
 const TIMED = new Set(['plank', 'side_bridge']);
 
-function prescription(id: string, index: number, a: Pick<PlanAnswers, 'goal' | 'experience' | 'returning'>): PlannedExercise {
+/**
+ * Plages de répétitions par orientation (premier polyarticulaire, autres polyarticulaires, isolation).
+ * Repères de l'ACSM (Ratamess et al. 2009, Med Sci Sports Exerc 41(3):687-708) : charges lourdes et peu de répétitions
+ * pour la force, plages moyennes pour l'hypertrophie, 10 à 25 répétitions et repos courts pour l'endurance musculaire.
+ */
+type Scheme = 'force' | 'hypertrophie' | 'forme' | 'endurance';
+const SCHEMES: Record<Scheme, { first: string; compound: string; iso: string }> = {
+  force: { first: '3-6', compound: '6-8', iso: '8-12' },
+  hypertrophie: { first: '6-10', compound: '8-12', iso: '10-15' },
+  forme: { first: '8-12', compound: '8-12', iso: '12-15' },
+  endurance: { first: '12-15', compound: '12-15', iso: '15-20' },
+};
+const SCHEME_ORDER: Scheme[] = ['force', 'hypertrophie', 'forme', 'endurance'];
+const OBJECTIVE_SCHEME: Record<ProgramObjective, Scheme> = {
+  hypertrophie: 'hypertrophie',
+  recomposition: 'hypertrophie',
+  'perte-de-gras': 'hypertrophie',
+  force: 'force',
+  athletique: 'force',
+  'remise-en-forme': 'forme',
+  maintien: 'forme',
+  'endurance-musculaire': 'endurance',
+};
+const GOAL_SCHEME: Record<Goal, Scheme> = { muscle: 'hypertrophie', perte: 'hypertrophie', recompo: 'hypertrophie', force: 'force', forme: 'forme' };
+
+/** Orientation des répétitions : l'objectif du programme (sinon celui du questionnaire), décalée d'un cran par la préférence. */
+function schemeFor(a: Pick<TrainingAnswers, 'goal' | 'programGoal' | 'repStyle'>): Scheme {
+  const base = a.programGoal ? OBJECTIVE_SCHEME[a.programGoal] : GOAL_SCHEME[a.goal!];
+  const i = SCHEME_ORDER.indexOf(base);
+  if (a.repStyle === 'lourd') return SCHEME_ORDER[Math.max(0, i - 1)]!;
+  if (a.repStyle === 'leger') return SCHEME_ORDER[Math.min(SCHEME_ORDER.length - 1, i + 1)]!;
+  return base;
+}
+
+function prescription(id: string, index: number, a: Pick<TrainingAnswers, 'goal' | 'experience' | 'returning' | 'programGoal' | 'repStyle'>): PlannedExercise {
   const lib = libraryExercise(id)!;
   const compound = lib.kind === 'compound';
   const bodyweight = lib.equipment === 'poids-du-corps';
   const first = index === 0;
+  const scheme = schemeFor(a);
   let reps: string;
   if (TIMED.has(id)) reps = '30-45';
   else if (TRAITS[id]?.needs.includes('traction') && compound) reps = '5-10';
-  else if (bodyweight && compound) reps = '8-15';
-  else if (a.goal === 'force') reps = compound ? (first ? '3-6' : '6-8') : '8-12';
-  else if (a.goal === 'forme') reps = compound ? '8-12' : '12-15';
-  else reps = compound ? (first ? '6-10' : '8-12') : '10-15';
+  else if (bodyweight && compound) reps = scheme === 'endurance' ? '12-20' : '8-15';
+  else reps = compound ? (first ? SCHEMES[scheme].first : SCHEMES[scheme].compound) : SCHEMES[scheme].iso;
 
   let sets = compound ? 3 : 2;
   if (a.experience === 'intermediate') sets = first && compound ? 4 : 3;
@@ -492,28 +559,108 @@ function prescription(id: string, index: number, a: Pick<PlanAnswers, 'goal' | '
   if (a.returning) sets = Math.min(sets, 3);
 
   const rir = a.returning ? 3 : a.experience === 'advanced' ? 1 : 2;
-  const restSec = a.goal === 'force' && compound && first ? Math.max(lib.rest, 180) : lib.rest;
+  const restSec = scheme === 'force' && compound && first ? Math.max(lib.rest, 180) : scheme === 'endurance' ? Math.min(lib.rest, 60) : lib.rest;
   return { libraryId: id, sets, reps, restSec, rir };
 }
 
-export function trainingPlan(a: PlanAnswers): TrainingPlan {
+/** Durée estimée d'une séance : 8 min d'échauffement, 40 s par série, les repos, une minute de mise en place par exercice. */
+const WARMUP_MIN = 8;
+const WORK_SEC = 40;
+const SETUP_SEC = 60;
+export function estimateMinutes(exercises: readonly Pick<PlannedExercise, 'sets' | 'restSec'>[]): number {
+  const sec = exercises.reduce((sum, e) => sum + e.sets * WORK_SEC + Math.max(0, e.sets - 1) * e.restSec + SETUP_SEC, 0);
+  return Math.round((WARMUP_MIN + sec / 60) / 5) * 5;
+}
+
+/** Groupes musculaires proposés en priorité dans l'assistant (et montrés dans le volume par muscle). */
+export const PRIORITY_MUSCLES: readonly MuscleGroup[] = ['pectoraux', 'dos', 'epaules', 'biceps', 'triceps', 'quadriceps', 'ischios', 'fessiers', 'mollets', 'abdominaux'];
+/** Exercice d'isolation qui travaille directement un groupe. */
+const ISOLATION_FOR: Partial<Record<MuscleGroup, Pattern>> = {
+  pectoraux: 'iso-pectoraux',
+  dos: 'iso-dos',
+  epaules: 'iso-epaules',
+  biceps: 'iso-biceps',
+  triceps: 'iso-triceps',
+  quadriceps: 'iso-quadriceps',
+  ischios: 'iso-ischios',
+  fessiers: 'iso-fessiers',
+  mollets: 'iso-mollets',
+  abdominaux: 'abdos',
+};
+/** Groupes dont le volume est comparé au repère de 10 à 20 séries par semaine. */
+const MAJOR_MUSCLES: readonly MuscleGroup[] = ['pectoraux', 'dos', 'epaules', 'quadriceps', 'ischios', 'fessiers'];
+const MAX_SETS = 5;
+
+/** Séries par semaine pour chaque groupe : directes, plus la moitié des séries où il est secondaire. */
+export function weeklyVolume(sessions: readonly Pick<PlannedSession, 'exercises'>[]): Map<MuscleGroup, { direct: number; indirect: number }> {
+  const out = new Map<MuscleGroup, { direct: number; indirect: number }>();
+  const at = (m: MuscleGroup) => out.get(m) ?? (out.set(m, { direct: 0, indirect: 0 }), out.get(m)!);
+  for (const s of sessions)
+    for (const e of s.exercises) {
+      const lib = libraryExercise(e.libraryId);
+      if (!lib) continue;
+      at(lib.muscle).direct += e.sets;
+      for (const m of lib.secondary) at(m).indirect += e.sets / 2;
+    }
+  return out;
+}
+
+/** « 12 », « 7,5 » séries. */
+const formatSets = (n: number) => (Number.isInteger(n) ? String(n) : n.toFixed(1).replace('.', ','));
+
+const SPLIT_REASONS: Record<string, (days: number) => string> = {
+  'corps entier': (n) =>
+    n === 1
+      ? 'Une séance par semaine, en corps entier : chaque muscle y passe.'
+      : `${n} séances en corps entier : chaque muscle travaille ${n} fois par semaine. L’ACSM (2026) conseille au moins 2 fois.`,
+  'haut, bas, haut': () =>
+    'Haut, bas, haut : le haut du corps 2 fois par semaine, les jambes une fois dans une séance complète. À volume égal, la fréquence pèse peu (Grgic et al. 2019).',
+  'poussée, tirage, jambes': (n) =>
+    n >= 6
+      ? 'Poussée, tirage, jambes, deux fois : chaque muscle 2 fois par semaine, comme le conseille l’ACSM (2026).'
+      : 'Poussée, tirage, jambes : une séance complète par groupe, chaque muscle une fois par semaine. À volume égal, la fréquence pèse peu (Grgic et al. 2019), mais l’ACSM (2026) conseille 2 fois.',
+  'haut et bas du corps': () => 'Haut et bas du corps sur 4 jours : chaque muscle 2 fois par semaine, comme le conseille l’ACSM (2026).',
+  'hybride haut, bas, poussée, tirage, jambes': () => '5 séances : haut et bas, puis poussée, tirage, jambes. Chaque muscle travaille 2 fois par semaine.',
+};
+
+const SCHEME_REASONS: Record<Scheme, string> = {
+  force: 'Répétitions : 3 à 8 sur les exercices polyarticulaires, repos de 3 min sur le premier, la plage de la force (repères ACSM 2009).',
+  hypertrophie: 'Répétitions : 6 à 12 sur les exercices polyarticulaires, 10 à 15 en isolation, la plage de l’hypertrophie (repères ACSM 2009).',
+  forme: 'Répétitions : 8 à 15, avec des charges modérées pour apprendre les mouvements (repères ACSM 2009).',
+  endurance: 'Répétitions : 12 à 20, repos d’une minute au plus, la plage de l’endurance musculaire (repères ACSM 2009).',
+};
+
+export function trainingPlan(a: TrainingAnswers): TrainingPlan {
   const days = [...new Set(a.weekdays)].filter((d) => d >= 1 && d <= 7).sort();
   const split = splitFor(days.length, a.split);
   const weekdays = split.label === 'haut, bas, haut' ? upperLowerDays(days) : days;
   const gym = a.place === 'salle';
   const available = new Set<Need>(a.equipment);
-  const excludedIds = new Set(a.zones.flatMap((z) => ZONE_EXCLUSIONS[z]));
+  const zoneExcluded = new Set(a.zones.flatMap((z) => ZONE_EXCLUSIONS[z]));
+  const avoided = new Set((a.avoid ?? []).filter((id) => libraryExercise(id)));
+  const excludedIds = new Set([...zoneExcluded, ...avoided]);
   const usable = (id: string) => {
     const traits = TRAITS[id];
     return Boolean(traits && libraryExercise(id) && !excludedIds.has(id) && canDo(traits.needs, available, gym));
   };
   const zoneFirst = (pattern: Pattern) => a.zones.flatMap((z) => ZONE_FIRST[z]?.[pattern] ?? []);
+  const favorites = (a.favorites ?? []).filter((id) => !excludedIds.has(id));
+  /** Machines et poulies, ou poids libres : la préférence passe avant l'ordre habituel, jamais avant la sécurité. */
+  const styleRank = (id: string) => {
+    if (!a.equipmentStyle) return 0;
+    const eq = libraryExercise(id)?.equipment;
+    const machine = eq === 'machine' || eq === 'poulie';
+    const free = eq === 'barre' || eq === 'halteres' || eq === 'kettlebell';
+    return a.equipmentStyle === 'machines' ? (machine ? 0 : free ? 2 : 1) : free ? 0 : machine ? 2 : 1;
+  };
   const candidates = (pattern: Pattern) => {
     const list = (PREFERENCES[pattern] ?? EXERCISE_LIBRARY.filter((e) => TRAITS[e.id]?.pattern === pattern).map((e) => e.id)).filter(usable);
-    const first = zoneFirst(pattern).filter((id) => list.includes(id));
-    return [...first, ...list.filter((id) => !first.includes(id))];
+    const styled = [...list].sort((x, y) => styleRank(x) - styleRank(y));
+    const first = [...zoneFirst(pattern), ...favorites].filter((id, i, all) => styled.includes(id) && all.indexOf(id) === i);
+    return [...first, ...styled.filter((id) => !first.includes(id))];
   };
-  const perSession = Math.max(3, EXERCISES_PER_MINUTES[a.sessionMinutes] - (a.goal === 'force' ? 1 : 0));
+  const scheme = schemeFor(a);
+  const perSession = Math.max(3, EXERCISES_PER_MINUTES[a.sessionMinutes] - (scheme === 'force' ? 1 : 0));
   const missing = new Set<string>();
 
   const sessions: PlannedSession[] = split.sessions.map((model, i) => {
@@ -528,15 +675,52 @@ export function trainingPlan(a: PlanAnswers): TrainingPlan {
         const equipped = all.filter((id) => TRAITS[id]!.needs.length > 0);
         const list = equipped.length ? equipped : all;
         if (list.length) {
-          pick = list[variant % list.length];
+          pick = list[variant % list.length]!;
+          // Deux développés dans la même séance : un autre angle (plat, incliné) quand la liste en offre un.
+          const angle = (id: string) => (id.includes('incline') ? 'incline' : 'plat');
+          if (pattern === 'pousse-h' && chosen.some((id) => TRAITS[id]!.pattern === 'pousse-h' && angle(id) === angle(pick!)))
+            pick = list.find((id) => !chosen.some((c) => TRAITS[c]!.pattern === 'pousse-h' && angle(c) === angle(id))) ?? pick;
           break;
         }
       }
       if (pick) chosen.push(pick);
       else missing.add(slot[0]!);
     }
-    return { name: model.name, weekday: weekdays[i] ?? days[i % Math.max(1, days.length)] ?? 1, exercises: chosen.map((id, index) => prescription(id, index, a)) };
+    const exercises = chosen.map((id, index) => prescription(id, index, a));
+    return { name: model.name, weekday: weekdays[i] ?? days[i % Math.max(1, days.length)] ?? 1, exercises, estimatedMinutes: 0 };
   });
+
+  // Priorités : une série de plus sur les exercices qui travaillent directement le groupe, et un exercice
+  // d'isolation en plus si le groupe reste sous le repère de 10 séries par semaine.
+  const reasons: string[] = [];
+  for (const muscle of a.priorities ?? []) {
+    const directOf = () => weeklyVolume(sessions).get(muscle)?.direct ?? 0;
+    for (const s of sessions) {
+      const e = s.exercises.find((x) => libraryExercise(x.libraryId)?.muscle === muscle);
+      if (e && e.sets < MAX_SETS) e.sets += 1;
+    }
+    let added: { name: string; session: string } | null = null;
+    const pattern = ISOLATION_FOR[muscle];
+    if (directOf() < VOLUME_REFERENCE.low && pattern) {
+      // Dans une séance qui travaille déjà ce groupe (la poussée pour les pectoraux), la moins chargée d'abord.
+      const order = [...sessions].sort((x, y) => {
+        const hits = (s: PlannedSession) => (s.exercises.some((e) => libraryExercise(e.libraryId)?.muscle === muscle) ? 0 : 1);
+        return hits(x) - hits(y) || x.exercises.length - y.exercises.length;
+      });
+      for (const s of order) {
+        const pick = candidates(pattern).find((id) => !s.exercises.some((e) => e.libraryId === id));
+        if (!pick) continue;
+        const planned = prescription(pick, s.exercises.length, a);
+        planned.sets = Math.min(MAX_SETS, planned.sets + 1);
+        s.exercises.push(planned);
+        added = { name: libraryExercise(pick)!.name, session: s.name };
+        break;
+      }
+    }
+    const label = MUSCLE_LABELS[muscle].toLocaleLowerCase('fr-FR');
+    reasons.push(`Priorité ${label} : ${directOf()} séries directes par semaine${added ? `, avec ${added.name.toLocaleLowerCase('fr-FR')} ajouté à « ${added.session} »` : ''}.`);
+  }
+  for (const s of sessions) s.estimatedMinutes = estimateMinutes(s.exercises);
   if (split.label === 'haut, bas, haut') sessions.sort((x, y) => x.weekday - y.weekday);
 
   /** Matériel qui ajouterait un exercice de ces schémas, sans revenir sur les zones à ménager (deux idées au plus). */
@@ -568,10 +752,60 @@ export function trainingPlan(a: PlanAnswers): TrainingPlan {
       `${capitalizeDay(pair[0])} et ${DAY_NAMES_FR[pair[1] - 1]} se suivent : en corps entier, les mêmes muscles travaillent deux jours de suite. Laisse si possible un jour entre deux séances${days.length === 3 ? ', ou choisis « Haut, bas, haut »' : ''}.`,
     );
   for (const z of a.zones) if (ZONE_ADVICE[z]) warnings.push(ZONE_ADVICE[z]);
+  const tooLong = sessions.filter((s) => s.estimatedMinutes > a.sessionMinutes + 10);
+  if (tooLong.length)
+    warnings.push(
+      `${tooLong.map((s) => `« ${s.name} »`).join(', ')} : environ ${Math.max(...tooLong.map((s) => s.estimatedMinutes))} min, au-delà des ${a.sessionMinutes} prévues. Retire un exercice d’isolation, ou garde ces séances pour les jours où tu as le temps.`,
+    );
+  const totals = weeklyVolume(sessions);
+  const volume: PlannedVolume[] = PRIORITY_MUSCLES.map((muscle) => {
+    const v = totals.get(muscle) ?? { direct: 0, indirect: 0 };
+    return { muscle, direct: v.direct, indirect: v.indirect, total: v.direct + v.indirect };
+  });
+  if (scheme === 'hypertrophie') {
+    const low = volume.filter((v) => MAJOR_MUSCLES.includes(v.muscle) && v.total < VOLUME_REFERENCE.low);
+    const high = volume.filter((v) => v.direct > VOLUME_REFERENCE.high);
+    const list = (vs: PlannedVolume[]) => vs.map((v) => `${MUSCLE_LABELS[v.muscle].toLocaleLowerCase('fr-FR')} ${formatSets(v.total)}`).join(', ');
+    if (low.length)
+      warnings.push(
+        `Sous le repère de 10 séries par semaine (Schoenfeld et al. 2017) : ${list(low)}. Une séance de plus, des séances plus longues ou une priorité les augmentent.`,
+      );
+    if (high.length)
+      warnings.push(
+        `Au-delà de 20 séries directes par semaine, les gains en plus sont incertains : ${high.map((v) => `${MUSCLE_LABELS[v.muscle].toLocaleLowerCase('fr-FR')} ${v.direct}`).join(', ')}.`,
+      );
+  }
   if (a.zones.length)
     warnings.push(
       'Zones à ménager : FORGE écarte les mouvements les plus exigeants pour elles. Ça ne remplace pas l’avis d’un professionnel de santé ; arrête un exercice qui fait mal.',
     );
+
+  const nameList = (ids: Iterable<string>) =>
+    [...ids]
+      .map((id) => libraryExercise(id)?.name.toLocaleLowerCase('fr-FR'))
+      .filter(Boolean)
+      .join(', ');
+  const used = new Set(sessions.flatMap((s) => s.exercises.map((e) => e.libraryId)));
+  const unplaced = (a.favorites ?? []).filter((id) => !used.has(id) && !avoided.has(id));
+  if (unplaced.length) warnings.push(`Favoris non placés : ${nameList(unplaced)}. Il manque le matériel, ta zone à ménager les écarte, ou leurs séances sont déjà complètes.`);
+  reasons.unshift(
+    ...[
+      (SPLIT_REASONS[split.label] ?? (() => null))(days.length),
+      SCHEME_REASONS[scheme],
+      a.programGoal === 'athletique' ? 'Développement athlétique : la base est la force. La bibliothèque n’a pas encore d’exercices de puissance ni de sauts.' : null,
+      a.repStyle === 'lourd'
+        ? 'Séries plus courtes et plus lourdes, comme tu le préfères.'
+        : a.repStyle === 'leger'
+          ? 'Séries plus longues et plus légères, comme tu le préfères.'
+          : null,
+      `${a.returning ? 'Reprise' : a.experience === 'advanced' ? 'Niveau confirmé' : a.experience === 'intermediate' ? 'Niveau intermédiaire' : 'Débutant'} : ${
+        prescription(sessions[0]?.exercises[0]?.libraryId ?? 'barbell_squat', 0, a).rir
+      } répétitions gardées en réserve en moyenne.`,
+      a.equipmentStyle === 'machines' ? 'Machines et poulies d’abord, comme tu le préfères.' : a.equipmentStyle === 'libres' ? 'Poids libres d’abord, comme tu le préfères.' : null,
+      favorites.some((id) => used.has(id)) ? `Tes favoris placés : ${nameList(favorites.filter((id) => used.has(id)))}.` : null,
+      avoided.size ? `Écartés à ta demande : ${nameList(avoided)}.` : null,
+    ].filter((r): r is string => Boolean(r)),
+  );
 
   return {
     programName: `Plan FORGE, ${days.length} séance${days.length > 1 ? 's' : ''} par semaine`,
@@ -579,5 +813,7 @@ export function trainingPlan(a: PlanAnswers): TrainingPlan {
     sessions,
     excluded: [...excludedIds].map((id) => libraryExercise(id)?.name).filter((n): n is string => Boolean(n)),
     warnings,
+    reasons,
+    volume,
   };
 }

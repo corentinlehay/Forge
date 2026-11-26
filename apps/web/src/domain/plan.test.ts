@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { libraryExercise } from '../data/exerciseLibrary';
 import { TRAITS } from '../data/exerciseTraits';
-import { activityFactor, ageOn, backToBack, bmrMifflin, nutritionPlan, trainingPlan, upperLowerDays, ZONE_EXCLUSIONS, type PlanAnswers } from './plan';
+import { activityFactor, ageOn, backToBack, bmrMifflin, estimateMinutes, nutritionPlan, trainingPlan, upperLowerDays, ZONE_EXCLUSIONS, type PlanAnswers } from './plan';
 
 const base: PlanAnswers = {
   goal: 'muscle',
@@ -201,5 +201,73 @@ describe('programme d’entraînement', () => {
     expect(force[0]!.restSec).toBeGreaterThanOrEqual(180);
     const beginner = trainingPlan({ ...base, experience: 'beginner', returning: true }).sessions[0]!.exercises;
     expect(beginner[0]).toMatchObject({ sets: 3, rir: 3 });
+  });
+
+  describe('assistant de programme', () => {
+    const lib = (id: string) => libraryExercise(id)!;
+    it('séances de 30 min : 3 exercices', () => {
+      for (const s of trainingPlan({ ...base, sessionMinutes: 30 }).sessions) expect(s.exercises).toHaveLength(3);
+    });
+
+    it('3 jours en poussée, tirage, jambes', () => {
+      const p = trainingPlan({ ...base, weekdays: [1, 3, 5], split: 'ppl' });
+      expect(p.splitLabel).toBe('poussée, tirage, jambes');
+      expect(p.sessions.map((s) => s.name)).toEqual(['Poussée', 'Tirage', 'Jambes']);
+      expect(p.sessions[0]!.exercises.every((e) => !['quadriceps', 'ischios', 'fessiers'].includes(lib(e.libraryId).muscle))).toBe(true);
+      expect(p.reasons[0]).toMatch(/^Poussée, tirage, jambes : une séance complète par groupe/);
+    });
+
+    it('deux développés dans une séance : un plat et un incliné', () => {
+      for (const equipmentStyle of [null, 'machines', 'libres'] as const) {
+        const push = trainingPlan({ ...base, weekdays: [1, 3, 5], split: 'ppl', equipmentStyle }).sessions[0]!;
+        const presses = push.exercises.map((e) => e.libraryId).filter((id) => ['pectoraux'].includes(lib(id).muscle));
+        expect(presses.filter((id) => id.includes('incline'))).toHaveLength(1);
+      }
+    });
+
+    it('exercices à éviter, favoris, machines ou poids libres', () => {
+      const avoid = trainingPlan({ ...base, avoid: ['barbell_squat'] });
+      expect(ids(avoid)).not.toContain('barbell_squat');
+      expect(avoid.reasons.join(' ')).toContain('Écartés à ta demande : squat.');
+      const fav = trainingPlan({ ...base, favorites: ['leg_press'] });
+      expect(fav.sessions.find((s) => s.name === 'Bas du corps A')!.exercises[0]!.libraryId).toBe('leg_press');
+      const machines = trainingPlan({ ...base, equipmentStyle: 'machines' });
+      expect(['machine', 'poulie']).toContain(lib(machines.sessions[0]!.exercises[0]!.libraryId).equipment);
+      const free = trainingPlan({ ...base, equipmentStyle: 'libres' });
+      expect(['barre', 'halteres']).toContain(lib(free.sessions[0]!.exercises[0]!.libraryId).equipment);
+    });
+
+    it('objectif du programme et préférence de séries', () => {
+      const endurance = trainingPlan({ ...base, programGoal: 'endurance-musculaire' }).sessions.flatMap((s) => s.exercises);
+      expect(endurance.every((e) => e.restSec <= 60)).toBe(true);
+      expect(endurance.some((e) => e.reps === '15-20')).toBe(true);
+      const heavy = trainingPlan({ ...base, programGoal: 'hypertrophie', repStyle: 'lourd' });
+      expect(heavy.sessions[0]!.exercises[0]!.reps).toBe('3-6');
+      expect(heavy.reasons.join(' ')).toContain('Séries plus courtes et plus lourdes');
+    });
+
+    it('priorités : une série de plus, et un exercice d’isolation dans une séance qui travaille déjà le groupe', () => {
+      const plain = trainingPlan({ ...base, weekdays: [1, 3, 5], split: 'ppl' });
+      const prio = trainingPlan({ ...base, weekdays: [1, 3, 5], split: 'ppl', priorities: ['pectoraux'] });
+      const chest = (p: typeof plain) => p.volume.find((v) => v.muscle === 'pectoraux')!.direct;
+      expect(chest(prio)).toBeGreaterThanOrEqual(10);
+      expect(chest(prio)).toBeGreaterThan(chest(plain));
+      const push = prio.sessions.find((s) => s.name === 'Poussée')!;
+      expect(push.exercises.filter((e) => lib(e.libraryId).muscle === 'pectoraux').length).toBeGreaterThan(
+        plain.sessions[0]!.exercises.filter((e) => lib(e.libraryId).muscle === 'pectoraux').length,
+      );
+      expect(prio.reasons.at(-1)).toMatch(/^Priorité pectoraux : \d+ séries directes par semaine, avec .+ ajouté à « Poussée »\.$/);
+    });
+
+    it('volume par muscle, durée estimée et avertissements de volume', () => {
+      const p = trainingPlan({ ...base, weekdays: [1, 3, 5] });
+      expect(p.volume.map((v) => v.muscle)).toEqual(['pectoraux', 'dos', 'epaules', 'biceps', 'triceps', 'quadriceps', 'ischios', 'fessiers', 'mollets', 'abdominaux']);
+      for (const v of p.volume) expect(v.total).toBe(v.direct + v.indirect);
+      expect(p.warnings.join(' ')).toMatch(/Sous le repère de 10 séries par semaine \(Schoenfeld et al\. 2017\) : pectoraux/);
+      expect(trainingPlan({ ...base, weekdays: [1, 3, 5], programGoal: 'force' }).warnings.join(' ')).not.toContain('Sous le repère');
+      for (const s of p.sessions) expect(s.estimatedMinutes).toBeGreaterThan(0);
+      // 8 min d'échauffement + 3 séries de 40 s + 2 repos de 2 min + 1 min de mise en place = 15 min.
+      expect(estimateMinutes([{ sets: 3, restSec: 120 }])).toBe(15);
+    });
   });
 });

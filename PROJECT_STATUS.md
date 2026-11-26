@@ -1,6 +1,6 @@
 # État du projet FORGE
 
-Mis à jour le 26 novembre 2026 : FORGE PROGRAMS, livraisons `programmes-1` et `programmes-2` en version de test (empilées).
+Mis à jour le 26 novembre 2026 : FORGE PROGRAMS, livraisons `programmes-1`, `programmes-2` et `generateur-1` en version de test (empilées).
 
 ## En production (branche `main`, depuis le 25 novembre 2026)
 
@@ -35,6 +35,7 @@ Base de données locale : version 11. Serveur : relais Open Food Facts et séanc
 |---|---|
 | `programmes-1` | FORGE PROGRAMS, livraison 1 : base Dexie v12 (table des versions, table du journal d'activité encore vide, champs facultatifs des programmes, rien de réécrit), statuts brouillon, actif, pause, terminé, archivé, objectif et objectif secondaire, durée et début du cycle, description. Écrans plein format : liste par statut, fiche programme (semaine du cycle, semaine type, séances, actions), création et modification. Remplace la feuille « Programmes » de Training |
 | `programmes-2` | FORGE PROGRAMS, livraison 2 (par-dessus `programmes-1`) : échauffement par séance, consigne et charge de départ par exercice, affichage RIR ou RPE (Réglages, Effort des séries). Versions : nouvelle version quand un programme déjà suivi est modifié, avec la liste des changements ; historique et détail de chaque version ; chaque séance retient la version suivie |
+| `generateur-1` | FORGE PROGRAMS, livraison 3 (par-dessus `programmes-2`) : assistant « Générer avec FORGE » (Training, Programmes). Questions pré-remplies (objectif parmi 8 et secondaire, niveau avec l'historique, jours et durée de 30 à 90 min, poussée-tirage-jambes sur 3 jours, salle ou maison, machines ou poids libres, jusqu'à 3 priorités, séries plus lourdes ou plus légères, favoris, exercices à éviter, zones). Proposition : séances avec durée estimée, volume par muscle sur le repère de 10 à 20 séries, avertissements, « Pourquoi ces choix ». Valider et activer, ou enregistrer en brouillon. Date de naissance demandée si elle manque, rien sous 18 ans |
 
 ## Audit FORGE LEVEL et FORGE PROGRAMS (26 novembre 2026)
 
@@ -110,7 +111,7 @@ Document complet, avec l'architecture, les cinq scénarios et le plan : https://
 
 ## Reste à faire
 
-1. **Valider `programmes-1` et `programmes-2`**, puis mise en production des deux ; ensuite `generateur-1`.
+1. **Valider `programmes-1`, `programmes-2` et `generateur-1`**, puis mise en production des trois ; ensuite `generateur-2` (modifier une proposition, régénérer, comparer).
 2. **Tes amis** : refaire le questionnaire (Réglages, Refaire le questionnaire) pour recevoir les nouveaux programmes (zone « Épaules » cochée ; « Haut, bas, haut » sur 3 jours).
 3. **Vérifier la production sur ton iPhone** :
     - la mise à jour de l'app et la reprise de tes données ;

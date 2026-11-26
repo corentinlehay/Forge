@@ -31,8 +31,8 @@ import { Screen } from '../../ui/Screen';
 
 type StepId = 'objectif' | 'toi' | 'activite' | 'niveau' | 'semaine' | 'lieu' | 'zones' | 'plan';
 const STEPS: StepId[] = ['objectif', 'toi', 'activite', 'niveau', 'semaine', 'lieu', 'zones', 'plan'];
-const DAY_NAMES = ['lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi', 'dimanche'];
-const DAY_LETTERS = ['L', 'M', 'M', 'J', 'V', 'S', 'D'];
+export const DAY_NAMES = ['lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi', 'dimanche'];
+export const DAY_LETTERS = ['L', 'M', 'M', 'J', 'V', 'S', 'D'];
 
 const GOALS: { value: Goal; text: string }[] = [
   { value: 'muscle', text: 'Gagner du muscle, avec une prise de poids lente et contrôlée.' },
@@ -46,19 +46,19 @@ const ACTIVITIES: { value: DailyActivity; title: string; text: string }[] = [
   { value: 'debout', title: 'Souvent debout', text: 'Commerce, enseignement, beaucoup de déplacements à pied.' },
   { value: 'physique', title: 'Travail physique', text: 'Chantier, manutention, métier d’effort.' },
 ];
-const LEVELS: { value: Experience; title: string; text: string }[] = [
+export const LEVELS: { value: Experience; title: string; text: string }[] = [
   { value: 'beginner', title: 'Débutant', text: 'Moins d’un an d’entraînement régulier.' },
   { value: 'intermediate', title: 'Intermédiaire', text: 'De un à trois ans d’entraînement régulier.' },
   { value: 'advanced', title: 'Confirmé', text: 'Plus de trois ans, tu connais tes charges.' },
 ];
-const EQUIPMENT: { value: Need; label: string }[] = [
+export const EQUIPMENT: { value: Need; label: string }[] = [
   { value: 'halteres', label: 'Haltères' },
   { value: 'banc', label: 'Banc' },
   { value: 'barre', label: 'Barre et disques, avec support' },
   { value: 'traction', label: 'Barre de traction' },
   { value: 'kettlebell', label: 'Kettlebell' },
 ];
-const ZONES: { value: Zone; label: string }[] = (Object.keys(ZONE_LABELS) as Zone[]).map((z) => ({ value: z, label: ZONE_LABELS[z] }));
+export const ZONES: { value: Zone; label: string }[] = (Object.keys(ZONE_LABELS) as Zone[]).map((z) => ({ value: z, label: ZONE_LABELS[z] }));
 
 interface Draft {
   goal: Goal | null;
@@ -393,7 +393,7 @@ function toAnswers(d: Draft, firstName?: string): PlanAnswers {
   };
 }
 
-function Question({ title, hint, children }: { title: string; hint?: string; children: ReactNode }) {
+export function Question({ title, hint, children }: { title: string; hint?: string; children: ReactNode }) {
   return (
     <section aria-label={title} className="flex flex-col gap-3">
       <h1 className="font-metal text-[40px] leading-none">{title}</h1>
@@ -403,8 +403,18 @@ function Question({ title, hint, children }: { title: string; hint?: string; chi
   );
 }
 
-/** Sur 3 jours : corps entier ou « haut, bas, haut », avec ce que chaque choix implique. */
-function ThreeDays({ split, weekdays, onChange }: { split: ThreeDaySplit | null; weekdays: number[]; onChange: (s: ThreeDaySplit) => void }) {
+/** Sur 3 jours : corps entier ou « haut, bas, haut » (et, dans l'assistant de programme, poussée, tirage, jambes), avec ce que chaque choix implique. */
+export function ThreeDays({
+  split,
+  weekdays,
+  onChange,
+  withPpl = false,
+}: {
+  split: ThreeDaySplit | null;
+  weekdays: number[];
+  onChange: (s: ThreeDaySplit) => void;
+  withPpl?: boolean;
+}) {
   const pair = backToBack(weekdays);
   return (
     <fieldset className="m-0 flex flex-col gap-2 border-0 p-0">
@@ -421,16 +431,25 @@ function ThreeDays({ split, weekdays, onChange }: { split: ThreeDaySplit | null;
         selected={split === 'haut-bas'}
         onClick={() => onChange('haut-bas')}
       />
+      {withPpl && (
+        <Choice
+          title="Poussée, tirage, jambes"
+          text="Pectoraux, épaules et triceps ; puis dos et biceps ; puis jambes. Chaque muscle ne travaille qu’une fois par semaine."
+          selected={split === 'ppl'}
+          onClick={() => onChange('ppl')}
+        />
+      )}
       {pair && (
         <p className="text-[13px] leading-snug text-cendre">
-          {capitalize(DAY_NAMES[pair[0] - 1]!)} et {DAY_NAMES[pair[1] - 1]} se suivent : avec « Haut, bas, haut », ce ne sont pas les mêmes muscles deux jours de suite.
+          {capitalize(DAY_NAMES[pair[0] - 1]!)} et {DAY_NAMES[pair[1] - 1]} se suivent : avec « Haut, bas, haut »{withPpl ? ' ou « Poussée, tirage, jambes »' : ''}, ce ne sont pas
+          les mêmes muscles deux jours de suite.
         </p>
       )}
     </fieldset>
   );
 }
 
-function Choice({ title, text, selected, onClick }: { title: string; text: string; selected: boolean; onClick: () => void }) {
+export function Choice({ title, text, selected, onClick }: { title: string; text: string; selected: boolean; onClick: () => void }) {
   return (
     <button
       type="button"

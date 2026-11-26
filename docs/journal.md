@@ -1,5 +1,27 @@
 # Journal des versions
 
+## FORGE PROGRAMS, livraison 3 (version de test, branche `generateur-1`, par-dessus `programmes-2`)
+
+- **Assistant « Générer avec FORGE »** (Training, Programmes ; aussi depuis Training quand aucune séance n'existe) :
+    - objectif du programme parmi les 8, objectif secondaire facultatif (affiché sur le programme, les répétitions suivent le principal) ;
+    - niveau et reprise, avec un repère tiré de l'historique : nombre de semaines où une séance a été terminée ;
+    - jours, durée de 30 à 90 min ; sur 3 jours, corps entier, haut-bas-haut ou poussée-tirage-jambes ;
+    - salle ou maison et matériel ; en salle, machines et poulies d'abord ou poids libres d'abord ;
+    - jusqu'à 3 groupes prioritaires, séries plus lourdes ou plus légères ;
+    - favoris et exercices à éviter (bibliothèque, 12 au plus chacun), zones à ménager ;
+    - pré-remplissage : dernières réponses de l'assistant, sinon questionnaire de départ, sinon profil ; ce qui n'est connu nulle part est demandé ;
+    - date de naissance demandée si elle manque (enregistrée dans le profil) ; aucun programme sous 18 ans.
+- **Moteur** (repères sourcés : ACSM 2009 et 2026, Schoenfeld et al. 2017, Grgic et al. 2019) :
+    - répétitions et repos selon l'objectif : force, hypertrophie, remise en forme, endurance musculaire (12 à 20 répétitions, repos d'une minute au plus) ;
+    - priorités : une série de plus sur les exercices du groupe, et un exercice d'isolation dans une séance qui travaille déjà ce groupe si son volume reste sous 10 séries ;
+    - volume par muscle (séries directes, et indirectes comptées pour moitié), durée estimée de chaque séance ;
+    - avertissements : séance plus longue que prévu, volume sous 10 ou au-delà de 20 séries directes (objectifs d'hypertrophie), favoris qui n'ont pas trouvé de place ;
+    - deux développés dans la même séance : un plat et un incliné quand c'est possible ;
+    - « Pourquoi ces choix » : répartition, répétitions, effort, préférences, favoris placés, exercices écartés, priorités.
+- **Proposition :** nom modifiable, séances avec effort en RIR ou RPE, graphique du volume par muscle sur la bande de 10 à 20 séries, avertissements, raisons. « Valider et activer » (l'ancien programme passe en pause) ou « Enregistrer en brouillon ». Rien n'est enregistré avant.
+- Le questionnaire de départ enregistre son programme par le même chemin (même résultat qu'avant) et affiche aussi les avertissements de volume.
+- 14 nouveaux tests (360 pour l'app).
+
 ## FORGE PROGRAMS, livraison 2 (version de test, branche `programmes-2`, par-dessus `programmes-1`)
 
 - **Éditeur de séance :**

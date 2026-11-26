@@ -1,24 +1,14 @@
 import { GOAL_LABELS, type NutritionPlan, type PlanAnswers, type TrainingPlan } from '../domain/plan';
-import type { ProgramObjective } from './types';
+import { GOAL_TO_OBJECTIVE } from '../domain/programs/generator';
 import { saveTargets } from './targets';
-import { libraryExercise } from '../data/exerciseLibrary';
 import { toLocalTimeKey } from '../lib/dates';
-import { createExerciseRepo, createProgramRepo, createProgramVersionRepo, createTemplateRepo } from './repositories/entities';
+import { saveGeneratedProgram } from './generatedProgram';
 import { createMetaRepo } from './repositories/meta';
 import { createProfileRepo } from './repositories/profile';
 import { createWeighInRepo } from './repositories/weighIns';
 import type { ForgeDB } from './schema';
 
 export const QUESTIONNAIRE_KEY = 'questionnaire';
-
-/** L'objectif du questionnaire, traduit en objectif de programme. */
-const GOAL_TO_OBJECTIVE: Record<PlanAnswers['goal'], ProgramObjective> = {
-  muscle: 'hypertrophie',
-  force: 'force',
-  perte: 'perte-de-gras',
-  recompo: 'recomposition',
-  forme: 'remise-en-forme',
-};
 
 export interface QuestionnaireRecord {
   answers: PlanAnswers;
@@ -57,32 +47,17 @@ export async function adoptPlan(
 
   let programId: string | null = null;
   if (training && training.sessions.length) {
-    const programs = createProgramRepo(db);
-    const templates = createTemplateRepo(db);
-    const exercises = createExerciseRepo(db);
-    const program = await programs.add(
+    const program = await saveGeneratedProgram(
+      db,
+      training,
       {
         name: training.programName,
-        active: false,
-        status: 'brouillon',
-        source: 'genere',
         objective: GOAL_TO_OBJECTIVE[answers.goal],
         note: `Généré par le questionnaire FORGE : ${training.sessions.length} séances par semaine, ${training.splitLabel}.`,
+        activate: true,
       },
       now,
     );
-    for (const [position, session] of training.sessions.entries()) {
-      const list = [];
-      for (const e of session.exercises) {
-        const lib = libraryExercise(e.libraryId);
-        if (!lib) continue;
-        const exercise = await exercises.fromLibrary(lib, now);
-        list.push({ exerciseId: exercise.id, sets: e.sets, reps: e.reps, restSec: e.restSec, rir: e.rir });
-      }
-      await templates.add({ name: session.name, weekdays: [session.weekday], exercises: list, position, programId: program.id }, now);
-    }
-    await createProgramVersionRepo(db).sync(program.id, now);
-    await programs.activate(program.id, now);
     programId = program.id;
   }
 
