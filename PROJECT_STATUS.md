@@ -1,6 +1,6 @@
 # État du projet FORGE
 
-Mis à jour le 25 novembre 2026 : mise en production de toute la pile, de nutrition-1 à motion-1, puis zone « Épaules » renforcée (`epaules-1`), aussi en production. Volume d'une séance en grand (`volume-1`), en production le même jour. Répartition « haut, bas, haut » sur 3 jours (`repartition-1`), en production le même jour. Le détail de chaque livraison est dans docs/journal.md.
+Mis à jour le 26 novembre 2026 : audit FORGE LEVEL et FORGE PROGRAMS (phase 0, sans code), en attente de validation.
 
 ## En production (branche `main`, depuis le 25 novembre 2026)
 
@@ -28,6 +28,21 @@ Base de données locale : version 11. Une base de la production précédente (ve
 | `pulse-1` | PULSE 1 et 1.1 : indicateur expliqué en 5 dimensions et lu en 4 niveaux, couverture, évolution sur 7 et 30 jours, analyse du jour, Nutrition Status séparé, règles de sécurité, proposition de séance qui garde toujours « Garder », check-in passable en 5 questions, historique par période, réglages |
 
 Base de données locale : version 11. Serveur : relais Open Food Facts et séances audio (Workers KV `forge-audio`). Chaque changement de schéma a son test de migration sans perte.
+
+## Audit FORGE LEVEL et FORGE PROGRAMS (26 novembre 2026)
+
+Phase 0 du cahier des charges « FORGE LEVEL & FORGE PROGRAMS » v1.0 : audit, conflits, architecture, données, règles LEVEL, moteur de génération, risques, découpage. Aucun code. Document complet : https://claude.ai/artifact/24EFHzYVpamQstVjdLs9w9
+
+- **Constat :** une bonne moitié de PROGRAMS existe déjà (programmes multiples, un seul actif, séances modifiables, génération déterministe validée avant adoption, double progression, propositions PULSE qui n'écrasent jamais le programme).
+- **Conflits principaux :**
+    - tables du cahier en double avec `programs` et `workoutTemplates` ;
+    - pas de `userId` (un utilisateur par appareil) ;
+    - XP, badges et caractéristiques à calculer depuis les données plutôt qu'à stocker ;
+    - Endurance et Mobilité sans aucune donnée source ;
+    - volume aux haltères compté pour une main.
+- **Migration prévue :** Dexie v12, une table `programVersions` et des champs facultatifs, sans perte.
+- **Découpage :** environ onze versions de test, de `programmes-1` à `avatar-1`.
+- **Décisions à valider avant tout code :** les huit cases du résumé du document.
 
 ## Audit FORGE PULSE (24 novembre 2026)
 
@@ -87,16 +102,17 @@ Document complet, avec l'architecture, les cinq scénarios et le plan : https://
 
 ## Reste à faire
 
-1. **Tes amis** : refaire le questionnaire (Réglages, Refaire le questionnaire) pour recevoir les nouveaux programmes (zone « Épaules » cochée ; « Haut, bas, haut » sur 3 jours).
-2. **Vérifier la production sur ton iPhone** :
+1. **Valider les huit décisions de l'audit LEVEL et PROGRAMS**, puis démarrage de `programmes-1`.
+2. **Tes amis** : refaire le questionnaire (Réglages, Refaire le questionnaire) pour recevoir les nouveaux programmes (zone « Épaules » cochée ; « Haut, bas, haut » sur 3 jours).
+3. **Vérifier la production sur ton iPhone** :
     - la mise à jour de l'app et la reprise de tes données ;
     - le retour haptique (iOS 18 et plus).
-3. **Logo : choisir parmi les pistes proposées** (aucune modification du dessin sans ton accord).
-4. **Tes séances audio.** Le code d'administration est en place (Secrets Store du compte, secret `ADMIN_CODE`) : il reste à ajouter tes enregistrements depuis l'espace créateur.
-5. **PULSE 2 : connecteurs.** Raccourci Apple Santé prêt à installer, bouton « Importer depuis Santé », registre de connecteurs, provenance, dédoublonnage, données contradictoires. Seulement après ta validation explicite.
-6. **PULSE 3 : apprentissage personnel.** Préférences apprises, consultables et modifiables, analyse des résultats des recommandations, semaine de décharge proposée, notification du matin en option.
-7. **IA transversale (dont la couche IA de PULSE et le « Pourquoi ? »).** Coach Claude avec le contexte de tous les modules, explication du score sans décision ni levée de garde-fou, mémoire et préférences modifiables, recommandations limitées aux contenus qui existent, données transmises réduites au nécessaire, plafond de coût par utilisateur. Nécessite ta clé API dans les secrets Cloudflare.
-8. **Compte et paiement.** Modèle à décider, compte léger, prestataire de paiement, pages légales ; avec la décision app native ou API Oura et WHOOP.
+4. **Logo : choisir parmi les pistes proposées** (aucune modification du dessin sans ton accord).
+5. **Tes séances audio.** Le code d'administration est en place (Secrets Store du compte, secret `ADMIN_CODE`) : il reste à ajouter tes enregistrements depuis l'espace créateur.
+6. **PULSE 2 : connecteurs.** Raccourci Apple Santé prêt à installer, bouton « Importer depuis Santé », registre de connecteurs, provenance, dédoublonnage, données contradictoires. Seulement après ta validation explicite.
+7. **PULSE 3 : apprentissage personnel.** Préférences apprises, consultables et modifiables, analyse des résultats des recommandations, semaine de décharge proposée, notification du matin en option.
+8. **IA transversale (dont la couche IA de PULSE et le « Pourquoi ? »).** Coach Claude avec le contexte de tous les modules, explication du score sans décision ni levée de garde-fou, mémoire et préférences modifiables, recommandations limitées aux contenus qui existent, données transmises réduites au nécessaire, plafond de coût par utilisateur. Nécessite ta clé API dans les secrets Cloudflare.
+9. **Compte et paiement.** Modèle à décider, compte léger, prestataire de paiement, pages légales ; avec la décision app native ou API Oura et WHOOP.
 
 ## Problèmes et limites techniques connus
 
