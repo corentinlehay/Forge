@@ -1,6 +1,15 @@
 # Journal des versions
 
-## FORGE PROGRAMS, livraison 4 (version de test, branche `generateur-2`, par-dessus `generateur-1`)
+## Mise en production du 26 novembre 2026
+
+- **Fusion dans `main`** des quatre livraisons FORGE PROGRAMS validées par Coz : programmes-1, programmes-2, generateur-1 et generateur-2.
+- **Avant la fusion :**
+    - `main` n'avait pas bougé depuis la mise en production du 25 novembre (repartition-1) ;
+    - la fusion se fait en avance rapide, sans conflit ;
+    - `npm run check` passe sur l'état exact mis en production.
+- **Base locale :** version 11 vers 12, deux tables ajoutées (versions des programmes, journal d'activité), aucune donnée réécrite. Testé depuis la version 11 et depuis la version 2.
+
+## FORGE PROGRAMS, livraison 4 (branche `generateur-2`, en production le 26 novembre 2026)
 
 - **Changer un exercice dans la proposition** (toucher l'exercice, ou « Changer ») :
     - « Même mouvement » d'abord : les exercices qui font le même geste, faisables avec ton matériel et tes zones à ménager, tes favoris en tête, puis selon ta préférence machines ou poids libres ;
@@ -17,7 +26,7 @@
 - Les noms gardent leurs majuscules au milieu d'une phrase (« curl à la barre EZ »).
 - 10 nouveaux tests (369 pour l'app).
 
-## FORGE PROGRAMS, livraison 3 (version de test, branche `generateur-1`, par-dessus `programmes-2`)
+## FORGE PROGRAMS, livraison 3 (branche `generateur-1`, en production le 26 novembre 2026)
 
 - **Assistant « Générer avec FORGE »** (Training, Programmes ; aussi depuis Training quand aucune séance n'existe) :
     - objectif du programme parmi les 8, objectif secondaire facultatif (affiché sur le programme, les répétitions suivent le principal) ;
@@ -39,7 +48,7 @@
 - Le questionnaire de départ enregistre son programme par le même chemin (même résultat qu'avant) et affiche aussi les avertissements de volume.
 - 14 nouveaux tests (360 pour l'app).
 
-## FORGE PROGRAMS, livraison 2 (version de test, branche `programmes-2`, par-dessus `programmes-1`)
+## FORGE PROGRAMS, livraison 2 (branche `programmes-2`, en production le 26 novembre 2026)
 
 - **Éditeur de séance :**
     - échauffement de la séance, en texte libre ;
@@ -61,7 +70,7 @@
 - **Démo :** deux versions (la version 2 ajoute une série au développé couché d'Upper A) et des séances rattachées à chacune.
 - 10 nouveaux tests (346 pour l'app).
 
-## FORGE PROGRAMS, livraison 1 (version de test, branche `programmes-1`)
+## FORGE PROGRAMS, livraison 1 (branche `programmes-1`, en production le 26 novembre 2026)
 
 - **Audit validé** (phase 0) : https://claude.ai/artifact/24EFHzYVpamQstVjdLs9w9. Huit décisions cochées, avatar V1 en emblème.
 - **Base Dexie v12 :**

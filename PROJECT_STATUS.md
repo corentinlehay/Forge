@@ -1,10 +1,10 @@
 # État du projet FORGE
 
-Mis à jour le 26 novembre 2026 : FORGE PROGRAMS, livraisons `programmes-1`, `programmes-2`, `generateur-1` et `generateur-2` en version de test (empilées).
+Mis à jour le 26 novembre 2026 : FORGE PROGRAMS en production (`programmes-1`, `programmes-2`, `generateur-1`, `generateur-2`).
 
-## En production (branche `main`, depuis le 25 novembre 2026)
+## En production (branche `main`, depuis le 26 novembre 2026)
 
-Base de données locale : version 11. Une base de la production précédente (version 2) passe directement en version 11, sans perte, ce qui est testé. Ce que la production contient, livraison par livraison :
+Base de données locale : version 12. La base de la production précédente (version 11) passe en version 12 sans perte ni réécriture, ce qui est testé ; une base de la toute première production (version 2) passe aussi directement en version 12. Ce que la production contient, livraison par livraison :
 
 | Branche | Contenu |
 |---|---|
@@ -23,20 +23,19 @@ Base de données locale : version 11. Une base de la production précédente (ve
 | `epaules-1` | Questionnaire, zone « Épaules » renforcée : plus aucun développé au-dessus de la tête, tractions, dips, écartés, développé incliné ni extension triceps au-dessus de la tête ; développé au sol, puis machine et haltères en premier ; consigne « élévations latérales jusqu'à hauteur d'épaule ». Conseils de matériel exacts (FORGE ne propose plus un matériel que tu as déjà) |
 | `volume-1` | Volume d'une séance en grand : le bloc Volume se touche, une vue plein écran compte le total pendant que chaque série se pose, avec record, palier, comparaison avec la séance précédente du même type, total depuis la première séance, graphique des dernières séances et phrase FORGE. Rien n'est inventé : chaque phrase vient des séances enregistrées |
 | `repartition-1` | Questionnaire, 3 jours par semaine : choix entre « Corps entier à chaque séance » et « Haut, bas, haut » (une séance jambes complète avec une ou deux séries d'épaules, deux séances haut du corps). Séances du haut jamais deux jours de suite. Avertissement quand deux séances corps entier se suivent |
+| `programmes-1` | FORGE PROGRAMS, livraison 1 : base Dexie v12 (table des versions, table du journal d'activité encore vide, champs facultatifs des programmes, rien de réécrit), statuts brouillon, actif, pause, terminé, archivé, objectif et objectif secondaire, durée et début du cycle, description. Écrans plein format : liste par statut, fiche programme (semaine du cycle, semaine type, séances, actions), création et modification. Remplace la feuille « Programmes » de Training |
+| `programmes-2` | FORGE PROGRAMS, livraison 2 : échauffement par séance, consigne et charge de départ par exercice, affichage RIR ou RPE (Réglages, Effort des séries). Versions : nouvelle version quand un programme déjà suivi est modifié, avec la liste des changements ; historique et détail de chaque version ; chaque séance retient la version suivie |
+| `generateur-1` | FORGE PROGRAMS, livraison 3 : assistant « Générer avec FORGE » (Training, Programmes). Questions pré-remplies (objectif parmi 8 et secondaire, niveau avec l'historique, jours et durée de 30 à 90 min, poussée-tirage-jambes sur 3 jours, salle ou maison, machines ou poids libres, jusqu'à 3 priorités, séries plus lourdes ou plus légères, favoris, exercices à éviter, zones). Proposition : séances avec durée estimée, volume par muscle sur le repère de 10 à 20 séries, avertissements, « Pourquoi ces choix ». Valider et activer, ou enregistrer en brouillon. Date de naissance demandée si elle manque, rien sous 18 ans |
+| `generateur-2` | FORGE PROGRAMS, livraison 4 : la proposition se modifie avant d'enregistrer. Chaque exercice : « Changer » propose le même mouvement d'abord (faisable avec ton matériel et tes zones, favoris en tête), puis le même muscle, puis toute la bibliothèque avec la raison des exercices écartés ; séries, ordre, retrait ; ajout d'un exercice par séance. Durées, volume et avertissements suivent, « Tes changements » les liste avec retour à la proposition de FORGE. « Autre proposition » avec comparaison et retour à celle d'avant. Éditeur de séance : « Remplacer » sur chaque exercice, avec les mêmes suggestions |
 | `signature-1` | FORGE SIGNATURE : nouvelle palette dans un système de couleurs unique (docs/design-system.md), couleur par espace pour les graphiques, indicateurs et l'onglet actif, vert FORGE pour toutes les actions principales, rouge d'alerte distinct de l'orange Nutrition, icône de l'app aux nouvelles couleurs |
 | `pulse-1-2` | PULSE 1.2 : plan du jour par module avec « Pourquoi ? », rubrique Sommeil, proposition à valider (accepter, garder, modifier, reporter, revenir en arrière), version allégée appliquée par Training, bilan du soir, historique des décisions et des bilans |
 | `pulse-1` | PULSE 1 et 1.1 : indicateur expliqué en 5 dimensions et lu en 4 niveaux, couverture, évolution sur 7 et 30 jours, analyse du jour, Nutrition Status séparé, règles de sécurité, proposition de séance qui garde toujours « Garder », check-in passable en 5 questions, historique par période, réglages |
 
-Base de données locale : version 11. Serveur : relais Open Food Facts et séances audio (Workers KV `forge-audio`). Chaque changement de schéma a son test de migration sans perte.
+Base de données locale : version 12. Serveur : relais Open Food Facts et séances audio (Workers KV `forge-audio`). Chaque changement de schéma a son test de migration sans perte.
 
 ## En attente de validation (version de test)
 
-| Branche | Contenu |
-|---|---|
-| `programmes-1` | FORGE PROGRAMS, livraison 1 : base Dexie v12 (table des versions, table du journal d'activité encore vide, champs facultatifs des programmes, rien de réécrit), statuts brouillon, actif, pause, terminé, archivé, objectif et objectif secondaire, durée et début du cycle, description. Écrans plein format : liste par statut, fiche programme (semaine du cycle, semaine type, séances, actions), création et modification. Remplace la feuille « Programmes » de Training |
-| `programmes-2` | FORGE PROGRAMS, livraison 2 (par-dessus `programmes-1`) : échauffement par séance, consigne et charge de départ par exercice, affichage RIR ou RPE (Réglages, Effort des séries). Versions : nouvelle version quand un programme déjà suivi est modifié, avec la liste des changements ; historique et détail de chaque version ; chaque séance retient la version suivie |
-| `generateur-1` | FORGE PROGRAMS, livraison 3 (par-dessus `programmes-2`) : assistant « Générer avec FORGE » (Training, Programmes). Questions pré-remplies (objectif parmi 8 et secondaire, niveau avec l'historique, jours et durée de 30 à 90 min, poussée-tirage-jambes sur 3 jours, salle ou maison, machines ou poids libres, jusqu'à 3 priorités, séries plus lourdes ou plus légères, favoris, exercices à éviter, zones). Proposition : séances avec durée estimée, volume par muscle sur le repère de 10 à 20 séries, avertissements, « Pourquoi ces choix ». Valider et activer, ou enregistrer en brouillon. Date de naissance demandée si elle manque, rien sous 18 ans |
-| `generateur-2` | FORGE PROGRAMS, livraison 4 (par-dessus `generateur-1`) : la proposition se modifie avant d'enregistrer. Chaque exercice : « Changer » propose le même mouvement d'abord (faisable avec ton matériel et tes zones, favoris en tête), puis le même muscle, puis toute la bibliothèque avec la raison des exercices écartés ; séries, ordre, retrait ; ajout d'un exercice par séance. Durées, volume et avertissements suivent, « Tes changements » les liste avec retour à la proposition de FORGE. « Autre proposition » avec comparaison et retour à celle d'avant. Éditeur de séance : « Remplacer » sur chaque exercice, avec les mêmes suggestions |
+Aucune version de test en attente.
 
 ## Audit FORGE LEVEL et FORGE PROGRAMS (26 novembre 2026)
 
@@ -112,7 +111,7 @@ Document complet, avec l'architecture, les cinq scénarios et le plan : https://
 
 ## Reste à faire
 
-1. **Valider `programmes-1`, `programmes-2`, `generateur-1` et `generateur-2`**, puis mise en production des quatre ; ensuite `suivi-1`.
+1. **Vérifier FORGE PROGRAMS sur ton iPhone** (mise à jour de l'app, ton programme gardé et actif, date de début à indiquer) ; ensuite `suivi-1`.
 2. **Tes amis** : refaire le questionnaire (Réglages, Refaire le questionnaire) pour recevoir les nouveaux programmes (zone « Épaules » cochée ; « Haut, bas, haut » sur 3 jours).
 3. **Vérifier la production sur ton iPhone** :
     - la mise à jour de l'app et la reprise de tes données ;
@@ -143,5 +142,5 @@ Document complet, avec l'architecture, les cinq scénarios et le plan : https://
 - **Icône de l'app sur l'iPhone.** Elle ne change qu'en retirant puis en ajoutant de nouveau l'app à l'écran d'accueil ; l'écart de couleur est minime.
 - **Retour haptique sur iPhone.** Il passe par l'interrupteur système de Safari (iOS 18 et plus), seulement pendant un geste. Il n'a pas pu être vérifié ici, faute d'iPhone : à confirmer sur ton téléphone. Sans effet sur les versions plus anciennes.
 - **Accueil adaptatif.** L'ordre change selon l'heure, la séance et la pesée du jour ; PULSE reste toujours en tête et la barre d'onglets ne bouge pas.
-- **Première mise à jour en production.** Elle saute de la base version 2 à la version 11 d'un coup, ce qui est testé. Par prudence, fais une sauvegarde (Réglages, Sauvegarde) depuis l'ancienne version, avant d'accepter la mise à jour proposée par l'app.
+- **Mise à jour du 26 novembre.** La base passe de la version 11 à la 12 en ajoutant deux tables, sans rien réécrire, ce qui est testé. Par prudence, fais une sauvegarde (Réglages, Sauvegarde) depuis l'ancienne version avant d'accepter la mise à jour proposée par l'app. La date de début de ton programme actuel n'est pas connue : FORGE la demande au lieu de la deviner.
 - **Mise en forme du code.** Pas de configuration Prettier dans le dépôt ; quelques anciens fichiers ne suivent pas le format du reste.
