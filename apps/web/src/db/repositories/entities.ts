@@ -15,6 +15,7 @@ import type {
   Per100,
   PriceRecord,
   Program,
+  ProgramStatus,
   RecipePhoto,
   RecipeRecord,
   PulseAction,
@@ -32,7 +33,8 @@ import type {
   WorkoutTemplate,
 } from '../types';
 import type { LibraryExercise } from '../../data/exerciseLibrary';
-import { isDateKey, isTimeKey } from '../../lib/dates';
+import { isDateKey, isTimeKey, toLocalDateKey } from '../../lib/dates';
+import { MAX_CYCLE_WEEKS, OBJECTIVES, programStatus } from '../../domain/programs/status';
 import { newId, nowIso } from '../../lib/ids';
 
 /** Erreur de saisie, au message affichable tel quel. */
@@ -135,30 +137,70 @@ export function createExerciseRepo(db: ForgeDB) {
   };
 }
 
+const STATUSES: readonly ProgramStatus[] = ['brouillon', 'actif', 'pause', 'termine', 'archive'];
+
 export function createProgramRepo(db: ForgeDB) {
   const base = entityRepo<Program>(db.programs, (i) => {
     if (i.name !== undefined) check(i.name.trim().length > 0 && i.name.length <= 60, 'Donne un nom au programme (60 caractères maximum).');
+    if (i.note !== undefined) check(i.note.length <= 500, 'Description : 500 caractères maximum.');
+    if (i.status !== undefined) check(STATUSES.includes(i.status), 'Statut de programme invalide.');
+    if (i.objective !== undefined && i.objective !== null) check(OBJECTIVES.includes(i.objective), 'Objectif invalide.');
+    if (i.secondaryObjective !== undefined && i.secondaryObjective !== null) check(OBJECTIVES.includes(i.secondaryObjective), 'Objectif secondaire invalide.');
+    if (i.durationWeeks !== undefined && i.durationWeeks !== null)
+      check(Number.isInteger(i.durationWeeks) && i.durationWeeks >= 1 && i.durationWeeks <= MAX_CYCLE_WEEKS, `Durée du cycle : entre 1 et ${MAX_CYCLE_WEEKS} semaines.`);
+    if (i.startDate !== undefined && i.startDate !== null) check(isDateKey(i.startDate), 'Date de début invalide.');
   });
+
+  /**
+   * Change le statut d'un programme. Activer met en pause le programme actif (jamais supprimé) et pose la date
+   * de début du cycle si elle manque ; « Recommencer un cycle » (depuis terminé) repart d'aujourd'hui.
+   */
+  const setStatus = async (id: string, status: ProgramStatus, now: Date = new Date()): Promise<void> => {
+    const today = toLocalDateKey(now);
+    await db.transaction('rw', db.programs, async () => {
+      const all = await base.listActive();
+      const target = all.find((p) => p.id === id);
+      if (!target) throw new DataError('Programme introuvable.');
+      const from = programStatus(target);
+      if (status === 'actif') {
+        for (const p of all) if (p.id !== id && programStatus(p) === 'actif') await base.update(p.id, { status: 'pause', active: false }, now);
+        const restart = from === 'termine';
+        await base.update(id, { status, active: true, ...(restart || !target.startDate ? { startDate: today } : {}), ...(restart ? { endDate: null } : {}) }, now);
+        return;
+      }
+      await base.update(id, { status, active: false, ...(status === 'termine' ? { endDate: today } : {}) }, now);
+    });
+  };
+
   return {
     ...base,
+    setStatus,
     /** Le programme actif ; s'il n'y en a pas, « Mon programme » est créé et activé. */
     async ensureActive(now: Date = new Date()): Promise<Program> {
       const all = await base.listActive();
       const current = all.find((p) => p.active);
       if (current) return current;
-      if (all[0]) {
-        await this.activate(all[0].id, now);
-        return { ...all[0], active: true };
-      }
-      return base.add({ name: 'Mon programme', active: true }, now);
+      return base.add({ name: 'Mon programme', active: true, status: 'actif', source: 'manuel', startDate: toLocalDateKey(now) }, now);
     },
-    /** Copie un programme et ses séances (la copie n'est pas activée). */
+    /** Copie un programme et ses séances : la copie est un brouillon, sans date de cycle. */
     async duplicate(id: string, now: Date = new Date()): Promise<Program> {
       const source = await base.get(id);
       if (!source || source.deletedAt) throw new DataError('Programme introuvable.');
       const templates = templateRepo(db);
       return db.transaction('rw', db.programs, db.workoutTemplates, async () => {
-        const copy = await base.add({ name: `${source.name.slice(0, 52)} (copie)`, active: false, ...(source.note ? { note: source.note } : {}) }, now);
+        const copy = await base.add(
+          {
+            name: `${source.name.slice(0, 52)} (copie)`,
+            active: false,
+            status: 'brouillon',
+            ...(source.note ? { note: source.note } : {}),
+            ...(source.objective ? { objective: source.objective } : {}),
+            ...(source.secondaryObjective ? { secondaryObjective: source.secondaryObjective } : {}),
+            ...(source.durationWeeks ? { durationWeeks: source.durationWeeks } : {}),
+            ...(source.source ? { source: source.source } : {}),
+          },
+          now,
+        );
         const own = (await templates.listActive()).filter((t) => t.programId === id);
         for (const t of own) await templates.add({ name: t.name, weekdays: t.weekdays, exercises: t.exercises, position: t.position, programId: copy.id }, now);
         return copy;
@@ -172,13 +214,9 @@ export function createProgramRepo(db: ForgeDB) {
         await base.remove(id, now);
       });
     },
-    /** Active un programme et désactive les autres. */
+    /** Active un programme ; l'ancien programme actif passe en pause. */
     async activate(id: string, now: Date = new Date()): Promise<void> {
-      await db.transaction('rw', db.programs, async () => {
-        for (const p of await base.listActive()) {
-          if (p.active !== (p.id === id)) await base.update(p.id, { active: p.id === id }, now);
-        }
-      });
+      await setStatus(id, 'actif', now);
     },
   };
 }

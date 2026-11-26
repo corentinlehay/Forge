@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Link, useNavigate, useParams } from 'react-router';
+import { Link, useNavigate, useParams, useSearchParams } from 'react-router';
 import { repos, useAllTemplates, useExercises, useTemplates } from '../../db/hooks';
 import { DataError } from '../../db/repositories/entities';
 import type { TemplateExercise, WorkoutTemplate } from '../../db/types';
@@ -45,9 +45,17 @@ const toRow = (e: TemplateExercise, i: number, fallbackRest: number | null): Row
   rir: e.rir === null || e.rir === undefined ? '' : String(e.rir),
 });
 
+/** Retour après l'édition : la fiche d'un programme quand on en vient, sinon Training. */
+function useReturnTo(): { to: string; label: string } {
+  const [params] = useSearchParams();
+  const back = params.get('retour');
+  return back && /^\/training\/programmes\/[\w-]+$/.test(back) ? { to: back, label: 'Programme' } : { to: '/training', label: 'Training' };
+}
+
 /** Une séance du programme : jours, exercices, séries, répétitions, repos et RIR visés. */
 export function TemplateScreen() {
   const { templateId = 'nouvelle' } = useParams();
+  const [params] = useSearchParams();
   const all = useAllTemplates();
   const current = useTemplates();
   const exercises = useExercises();
@@ -66,10 +74,14 @@ export function TemplateScreen() {
       </Screen>
     );
   }
-  return <TemplateEditor key={templateId} editing={editing} nextPosition={current.length} />;
+  // Nouvelle séance : dans le programme d'où l'on vient (« Ajouter une séance » d'une fiche programme), sinon l'actif.
+  const programId = params.get('programme');
+  const nextPosition = programId ? all.filter((t) => t.programId === programId).length : current.length;
+  return <TemplateEditor key={templateId} editing={editing} nextPosition={nextPosition} programId={programId} />;
 }
 
-function TemplateEditor({ editing, nextPosition }: { editing: WorkoutTemplate | null; nextPosition: number }) {
+function TemplateEditor({ editing, nextPosition, programId }: { editing: WorkoutTemplate | null; nextPosition: number; programId: string | null }) {
+  const back = useReturnTo();
   const navigate = useNavigate();
   const toast = useToast();
   const exercises = useExercises();
@@ -107,15 +119,15 @@ function TemplateEditor({ editing, nextPosition }: { editing: WorkoutTemplate | 
       const input = { name: name.trim(), weekdays, exercises: list };
       if (editing) await repos.templates.update(editing.id, input);
       else {
-        const program = await repos.programs.ensureActive();
+        const target = programId && (await repos.programs.get(programId)) ? programId : (await repos.programs.ensureActive()).id;
         await repos.templates.add({
           ...input,
           position: nextPosition,
-          programId: program.id,
+          programId: target,
         });
       }
       toast.show(editing ? 'Séance modifiée' : 'Séance ajoutée au programme');
-      navigate('/training', { viewTransition: true });
+      navigate(back.to, { viewTransition: true });
     } catch (e) {
       setError(e instanceof DataError ? e.message : 'L’enregistrement a échoué. Réessaie.');
       setBusy(false);
@@ -132,14 +144,14 @@ function TemplateEditor({ editing, nextPosition }: { editing: WorkoutTemplate | 
       programId: editing.programId ?? null,
     });
     toast.show('Séance dupliquée : choisis ses jours');
-    navigate(`/training/programme/${copy.id}`, { replace: true });
+    navigate(`/training/programme/${copy.id}${back.to === '/training' ? '' : `?retour=${encodeURIComponent(back.to)}`}`, { replace: true });
   };
 
   const remove = async () => {
     if (!editing) return;
     await repos.templates.remove(editing.id);
     toast.show('Séance retirée du programme');
-    navigate('/training', { replace: true });
+    navigate(back.to, { replace: true });
   };
 
   return (
@@ -277,10 +289,11 @@ export function IconButton({
 }
 
 function BackLink() {
+  const back = useReturnTo();
   return (
-    <Link to="/training" viewTransition className="-ml-2 flex min-h-11 items-center gap-1 self-start px-2 text-[15px] text-cendre">
+    <Link to={back.to} viewTransition className="-ml-2 flex min-h-11 items-center gap-1 self-start px-2 text-[15px] text-cendre">
       <Icon name="back" size={20} />
-      Training
+      {back.label}
     </Link>
   );
 }

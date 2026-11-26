@@ -179,11 +179,54 @@ export interface TemplateExercise {
   rir?: number | null;
 }
 
-/** Un programme : un ensemble de séances. Un seul est actif à la fois. */
+/** Cycle de vie d'un programme. Un seul est `actif` à la fois. */
+export type ProgramStatus = 'brouillon' | 'actif' | 'pause' | 'termine' | 'archive';
+
+/** Objectif propre à un programme : il ne change ni le profil ni la nutrition. */
+export type ProgramObjective = 'hypertrophie' | 'force' | 'endurance-musculaire' | 'remise-en-forme' | 'perte-de-gras' | 'recomposition' | 'athletique' | 'maintien';
+
+/**
+ * Un programme : un ensemble de séances. Un seul est actif à la fois (`active` reste la référence
+ * historique et vaut vrai si et seulement si le statut est `actif`).
+ * Les champs ajoutés en base v12 sont facultatifs : absents sur un programme d'avant, ils ne sont jamais devinés.
+ */
 export interface Program extends SyncFields {
   name: string;
   active: boolean;
+  /** Description libre. */
   note?: string;
+  /** Absent avant la v12 : déduit de `active` (actif ou en pause). */
+  status?: ProgramStatus;
+  objective?: ProgramObjective | null;
+  secondaryObjective?: ProgramObjective | null;
+  /** Créé à la main ou généré par FORGE (absent : inconnu). */
+  source?: 'manuel' | 'genere' | null;
+  /** Durée du cycle, en semaines (absente : sans durée). */
+  durationWeeks?: number | null;
+  /** Début du cycle (YYYY-MM-DD), posé à la première activation ou saisi par l'utilisateur. */
+  startDate?: string | null;
+  /** Fin du cycle, posée quand le programme passe « terminé ». */
+  endDate?: string | null;
+  /** Version courante (FORGE PROGRAMS, versions). */
+  currentVersionId?: string | null;
+}
+
+/** Photo d'un programme et de ses séances à un moment donné. */
+export interface ProgramSnapshot {
+  name: string;
+  objective?: ProgramObjective | null;
+  secondaryObjective?: ProgramObjective | null;
+  note?: string;
+  durationWeeks?: number | null;
+  sessions: { templateId: string; name: string; weekdays: number[]; position: number; exercises: TemplateExercise[] }[];
+}
+
+/** Version d'un programme : la photo, et ce qui a changé par rapport à la précédente. */
+export interface ProgramVersion extends SyncFields {
+  programId: string;
+  version: number;
+  snapshot: ProgramSnapshot;
+  changeSummary: string;
 }
 
 /** Une séance du programme, prévue certains jours de la semaine (1 = lundi … 7 = dimanche). */

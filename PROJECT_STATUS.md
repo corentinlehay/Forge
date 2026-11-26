@@ -1,6 +1,6 @@
 # État du projet FORGE
 
-Mis à jour le 26 novembre 2026 : audit FORGE LEVEL et FORGE PROGRAMS (phase 0, sans code), en attente de validation.
+Mis à jour le 26 novembre 2026 : audit FORGE LEVEL et FORGE PROGRAMS validé (8 décisions), première livraison `programmes-1` en version de test.
 
 ## En production (branche `main`, depuis le 25 novembre 2026)
 
@@ -29,6 +29,12 @@ Base de données locale : version 11. Une base de la production précédente (ve
 
 Base de données locale : version 11. Serveur : relais Open Food Facts et séances audio (Workers KV `forge-audio`). Chaque changement de schéma a son test de migration sans perte.
 
+## En attente de validation (version de test)
+
+| Branche | Contenu |
+|---|---|
+| `programmes-1` | FORGE PROGRAMS, livraison 1 : base Dexie v12 (table des versions, champs facultatifs des programmes, rien de réécrit), statuts brouillon, actif, pause, terminé, archivé, objectif et objectif secondaire, durée et début du cycle, description. Écrans plein format : liste par statut, fiche programme (semaine du cycle, semaine type, séances, actions), création et modification. Remplace la feuille « Programmes » de Training |
+
 ## Audit FORGE LEVEL et FORGE PROGRAMS (26 novembre 2026)
 
 Phase 0 du cahier des charges « FORGE LEVEL & FORGE PROGRAMS » v1.0 : audit, conflits, architecture, données, règles LEVEL, moteur de génération, risques, découpage. Aucun code. Document complet : https://claude.ai/artifact/24EFHzYVpamQstVjdLs9w9
@@ -42,7 +48,8 @@ Phase 0 du cahier des charges « FORGE LEVEL & FORGE PROGRAMS » v1.0 : audit, c
     - volume aux haltères compté pour une main.
 - **Migration prévue :** Dexie v12, une table `programVersions` et des champs facultatifs, sans perte.
 - **Découpage :** environ onze versions de test, de `programmes-1` à `avatar-1`.
-- **Décisions à valider avant tout code :** les huit cases du résumé du document.
+- **Décisions validées par Coz le 26 novembre :** les huit, avec l'emblème pour l'avatar V1.
+- **Reste à trancher avant `suivi-2` :** Endurance et Mobilité, journal d'activité ou attente de la connexion Santé (PULSE 2).
 
 ## Audit FORGE PULSE (24 novembre 2026)
 
@@ -102,7 +109,7 @@ Document complet, avec l'architecture, les cinq scénarios et le plan : https://
 
 ## Reste à faire
 
-1. **Valider les huit décisions de l'audit LEVEL et PROGRAMS**, puis démarrage de `programmes-1`.
+1. **Valider `programmes-1`**, puis mise en production ; ensuite `programmes-2` (éditeur complet et versions).
 2. **Tes amis** : refaire le questionnaire (Réglages, Refaire le questionnaire) pour recevoir les nouveaux programmes (zone « Épaules » cochée ; « Haut, bas, haut » sur 3 jours).
 3. **Vérifier la production sur ton iPhone** :
     - la mise à jour de l'app et la reprise de tes données ;

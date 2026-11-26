@@ -1,17 +1,15 @@
 import { useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router';
 import { EXERCISE_LIBRARY } from '../../data/exerciseLibrary';
-import { useAllTemplates, usePrograms, useExercises, useTemplates, useToday, useWorkouts, useWorkoutSets } from '../../db/hooks';
+import { usePrograms, useExercises, useTemplates, useToday, useWorkouts, useWorkoutSets } from '../../db/hooks';
 import { activeProgram, completedWorkouts, isoWeekday, setsByWorkout, weekStart, workoutStats } from '../../domain/training';
 import { addDays } from '../../lib/dates';
 import { countLabel, formatDayShort, formatNumber } from '../../lib/format';
 import { Button } from '../../ui/Button';
 import { Icon } from '../../ui/Icon';
 import { Screen } from '../../ui/Screen';
-import { Sheet } from '../../ui/Sheet';
 import { useDashboardData } from '../dashboard/useDashboardData';
 import { SessionHero } from './SessionHero';
-import { ProgramsPanel } from './ProgramsSheet';
 import { MusclesCard } from '../muscles/MusclesCard';
 import { CoachButton } from '../../ui/CoachButton';
 import { TrainingMindLinks } from '../mind/LibraryScreens';
@@ -25,13 +23,11 @@ export function TrainingScreen() {
   const data = useDashboardData();
   const today = useToday();
   const templates = useTemplates();
-  const allTemplates = useAllTemplates();
   const programs = usePrograms();
   const exercises = useExercises();
   const workouts = useWorkouts();
   const sets = useWorkoutSets();
   const navigate = useNavigate();
-  const [programsOpen, setProgramsOpen] = useState(false);
   const [showAll, setShowAll] = useState(false);
 
   const history = useMemo(() => {
@@ -97,12 +93,18 @@ export function TrainingScreen() {
         <div className="flex items-center justify-between gap-3">
           <div className="min-w-0">
             <h2 className="text-[17px] font-semibold">Programme</h2>
-            {program && <p className="truncate text-[13px] text-cendre">{program.name}</p>}
+            {program ? (
+              <Link to={`/training/programmes/${program.id}`} viewTransition className="block truncate text-[13px] text-cendre underline-offset-2 active:underline">
+                {program.name}
+              </Link>
+            ) : (
+              programs && programs.length > 0 && <p className="text-[13px] text-cendre">Aucun programme actif</p>
+            )}
           </div>
-          <Button variant="quiet" className="-mr-2 shrink-0" onClick={() => setProgramsOpen(true)}>
+          <Link to="/training/programmes" viewTransition className="-mr-2 flex min-h-11 shrink-0 items-center gap-2 px-2 text-[15px] font-medium">
             <Icon name="list" size={18} />
             Programmes
-          </Button>
+          </Link>
         </div>
         {templates?.length === 0 && (
           <div className="flex flex-col gap-3 rounded-[18px] bg-anthracite p-4">
@@ -186,10 +188,6 @@ export function TrainingScreen() {
           </Button>
         )}
       </section>
-
-      <Sheet open={programsOpen} title="Programmes" onClose={() => setProgramsOpen(false)}>
-        {programsOpen && programs && allTemplates && <ProgramsPanel programs={programs} templates={allTemplates} onDone={() => setProgramsOpen(false)} />}
-      </Sheet>
     </Screen>
   );
 }

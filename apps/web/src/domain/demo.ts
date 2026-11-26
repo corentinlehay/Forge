@@ -13,6 +13,7 @@ import type {
   MetaEntry,
   Profile,
   Program,
+  ProgramVersion,
   Scale5,
   WaterLog,
   WeekNote,
@@ -303,6 +304,7 @@ export interface DemoTables {
   pains: Pain[];
   weekNotes: WeekNote[];
   pulseDays: PulseDay[];
+  programVersions: ProgramVersion[];
 }
 
 function localIso(dateKey: string, hour: number, minute = 0): string {
@@ -379,6 +381,24 @@ export function generateDemoData(today: string, now: Date): DemoTables {
     ...sync('programme'),
     name: 'Programme démo, 5 séances',
     active: true,
+    status: 'actif',
+    objective: 'hypertrophie',
+    source: 'manuel',
+    durationWeeks: 8,
+    startDate: addDays(today, -42),
+    note: 'Haut et bas du corps sur 5 jours, une progression lente des charges.',
+  };
+  // Un cycle précédent, terminé : il reste consultable dans « Programmes ».
+  const previous: Program = {
+    ...sync('programme-precedent'),
+    name: 'Remise en route, 3 séances',
+    active: false,
+    status: 'termine',
+    objective: 'remise-en-forme',
+    source: 'manuel',
+    durationWeeks: 4,
+    startDate: addDays(today, -73),
+    endDate: addDays(today, -45),
   };
   const workoutTemplates: WorkoutTemplate[] = PROGRAM.map((t, position) => ({
     ...sync('seance-type'),
@@ -394,6 +414,21 @@ export function generateDemoData(today: string, now: Date): DemoTables {
       rir: 2,
     })),
   }));
+
+  // Séances du cycle précédent (terminé, plus suivi : jamais proposées comme séance du jour).
+  const previousTemplates: WorkoutTemplate[] = [
+    { name: 'Corps entier A', weekday: 1, list: ['Squat', 'Développé couché', 'Rowing barre'] },
+    { name: 'Corps entier B', weekday: 3, list: ['Soulevé de terre roumain', 'Développé militaire debout', 'Rowing barre'] },
+    { name: 'Corps entier C', weekday: 5, list: ['Squat', 'Développé couché', 'Développé militaire debout'] },
+  ].map((t, position) => ({
+    ...sync('seance-type-precedente'),
+    name: t.name,
+    weekdays: [t.weekday],
+    position,
+    programId: previous.id,
+    exercises: t.list.map((name) => ({ exerciseId: exerciseId(name), sets: 3, reps: '8-12', restSec: 120, rir: 2 })),
+  }));
+  workoutTemplates.push(...previousTemplates);
 
   // Séances des 6 dernières semaines (hier compris), avec une progression lente des charges.
   const workouts: Workout[] = [];
@@ -652,7 +687,7 @@ export function generateDemoData(today: string, now: Date): DemoTables {
     foods: [...foods.values()],
     mealTemplates: [],
     waterLogs,
-    programs: [program],
+    programs: [program, previous],
     recipes: [],
     recipePhotos: [],
     mealPlans: [],
@@ -666,5 +701,6 @@ export function generateDemoData(today: string, now: Date): DemoTables {
     pains,
     weekNotes,
     pulseDays: [],
+    programVersions: [],
   };
 }

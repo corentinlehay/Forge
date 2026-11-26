@@ -233,23 +233,62 @@ const exerciseSchema = z.object({
   restSec: z.number().int().min(0).max(900).nullable().optional(),
 });
 
-const programSchema = z.object({ ...syncFields, name: z.string().min(1).max(60), active: z.boolean(), note: z.string().max(500).optional() });
+const objectiveSchema = z.enum(['hypertrophie', 'force', 'endurance-musculaire', 'remise-en-forme', 'perte-de-gras', 'recomposition', 'athletique', 'maintien']);
+
+const programSchema = z.object({
+  ...syncFields,
+  name: z.string().min(1).max(60),
+  active: z.boolean(),
+  note: z.string().max(500).optional(),
+  // Base v12 : tous facultatifs, une sauvegarde plus ancienne reste importable.
+  status: z.enum(['brouillon', 'actif', 'pause', 'termine', 'archive']).optional(),
+  objective: objectiveSchema.nullable().optional(),
+  secondaryObjective: objectiveSchema.nullable().optional(),
+  source: z.enum(['manuel', 'genere']).nullable().optional(),
+  durationWeeks: z.number().int().min(1).max(52).nullable().optional(),
+  startDate: dateKey.nullable().optional(),
+  endDate: dateKey.nullable().optional(),
+  currentVersionId: z.string().nullable().optional(),
+});
+
+const templateExerciseSchema = z.object({
+  exerciseId: z.string().min(1),
+  sets: z.number().int().min(1).max(20),
+  reps: z.string().max(20),
+  restSec: z.number().int().min(0).max(900).nullable().optional(),
+  rir: z.number().int().min(0).max(10).nullable().optional(),
+});
 
 const templateSchema = z.object({
   ...syncFields,
   name: z.string().min(1).max(60),
   weekdays: z.array(z.number().int().min(1).max(7)),
-  exercises: z.array(
-    z.object({
-      exerciseId: z.string().min(1),
-      sets: z.number().int().min(1).max(20),
-      reps: z.string().max(20),
-      restSec: z.number().int().min(0).max(900).nullable().optional(),
-      rir: z.number().int().min(0).max(10).nullable().optional(),
-    }),
-  ),
+  exercises: z.array(templateExerciseSchema),
   position: z.number(),
   programId: z.string().nullable().optional(),
+});
+
+const programVersionSchema = z.object({
+  ...syncFields,
+  programId: z.string().min(1),
+  version: z.number().int().min(1),
+  snapshot: z.object({
+    name: z.string().min(1).max(60),
+    objective: objectiveSchema.nullable().optional(),
+    secondaryObjective: objectiveSchema.nullable().optional(),
+    note: z.string().max(500).optional(),
+    durationWeeks: z.number().int().min(1).max(52).nullable().optional(),
+    sessions: z.array(
+      z.object({
+        templateId: z.string(),
+        name: z.string().min(1).max(60),
+        weekdays: z.array(z.number().int().min(1).max(7)),
+        position: z.number(),
+        exercises: z.array(templateExerciseSchema),
+      }),
+    ),
+  }),
+  changeSummary: z.string().max(1000),
 });
 
 const adjustmentSchema = z.object({ source: z.literal('pulse'), setsDelta: z.number().int().min(-5).max(0), rirDelta: z.number().int().min(0).max(5) });
@@ -439,6 +478,7 @@ export const backupSchema = z.object({
     pains: z.array(painSchema).default([]),
     weekNotes: z.array(weekNoteSchema).default([]),
     pulseDays: z.array(pulseDaySchema).default([]),
+    programVersions: z.array(programVersionSchema).default([]),
   }),
 });
 
@@ -479,6 +519,7 @@ const TABLES = [
   ['pains', 'id'],
   ['weekNotes', 'id'],
   ['pulseDays', 'id'],
+  ['programVersions', 'id'],
 ] as const;
 
 type TableName = (typeof TABLES)[number][0];

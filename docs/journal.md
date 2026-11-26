@@ -1,5 +1,28 @@
 # Journal des versions
 
+## FORGE PROGRAMS, livraison 1 (version de test, branche `programmes-1`)
+
+- **Audit validé** (phase 0) : https://claude.ai/artifact/24EFHzYVpamQstVjdLs9w9. Huit décisions cochées, avatar V1 en emblème.
+- **Base Dexie v12 :**
+    - nouvelle table `programVersions`, vide, qui servira aux versions (`programmes-2`) ;
+    - programmes : statut, objectif et objectif secondaire, origine (manuel ou généré), durée du cycle, début et fin du cycle, version courante. Tous facultatifs ;
+    - la migration ne réécrit aucun programme. Un programme d'avant tire son statut de `active` (actif ou en pause). Sa date de début reste inconnue tant que tu ne la donnes pas ;
+    - tests : passage de v11 à v12 avec programmes, séances et journal PULSE intacts ; passage de v2 à la version actuelle toujours vert. Essai réel : une base créée par la production actuelle s'ouvre en v12 dans le navigateur, programme actif conservé.
+- **Statuts :**
+    - brouillon, actif, en pause, terminé, archivé ;
+    - activer un programme met l'ancien en pause, jamais supprimé, et pose le début du cycle s'il manque ;
+    - terminer pose la fin du cycle ; « Recommencer un cycle » repart d'aujourd'hui ;
+    - un programme sans séance ne s'active pas ; le programme actif ne se supprime pas.
+- **Écrans** (Training, Programmes) :
+    - liste groupée par statut, archivés repliés ;
+    - fiche programme : objectif, description, semaine du cycle avec une case par semaine, semaine type, séances, actions de statut, modifier, dupliquer en brouillon, supprimer ;
+    - création en brouillon : nom, objectif, objectif secondaire, durée (sans durée, 4 à 16 semaines), description. La date de début se corrige ensuite.
+- **Séances :** « Ajouter une séance » depuis une fiche range la séance dans ce programme, et l'éditeur y revient après l'enregistrement.
+- **Programme généré par le questionnaire :** il porte désormais son objectif et l'origine « généré ».
+- **Sauvegarde :** nouveaux champs et nouvelle table ; une sauvegarde plus ancienne reste importable.
+- **Démo :** cycle de 8 semaines en cours (semaine 7) et un programme terminé.
+- 10 nouveaux tests (336 pour l'app).
+
 ## Répartition sur 3 jours (branche `repartition-1`, en production le 25 novembre 2026)
 
 - **Pourquoi :** sur 3 jours, FORGE ne proposait que du corps entier, avec des jambes à chaque séance. Certains préfèrent une séance jambes à part.

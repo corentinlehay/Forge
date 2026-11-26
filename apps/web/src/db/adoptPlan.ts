@@ -1,4 +1,5 @@
 import { GOAL_LABELS, type NutritionPlan, type PlanAnswers, type TrainingPlan } from '../domain/plan';
+import type { ProgramObjective } from './types';
 import { saveTargets } from './targets';
 import { libraryExercise } from '../data/exerciseLibrary';
 import { toLocalTimeKey } from '../lib/dates';
@@ -9,6 +10,15 @@ import { createWeighInRepo } from './repositories/weighIns';
 import type { ForgeDB } from './schema';
 
 export const QUESTIONNAIRE_KEY = 'questionnaire';
+
+/** L'objectif du questionnaire, traduit en objectif de programme. */
+const GOAL_TO_OBJECTIVE: Record<PlanAnswers['goal'], ProgramObjective> = {
+  muscle: 'hypertrophie',
+  force: 'force',
+  perte: 'perte-de-gras',
+  recompo: 'recomposition',
+  forme: 'remise-en-forme',
+};
 
 export interface QuestionnaireRecord {
   answers: PlanAnswers;
@@ -50,7 +60,17 @@ export async function adoptPlan(
     const programs = createProgramRepo(db);
     const templates = createTemplateRepo(db);
     const exercises = createExerciseRepo(db);
-    const program = await programs.add({ name: training.programName, active: false }, now);
+    const program = await programs.add(
+      {
+        name: training.programName,
+        active: false,
+        status: 'brouillon',
+        source: 'genere',
+        objective: GOAL_TO_OBJECTIVE[answers.goal],
+        note: `Généré par le questionnaire FORGE : ${training.sessions.length} séances par semaine, ${training.splitLabel}.`,
+      },
+      now,
+    );
     for (const [position, session] of training.sessions.entries()) {
       const list = [];
       for (const e of session.exercises) {

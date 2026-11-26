@@ -1,6 +1,6 @@
 import Dexie, { type EntityTable } from 'dexie';
 import { activeDbName } from './dataMode';
-import type { AudioDownload, AudioState, BodyPhoto, Measurement, Pain, PulseDay, WeekNote, MindSession, MoodLog, TargetChange, CheckIn, Exercise, Food, FoodEntry, MealPlan, MealTemplate, MetaEntry, PriceRecord, Profile, Program, RecipePhoto, RecipeRecord, ShoppingList, WaterLog, WeighIn, Workout, WorkoutSet, WorkoutTemplate } from './types';
+import type { AudioDownload, AudioState, BodyPhoto, Measurement, Pain, PulseDay, WeekNote, MindSession, MoodLog, TargetChange, CheckIn, Exercise, Food, FoodEntry, MealPlan, MealTemplate, MetaEntry, PriceRecord, Profile, Program, ProgramVersion, RecipePhoto, RecipeRecord, ShoppingList, WaterLog, WeighIn, Workout, WorkoutSet, WorkoutTemplate } from './types';
 import { newId, nowIso } from '../lib/ids';
 
 /**
@@ -17,7 +17,7 @@ import { newId, nowIso } from '../lib/ids';
  * v7 : + journal émotionnel, pratiques Mind. v8 : + état et téléchargements des séances audio.
  * v9 : + mensurations, photos du corps, douleurs. v10 : + notes de semaine des bilans. v11 : + journal PULSE (tables ajoutées).
  */
-export const SCHEMA_VERSION = 11;
+export const SCHEMA_VERSION = 12;
 
 export class ForgeDB extends Dexie {
   profile!: EntityTable<Profile, 'id'>;
@@ -48,6 +48,7 @@ export class ForgeDB extends Dexie {
   pains!: EntityTable<Pain, 'id'>;
   weekNotes!: EntityTable<WeekNote, 'id'>;
   pulseDays!: EntityTable<PulseDay, 'id'>;
+  programVersions!: EntityTable<ProgramVersion, 'id'>;
 
   constructor(name = 'forge') {
     super(name);
@@ -95,6 +96,9 @@ export class ForgeDB extends Dexie {
     this.version(9).stores({ measurements: 'id, date, updatedAt', bodyPhotos: 'id, date, updatedAt', pains: 'id, updatedAt' });
     this.version(10).stores({ weekNotes: 'id, weekStart, updatedAt' });
     this.version(11).stores({ pulseDays: 'id, date, updatedAt' });
+    // FORGE PROGRAMS : versions des programmes. Les nouveaux champs des programmes sont facultatifs :
+    // rien n'est réécrit, le statut d'un programme d'avant se déduit de `active`.
+    this.version(12).stores({ programVersions: 'id, programId, updatedAt' });
   }
 }
 

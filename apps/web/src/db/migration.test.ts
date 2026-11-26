@@ -474,3 +474,70 @@ describe('journal PULSE', () => {
     db.close();
   });
 });
+
+describe('migration v11 → v12', () => {
+  it('ajoute les versions de programme sans réécrire les programmes ni leurs séances', async () => {
+    const name = `migration12-${crypto.randomUUID()}`;
+    names.push(name);
+    const v11 = new Dexie(name);
+    v11.version(1).stores({ profile: 'id, updatedAt', weighIns: 'id, date, [date+time], updatedAt', meta: 'key' });
+    v11.version(2).stores({
+      foodEntries: 'id, date, updatedAt',
+      exercises: 'id, name, updatedAt',
+      workoutTemplates: 'id, updatedAt',
+      workouts: 'id, date, updatedAt',
+      workoutSets: 'id, workoutId, exerciseId, updatedAt',
+      checkIns: 'id, date, updatedAt',
+    });
+    v11.version(3).stores({ foods: 'id, [source+sourceId], name, updatedAt', mealTemplates: 'id, updatedAt', waterLogs: 'id, date, updatedAt' });
+    v11.version(4).stores({ programs: 'id, updatedAt' });
+    v11
+      .version(5)
+      .stores({
+        recipes: 'id, updatedAt',
+        recipePhotos: 'id, recipeKey, updatedAt',
+        mealPlans: 'id, date, updatedAt',
+        shoppingLists: 'id, updatedAt',
+        prices: 'id, key, updatedAt',
+      });
+    v11.version(6).stores({ targetChanges: 'id, date, updatedAt' });
+    v11.version(7).stores({ moodLogs: 'id, date, updatedAt', mindSessions: 'id, date, updatedAt' });
+    v11.version(8).stores({ audioStates: 'id, updatedAt', audioDownloads: 'id' });
+    v11.version(9).stores({ measurements: 'id, date, updatedAt', bodyPhotos: 'id, date, updatedAt', pains: 'id, updatedAt' });
+    v11.version(10).stores({ weekNotes: 'id, weekStart, updatedAt' });
+    v11.version(11).stores({ pulseDays: 'id, date, updatedAt' });
+    const prog = { id: 'p1', createdAt: 'a', updatedAt: 'a', deletedAt: null, name: 'Plan FORGE', active: true };
+    const paused = { id: 'p2', createdAt: 'a', updatedAt: 'a', deletedAt: null, name: 'Ancien', active: false };
+    await v11.table('programs').bulkPut([prog, paused]);
+    await v11
+      .table('workoutTemplates')
+      .put({ id: 't1', createdAt: 'a', updatedAt: 'a', deletedAt: null, name: 'Push', weekdays: [1], exercises: [], position: 0, programId: 'p1' });
+    await v11
+      .table('pulseDays')
+      .put({
+        id: 'd1',
+        createdAt: 'a',
+        updatedAt: 'a',
+        deletedAt: null,
+        date: '2026-11-25',
+        engineVersion: 2,
+        readiness: 70,
+        confidence: 'moyenne',
+        mode: 'normal',
+        components: [],
+        nutritionKind: 'incomplet',
+        nutritionScore: null,
+        rules: [],
+      });
+    v11.close();
+    const db = new ForgeDB(name);
+    await db.open();
+    expect(db.verno).toBe(SCHEMA_VERSION);
+    expect(await db.programs.get('p1')).toEqual(prog);
+    expect(await db.programs.get('p2')).toEqual(paused);
+    expect((await db.workoutTemplates.get('t1'))?.programId).toBe('p1');
+    expect((await db.pulseDays.get('d1'))?.readiness).toBe(70);
+    expect(await db.programVersions.count()).toBe(0);
+    db.close();
+  });
+});
