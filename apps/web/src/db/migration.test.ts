@@ -538,6 +538,7 @@ describe('migration v11 → v12', () => {
     expect((await db.workoutTemplates.get('t1'))?.programId).toBe('p1');
     expect((await db.pulseDays.get('d1'))?.readiness).toBe(70);
     expect(await db.programVersions.count()).toBe(0);
+    expect(await db.activities.count()).toBe(0);
     db.close();
   });
 });

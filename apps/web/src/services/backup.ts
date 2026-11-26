@@ -268,6 +268,18 @@ const templateSchema = z.object({
   programId: z.string().nullable().optional(),
 });
 
+const activitySchema = z.object({
+  ...syncFields,
+  date: dateKey,
+  kind: z.enum(['cardio', 'mobilite']),
+  minutes: z
+    .number()
+    .int()
+    .min(1)
+    .max(24 * 60),
+  note: z.string().max(300).optional(),
+});
+
 const programVersionSchema = z.object({
   ...syncFields,
   programId: z.string().min(1),
@@ -479,6 +491,7 @@ export const backupSchema = z.object({
     weekNotes: z.array(weekNoteSchema).default([]),
     pulseDays: z.array(pulseDaySchema).default([]),
     programVersions: z.array(programVersionSchema).default([]),
+    activities: z.array(activitySchema).default([]),
   }),
 });
 
@@ -520,6 +533,7 @@ const TABLES = [
   ['weekNotes', 'id'],
   ['pulseDays', 'id'],
   ['programVersions', 'id'],
+  ['activities', 'id'],
 ] as const;
 
 type TableName = (typeof TABLES)[number][0];

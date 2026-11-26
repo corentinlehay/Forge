@@ -5,6 +5,7 @@
 - **Audit validé** (phase 0) : https://claude.ai/artifact/24EFHzYVpamQstVjdLs9w9. Huit décisions cochées, avatar V1 en emblème.
 - **Base Dexie v12 :**
     - nouvelle table `programVersions`, vide, qui servira aux versions (`programmes-2`) ;
+    - nouvelle table `activities`, vide : le journal d'activité (cardio et mobilité, en minutes) choisi par Coz pour Endurance et Mobilité. L'écran de saisie arrive avec `suivi-2` ;
     - programmes : statut, objectif et objectif secondaire, origine (manuel ou généré), durée du cycle, début et fin du cycle, version courante. Tous facultatifs ;
     - la migration ne réécrit aucun programme. Un programme d'avant tire son statut de `active` (actif ou en pause). Sa date de début reste inconnue tant que tu ne la donnes pas ;
     - tests : passage de v11 à v12 avec programmes, séances et journal PULSE intacts ; passage de v2 à la version actuelle toujours vert. Essai réel : une base créée par la production actuelle s'ouvre en v12 dans le navigateur, programme actif conservé.

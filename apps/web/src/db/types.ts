@@ -211,6 +211,17 @@ export interface Program extends SyncFields {
   currentVersionId?: string | null;
 }
 
+/**
+ * Journal d'activité, rempli par l'utilisateur (décision du 26 novembre 2026) : cardio et mobilité, en minutes.
+ * Source des caractéristiques Endurance et Mobilité de FORGE LEVEL. Table créée en v12, écran à venir.
+ */
+export interface Activity extends SyncFields {
+  date: string;
+  kind: 'cardio' | 'mobilite';
+  minutes: number;
+  note?: string;
+}
+
 /** Photo d'un programme et de ses séances à un moment donné. */
 export interface ProgramSnapshot {
   name: string;
