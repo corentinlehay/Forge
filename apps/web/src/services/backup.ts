@@ -32,6 +32,7 @@ const profileSchema = z.object({
   returningAfterBreak: z.boolean().optional(),
   gainRate: z.object({ lowPctPerWeek: z.number().min(-2).max(2), highPctPerWeek: z.number().min(-2).max(2) }),
   goal: z.enum(['muscle', 'perte', 'recompo', 'force', 'forme']).optional(),
+  specialization: z.enum(['POWER', 'BUILDER', 'ENGINE', 'DISCIPLINE', 'MOBILITY', 'RECOVERY']).nullable().optional(),
 });
 
 const weighInSchema = z.object({

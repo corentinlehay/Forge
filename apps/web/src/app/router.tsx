@@ -1,5 +1,7 @@
 import { createBrowserRouter, Navigate } from 'react-router';
 import { CoachScreen } from '../features/coach/CoachScreen';
+import { ActivityJournalScreen } from '../features/level/ActivityJournal';
+import { PlayerScreen } from '../features/level/PlayerScreen';
 import { HomeScreen } from '../features/home/HomeScreen';
 import { AddFoodScreen } from '../features/nutrition/AddFoodScreen';
 import { NutritionScreen } from '../features/nutrition/NutritionScreen';
@@ -101,6 +103,8 @@ export const router = createBrowserRouter([
       { path: 'mind/createur', element: <CreatorScreen /> },
       { path: 'mind/createur/:id', element: <CreatorEditor /> },
       { path: 'coach', element: <CoachScreen /> },
+      { path: 'progression/joueur', element: <PlayerScreen /> },
+      { path: 'progression/joueur/activites', element: <ActivityJournalScreen /> },
       { path: 'reglages', element: <SettingsScreen /> },
       { path: '*', element: <Navigate to="/" replace /> },
     ],

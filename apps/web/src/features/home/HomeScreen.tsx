@@ -16,6 +16,7 @@ import { useWeighInSheet } from '../weight/WeighInSheet';
 import { statusView } from '../weight/weightStatus';
 import { SessionHero } from '../training/SessionHero';
 import { CoachButton } from '../../ui/CoachButton';
+import { LevelCard } from '../level/LevelCard';
 import { BackupReminder } from './BackupReminder';
 import { WeekCard } from '../review/WeekCard';
 import { PulseCard } from '../pulse/PulseCard';
@@ -110,6 +111,7 @@ function Dashboard({ data }: { data: DashboardData }) {
           {card === 'evening' && <EveningCard />}
         </div>
       ))}
+      <LevelCard />
       <CoachCard data={data} />
       <BackupReminder />
     </>

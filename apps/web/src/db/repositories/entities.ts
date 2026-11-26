@@ -1,6 +1,7 @@
 import type { EntityTable, Table } from 'dexie';
 import type { ForgeDB } from '../schema';
 import type {
+  Activity,
   BodyPhoto,
   CheckIn,
   Exercise,
@@ -556,6 +557,16 @@ export function createWeekNoteRepo(db: ForgeDB) {
       return existing ? base.update(existing.id, fields, now) : base.add({ weekStart, ...fields } as Input<WeekNote>, now);
     },
   };
+}
+
+/** Journal d'activité (cardio, mobilité) : la source d'Endurance et de Mobilité dans FORGE LEVEL. */
+export function createActivityRepo(db: ForgeDB) {
+  return entityRepo<Activity>(db.activities, (i) => {
+    if (i.date !== undefined) check(isDateKey(i.date), 'Date invalide.');
+    if (i.kind !== undefined) check(i.kind === 'cardio' || i.kind === 'mobilite', 'Type d’activité invalide.');
+    if (i.minutes !== undefined) check(Number.isInteger(i.minutes) && between(i.minutes, 1, 600), 'Durée : de 1 à 600 minutes.');
+    if (i.note !== undefined) check(i.note.length <= 200, 'Note trop longue (200 caractères maximum).');
+  });
 }
 
 export function createPainRepo(db: ForgeDB) {

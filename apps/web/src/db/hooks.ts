@@ -31,8 +31,10 @@ import {
   createWaterRepo,
   createWorkoutRepo,
   createTargetChangeRepo,
+  createActivityRepo,
 } from './repositories/entities';
 import type {
+  Activity,
   AudioState,
   BodyPhoto,
   PulseDay,
@@ -107,6 +109,9 @@ export const repos = {
   },
   get programs() {
     return createProgramRepo(getDb());
+  },
+  get activities() {
+    return createActivityRepo(getDb());
   },
   get programVersions() {
     return createProgramVersionRepo(getDb());
@@ -188,6 +193,11 @@ export function useMoodLogs(): MoodLog[] | undefined {
 }
 
 /** Pratiques Mind, de la plus récente à la plus ancienne. */
+/** Journal d'activité, du plus récent au plus ancien. */
+export function useActivities(): Activity[] | undefined {
+  return useLiveQuery(async () => (await repos.activities.listActive()).sort((a, b) => b.date.localeCompare(a.date) || b.createdAt.localeCompare(a.createdAt)), []);
+}
+
 export function useMindSessions(): MindSession[] | undefined {
   return useLiveQuery(async () => (await repos.mindSessions.listActive()).sort((a, b) => `${b.date}${b.time}`.localeCompare(`${a.date}${a.time}`)), []);
 }
@@ -223,6 +233,17 @@ export function usePrograms(): Program[] | undefined {
 /** Versions d'un programme, de la première à la plus récente. */
 export function useProgramVersions(programId: string | null | undefined): ProgramVersion[] | undefined {
   return useLiveQuery(async () => (programId ? repos.programVersions.list(programId) : []), [programId]);
+}
+
+/** Toutes les versions de tous les programmes. */
+export function useAllProgramVersions(): ProgramVersion[] | undefined {
+  return useLiveQuery(
+    () =>
+      getDb()
+        .programVersions.toArray()
+        .then((all) => all.filter((v) => !v.deletedAt)),
+    [],
+  );
 }
 
 /** Toutes les séances-types, tous programmes confondus. */

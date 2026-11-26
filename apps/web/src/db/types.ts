@@ -22,6 +22,9 @@ export interface GainRate {
 }
 
 /** Profil unique de l'utilisateur. Les champs absents sont demandés au moment où une fonction en a besoin. */
+/** Titre FORGE LEVEL choisi par l'utilisateur ; il ne change aucun calcul. */
+export type Specialization = 'POWER' | 'BUILDER' | 'ENGINE' | 'DISCIPLINE' | 'MOBILITY' | 'RECOVERY';
+
 export interface Profile extends SyncFields {
   id: 'me';
   firstName?: string;
@@ -36,6 +39,8 @@ export interface Profile extends SyncFields {
   goal?: 'muscle' | 'perte' | 'recompo' | 'force' | 'forme';
   /** Objectifs nutritionnels du jour, définis par l'utilisateur dans Nutrition. */
   nutritionTargets?: NutritionTargets;
+  /** FORGE LEVEL : titre choisi, null quand l'utilisateur l'a retiré. */
+  specialization?: Specialization | null;
 }
 
 export interface NutritionTargets {

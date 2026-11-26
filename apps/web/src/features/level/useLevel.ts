@@ -1,0 +1,86 @@
+import { useMemo } from 'react';
+import {
+  useActivities,
+  useAllProgramVersions,
+  useAllTemplates,
+  useCheckIns,
+  useExercises,
+  useFoodEntries,
+  useMindSessions,
+  useProfile,
+  usePrograms,
+  usePulseDays,
+  useTargetChanges,
+  useToday,
+  useWeekNotes,
+  useWorkouts,
+  useWorkoutSets,
+} from '../../db/hooks';
+import { buildCatalog, catalogItem } from '../../domain/exerciseCatalog';
+import { computeLevel, type LevelState } from '../../domain/level/level';
+import type { MuscleResolver } from '../../domain/muscleVolume';
+import { PRIORITY_MUSCLES } from '../../domain/plan';
+
+/** FORGE LEVEL calculé à partir de toutes les données enregistrées ; undefined pendant le chargement. */
+export function useLevel(): LevelState | undefined {
+  const workouts = useWorkouts();
+  const sets = useWorkoutSets();
+  const exercises = useExercises();
+  const templates = useAllTemplates();
+  const programs = usePrograms();
+  const versions = useAllProgramVersions();
+  const pulseDays = usePulseDays();
+  const mindSessions = useMindSessions();
+  const activities = useActivities();
+  const foodEntries = useFoodEntries();
+  const profile = useProfile();
+  const targetChanges = useTargetChanges();
+  const weekNotes = useWeekNotes();
+  const checkIns = useCheckIns();
+  const today = useToday();
+  return useMemo(() => {
+    if (
+      !workouts ||
+      !sets ||
+      !exercises ||
+      !templates ||
+      !programs ||
+      !versions ||
+      !pulseDays ||
+      !mindSessions ||
+      !activities ||
+      !foodEntries ||
+      profile === undefined ||
+      !targetChanges ||
+      !weekNotes ||
+      !checkIns
+    )
+      return undefined;
+    const catalog = buildCatalog(exercises);
+    const resolve: MuscleResolver = (id) => {
+      const item = catalogItem(catalog, id);
+      return item ? { muscle: item.muscle, secondary: item.secondary } : null;
+    };
+    return computeLevel(
+      {
+        workouts,
+        sets,
+        exercises,
+        templates,
+        programs,
+        versions,
+        pulseDays,
+        mindSessions,
+        activities,
+        foodEntries,
+        targets: profile?.nutritionTargets ?? null,
+        targetChanges,
+        weekNotes,
+        checkIns,
+        today,
+      },
+      resolve,
+      PRIORITY_MUSCLES,
+    );
+  }, [workouts, sets, exercises, templates, programs, versions, pulseDays, mindSessions, activities, foodEntries, profile, targetChanges, weekNotes, checkIns, today]);
+}

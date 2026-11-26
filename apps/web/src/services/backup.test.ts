@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { ForgeDB, SCHEMA_VERSION } from '../db/schema';
 import { createProfileRepo } from '../db/repositories/profile';
 import { createWeighInRepo } from '../db/repositories/weighIns';
-import { createCheckInRepo, createPulseDayRepo } from '../db/repositories/entities';
+import { createActivityRepo, createCheckInRepo, createPulseDayRepo } from '../db/repositories/entities';
 import { backupFileName, exportBackup, importBackup, isBackupDue, markBackupDone, parseBackup, serializeBackup } from './backup';
 
 const dbs: ForgeDB[] = [];
@@ -40,6 +40,25 @@ describe('sauvegarde et restauration', () => {
     expect(report.added).toBe(3);
     expect(await target.weighIns.toArray()).toEqual(await source.weighIns.toArray());
     expect(await target.profile.toArray()).toEqual(await source.profile.toArray());
+  });
+
+  it('garde le journal d’activité et la spécialisation FORGE LEVEL', async () => {
+    await createActivityRepo(source).add({ date: '2026-11-24', kind: 'cardio', minutes: 40, note: 'Vélo' });
+    await createProfileRepo(source).update({ specialization: 'BUILDER' });
+    const parsed = parseBackup(serializeBackup(await exportBackup(source)));
+    if (!parsed.ok) throw new Error('sauvegarde illisible');
+    const target = await freshDb();
+    await importBackup(target, parsed.backup, 'replace');
+    expect(await target.activities.toArray()).toEqual(await source.activities.toArray());
+    expect((await target.profile.get('me'))?.specialization).toBe('BUILDER');
+  });
+
+  it('refuse une activité ou une spécialisation invalide', async () => {
+    const activities = createActivityRepo(source);
+    await expect(activities.add({ date: '2026-11-24', kind: 'cardio', minutes: 0 })).rejects.toThrow('Durée : de 1 à 600 minutes.');
+    await expect(activities.add({ date: '2026-11-24', kind: 'natation' as never, minutes: 30 })).rejects.toThrow('Type d’activité invalide.');
+    await expect(createProfileRepo(source).update({ specialization: 'NINJA' as never })).rejects.toThrow('Spécialisation inconnue.');
+    await createProfileRepo(source).update({ specialization: null });
   });
 
   it('garde un check-in aux réponses passées et le journal PULSE v2', async () => {

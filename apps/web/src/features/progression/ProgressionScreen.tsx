@@ -1,4 +1,5 @@
 import { useMemo } from 'react';
+import { LevelCard } from '../level/LevelCard';
 import { Link, useSearchParams } from 'react-router';
 import { useCheckIns, useExercises, useToday, useWorkouts, useWorkoutSets } from '../../db/hooks';
 import { e1rm, findRecords, weeklyVolumes } from '../../domain/training';
@@ -53,6 +54,7 @@ export function ProgressionScreen() {
           <CoachButton />
         </div>
       </div>
+      <LevelCard />
       <Link to="/progression/bilans" viewTransition className="flex min-h-12 items-center justify-between gap-3 rounded-[14px] bg-anthracite px-4 active:opacity-80">
         <span className="flex items-center gap-2.5 text-[15px] font-semibold">
           <Icon name="calendar" size={20} className="text-module" />

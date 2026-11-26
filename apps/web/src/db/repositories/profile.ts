@@ -1,5 +1,5 @@
 import type { ForgeDB } from '../schema';
-import type { GainRate, Profile } from '../types';
+import type { GainRate, Profile, Specialization } from '../types';
 import { nowIso } from '../../lib/ids';
 
 /**
@@ -9,6 +9,8 @@ import { nowIso } from '../../lib/ids';
 export const DEFAULT_GAIN_RATE: GainRate = { lowPctPerWeek: 0.25, highPctPerWeek: 0.5 };
 
 export class ProfileError extends Error {}
+
+const SPECIALIZATIONS: readonly Specialization[] = ['POWER', 'BUILDER', 'ENGINE', 'DISCIPLINE', 'MOBILITY', 'RECOVERY'];
 
 type ProfilePatch = Partial<Omit<Profile, 'id' | 'createdAt' | 'updatedAt' | 'deletedAt'>>;
 
@@ -21,6 +23,9 @@ function validate(patch: ProfilePatch): void {
     if (lowPctPerWeek < -2 || highPctPerWeek > 2 || lowPctPerWeek >= highPctPerWeek) {
       throw new ProfileError('Fourchette invalide : le bas doit être inférieur au haut, entre −2 et +2 % par semaine.');
     }
+  }
+  if (patch.specialization !== undefined && patch.specialization !== null && !SPECIALIZATIONS.includes(patch.specialization)) {
+    throw new ProfileError('Spécialisation inconnue.');
   }
   if (patch.nutritionTargets) {
     const { kcal, proteinG, carbsG, fatG } = patch.nutritionTargets;

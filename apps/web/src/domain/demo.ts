@@ -504,6 +504,17 @@ export function generateDemoData(today: string, now: Date): DemoTables {
     }
   }
 
+  // Journal d'activité (FORGE LEVEL) : un footing le mercredi et une sortie vélo le dimanche, mobilité le samedi, sur 6 semaines.
+  const activities: Activity[] = [];
+  for (let i = 42; i >= 1; i--) {
+    const date = addDays(today, -i);
+    const day = isoWeekday(date);
+    const week = Math.floor((42 - i) / 7);
+    if (day === 3) activities.push({ ...sync('activity', localIso(date, 7, 0)), date, kind: 'cardio', minutes: 25 + 2 * week, note: 'Footing' });
+    if (day === 7) activities.push({ ...sync('activity', localIso(date, 10, 0)), date, kind: 'cardio', minutes: 50 + 5 * week, note: 'Vélo' });
+    if (day === 6 && week % 3 !== 2) activities.push({ ...sync('activity', localIso(date, 18, 0)), date, kind: 'mobilite', minutes: 15, note: 'Hanches et épaules' });
+  }
+
   // Deux choix faits avec PULSE, pour le suivi du programme : une séance allégée, et une récupération active à la place de la dernière séance manquée.
   const pulseDays: PulseDay[] = [];
   const pulseDay = (date: string, templateId: string, choice: 'alleger' | 'remplacer', adjustment: WorkoutAdjustment | null): PulseDay => ({
@@ -776,6 +787,6 @@ export function generateDemoData(today: string, now: Date): DemoTables {
     weekNotes,
     pulseDays,
     programVersions: [v1, v2],
-    activities: [],
+    activities,
   };
 }

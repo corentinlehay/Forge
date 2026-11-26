@@ -1,5 +1,29 @@
 # Journal des versions
 
+## FORGE LEVEL, livraison 1 (version de test, branche `level-1`, par-dessus `suivi-1`)
+
+- **Moteur, calculé à partir des données** (`domain/level/`), sans journal d'XP stocké : chaque gain a une clé unique, une même donnée ne rapporte qu'une fois, tout se recalcule après une restauration, et supprimer une séance retire son XP.
+- **XP :**
+    - séance terminée (3 séries ou plus) 100, une par jour, 6 par semaine au plus ; une séance allégée par PULSE rapporte autant ;
+    - semaine du programme respectée 150 ; cycle terminé avec 80 % des séances 500 ;
+    - record 40 et objectif de charge de la double progression atteint 20, 3 par séance au plus chacun ;
+    - pratique Mind 30 et cardio ou mobilité 30, un par jour ; protéines atteintes 20 (objectif en vigueur ce jour-là), 5 jours par semaine au plus ; bilan de la semaine 30 ;
+    - badge 50, ou 200 s'il est rare.
+    - Ni le volume ni la durée ne rapportent d'XP.
+- **Niveaux** 1 à 50 : 134 × (N − 1)^1,85 XP cumulée, la courbe de l'audit (niveau 10 à 7 810 XP).
+- **18 badges** (force, régularité, endurance, Mind, programmes, tonnage), chacun daté par la donnée qui l'a débloqué.
+- **Six caractéristiques sur 100**, sur 12 semaines : Force, Hypertrophie, Endurance, Régularité, Mobilité, Récupération.
+    - Sous le minimum de données, pas de note mais ce qu'il faut enregistrer.
+    - Au-dessus, une confiance selon la part de semaines renseignées et la variation sur 4 semaines avec le facteur qui l'explique.
+    - Le détail de chaque facteur s'ouvre en touchant la note.
+    - Repères sourcés : OMS 2020, ACSM 2011, AASM 2015, Schoenfeld et al. 2017.
+- **Fiche joueur** (`/progression/joueur`) : emblème, niveau et XP, spécialisation au choix (un titre qui ne change aucun calcul, ta meilleure note suggérée ; ENGINE et MOBILITY cachées sans note), caractéristiques, badges, dernière XP, d'où vient l'XP, règles.
+- **Cartes d'entrée** : en tête de Progression, et sur l'accueil.
+- **Journal d'activité** (`/progression/joueur/activites`) : cardio et mobilité en minutes, la source d'Endurance et de Mobilité.
+- Démo : un footing, une sortie vélo et une séance de mobilité par semaine.
+- Calcul sur un an de données : environ 40 ms.
+- 13 nouveaux tests (389 pour l'app).
+
 ## FORGE PROGRAMS, livraison 5 : suivi du programme (version de test, branche `suivi-1`)
 
 - **Écran « Suivi »** d'un programme : depuis sa fiche (ligne « Suivi », avec la régularité) et depuis Training (lien « Suivi » à côté du programme actif).
