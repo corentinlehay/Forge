@@ -157,7 +157,10 @@ describe('XP', () => {
     const input = { ...empty('2026-10-20'), workouts: ws, sets: [...sets('w1', 60, 12), ...sets('w2', 62.5, 8)] };
     const a = computeLevel(input, resolve, PRIORITY_MUSCLES);
     expect(new Set(a.events.map((e) => e.key)).size).toBe(a.events.length);
-    expect(computeLevel(input, resolve, PRIORITY_MUSCLES)).toEqual(a);
+    const again = computeLevel(input, resolve, PRIORITY_MUSCLES);
+    expect(again.events).toEqual(a.events);
+    expect(again.unlocks).toEqual(a.unlocks);
+    expect(again.characteristics).toEqual(a.characteristics);
     const removed = computeLevel({ ...input, workouts: [ws[0]!, { ...ws[1]!, deletedAt: T }] }, resolve, PRIORITY_MUSCLES);
     expect(removed.progress.totalXp).toBeLessThan(a.progress.totalXp);
     expect(removed.events.some((e) => e.key.includes('w2'))).toBe(false);

@@ -2,11 +2,9 @@ import { useState } from 'react';
 import { Link } from 'react-router';
 import { repos, useProfile } from '../../db/hooks';
 import type { Specialization } from '../../db/types';
-import { BADGE_CATEGORY_LABELS, BADGES, type BadgeDef } from '../../domain/level/badges';
-import { CHARACTERISTIC_LABELS, CHARACTERISTIC_TEXTS, CONFIDENCE_LABELS, type Characteristic } from '../../domain/level/characteristics';
+import { BADGES } from '../../domain/level/badges';
+import { CHARACTERISTIC_LABELS } from '../../domain/level/characteristics';
 import type { LevelState } from '../../domain/level/level';
-import { LEVEL_SETTINGS } from '../../domain/level/settings';
-import { XP_KIND_LABELS, type XpKind } from '../../domain/level/xp';
 import { formatDayMonth, formatNumber } from '../../lib/format';
 import { Button } from '../../ui/Button';
 import { Icon } from '../../ui/Icon';
@@ -15,11 +13,13 @@ import { Sheet } from '../../ui/Sheet';
 import { useToast } from '../../ui/Toast';
 import { useHistoryBack } from '../mind/mindShared';
 import { Emblem } from './Emblem';
+import { BadgeMedal, NavRow } from './parts';
+import { Radar } from './Radar';
 import { useLevel } from './useLevel';
 
 const xp = (n: number) => `${formatNumber(n, 0)} XP`;
 
-/** Fiche joueur FORGE LEVEL : niveau et XP, six caractéristiques, badges, et d'où vient chaque point. */
+/** Fiche joueur FORGE LEVEL : niveau et XP, l'hexagone des caractéristiques, l'accès aux badges, à l'XP et à l'historique. */
 export function PlayerScreen() {
   const level = useLevel();
   const profile = useProfile();
@@ -54,10 +54,6 @@ function Player({ level, firstName, specialization }: { level: LevelState; first
     }
   };
   const unlocked = new Map(level.unlocks.map((u) => [u.id, u]));
-  const totals = Object.entries(level.events.reduce<Record<string, number>>((acc, e) => ({ ...acc, [e.kind]: (acc[e.kind] ?? 0) + e.xp }), {})).sort((a, b) => b[1] - a[1]) as [
-    XpKind,
-    number,
-  ][];
 
   return (
     <>
@@ -95,37 +91,46 @@ function Player({ level, firstName, specialization }: { level: LevelState; first
         </div>
       </section>
 
-      <section aria-label="Caractéristiques" className="flex flex-col gap-2">
-        <div>
-          <h2 className="text-[17px] font-semibold">Caractéristiques</h2>
-          <p className="text-[13px] leading-snug text-cendre">Notes sur 100 calculées sur 12 semaines : une convention FORGE, pas une mesure. Elles ne dépendent pas du niveau.</p>
-        </div>
-        {level.characteristics.map((c) => (
-          <CharacteristicRow key={c.key} c={c} />
-        ))}
-      </section>
+      <Link
+        to="/progression/joueur/caracteristiques"
+        viewTransition
+        aria-label="Ouvrir les caractéristiques"
+        className="flex flex-col gap-1 rounded-[22px] bg-anthracite px-2 pt-4 pb-3 active:opacity-90"
+      >
+        <span className="flex items-center justify-between px-3">
+          <span className="text-[17px] font-semibold">Caractéristiques</span>
+          <Icon name="chevron" size={16} className="text-cendre" />
+        </span>
+        <Radar items={level.characteristics} size={280} />
+        <span className="px-3 text-center text-[12px] text-cendre">Notes sur 12 semaines. « – » : pas encore assez de données.</span>
+      </Link>
 
-      <section aria-label="Badges" className="flex flex-col gap-2">
-        <div className="flex items-baseline justify-between gap-3">
-          <h2 className="text-[17px] font-semibold">Badges</h2>
-          <span className="text-[13px] text-cendre tabular-nums">
-            {unlocked.size} sur {BADGES.length}
-          </span>
-        </div>
-        <ul className="grid grid-cols-2 gap-2">
-          {[...BADGES]
-            .sort((a, b) => Number(unlocked.has(b.id)) - Number(unlocked.has(a.id)))
-            .map((b) => (
-              <BadgeTile key={b.id} badge={b} unlock={unlocked.get(b.id) ?? null} />
-            ))}
-        </ul>
-      </section>
+      <nav aria-label="FORGE LEVEL" className="flex flex-col gap-2">
+        <NavRow to="/progression/joueur/xp" icon="bolt" title="Progression XP" aside={xp(progress.totalXp)} />
+        <NavRow to="/progression/joueur/badges" icon="trophy" title="Badges" aside={`${unlocked.size} sur ${BADGES.length}`} />
+        <NavRow to="/progression/joueur/historique" icon="clock" title="Historique" />
+        <NavRow to="/progression/joueur/activites" icon="calendar" title="Journal d’activité" aside="Cardio, mobilité" />
+      </nav>
 
-      <section aria-label="Dernière XP" className="flex flex-col gap-2">
+      {level.unlocks.length > 0 && (
+        <section aria-label="Derniers badges" className="flex gap-3 overflow-x-auto pb-1">
+          {level.unlocks.slice(0, 6).map((u) => {
+            const def = BADGES.find((b) => b.id === u.id)!;
+            return (
+              <Link key={u.id} to="/progression/joueur/badges" viewTransition className="flex w-[88px] shrink-0 flex-col items-center gap-1.5 text-center">
+                <BadgeMedal badge={def} unlocked size={52} />
+                <span className="line-clamp-2 text-[12px] leading-tight">{def.name}</span>
+              </Link>
+            );
+          })}
+        </section>
+      )}
+
+      <section aria-label="Dernière XP" className="flex flex-col gap-2 pb-4">
         <h2 className="text-[17px] font-semibold">Dernière XP</h2>
         {level.events.length ? (
           <ol className="flex flex-col">
-            {level.events.slice(0, 12).map((e) => (
+            {level.events.slice(0, 6).map((e) => (
               <li key={e.key} className="flex items-center gap-3 border-b border-graphite py-2.5 last:border-b-0">
                 <span className="w-14 shrink-0 text-[13px] text-cendre tabular-nums">{formatDayMonth(e.date)}</span>
                 <span className="min-w-0 flex-1 text-[15px] leading-tight">{e.label}</span>
@@ -136,28 +141,7 @@ function Player({ level, firstName, specialization }: { level: LevelState; first
         ) : (
           <p className="text-[15px] text-cendre">Termine une séance pour gagner tes premiers points.</p>
         )}
-        {totals.length > 0 && (
-          <div className="flex flex-col gap-1 rounded-[18px] bg-anthracite p-4">
-            <h3 className="text-[13px] text-cendre">D’où vient ton XP</h3>
-            {totals.map(([kind, n]) => (
-              <p key={kind} className="flex justify-between text-[15px] tabular-nums">
-                <span>{XP_KIND_LABELS[kind]}</span>
-                <span>{xp(n)}</span>
-              </p>
-            ))}
-          </div>
-        )}
       </section>
-
-      <Rules />
-
-      <Link to="/progression/joueur/activites" viewTransition className="flex min-h-12 items-center justify-between gap-3 rounded-[14px] bg-anthracite px-4 active:opacity-80">
-        <span className="flex items-center gap-2.5 text-[15px] font-semibold">
-          <Icon name="calendar" size={20} className="text-module" />
-          Journal d’activité, cardio et mobilité
-        </span>
-        <Icon name="chevron" size={16} className="text-cendre" />
-      </Link>
 
       <Sheet open={choosing} title="Spécialisation" onClose={() => setChoosing(false)}>
         <div className="flex flex-col gap-2 pb-2">
@@ -188,129 +172,5 @@ function Player({ level, firstName, specialization }: { level: LevelState; first
         </div>
       </Sheet>
     </>
-  );
-}
-
-const CONFIDENCE_STYLE = { faible: 'text-cendre', moyenne: 'text-craie', elevee: 'text-module' } as const;
-
-function CharacteristicRow({ c }: { c: Characteristic }) {
-  const label = CHARACTERISTIC_LABELS[c.key];
-  const journal = c.key === 'endurance' || c.key === 'mobilite';
-  return (
-    <details className="group rounded-[18px] bg-anthracite px-4 py-3">
-      <summary
-        className="flex cursor-pointer list-none flex-col gap-2 [&::-webkit-details-marker]:hidden"
-        aria-label={c.score === null ? `${label} : données insuffisantes` : `${label} : ${c.score} sur 100`}
-      >
-        <span className="flex items-baseline justify-between gap-3">
-          <span className="text-[15px] font-semibold">{label}</span>
-          {c.score === null ? (
-            <span className="text-[13px] text-cendre">Données insuffisantes</span>
-          ) : (
-            <span className="flex items-baseline gap-1">
-              <span className="font-metal text-[28px] leading-none tabular-nums">{c.score}</span>
-              <span className="text-[12px] text-cendre">/100</span>
-            </span>
-          )}
-        </span>
-        {c.score !== null && (
-          <span className="h-1.5 overflow-hidden rounded-full bg-graphite" aria-hidden="true">
-            <span className="block h-full rounded-full bg-module" style={{ width: `${c.score}%` }} />
-          </span>
-        )}
-        <span className="flex items-start justify-between gap-3 text-[12px]">
-          {c.score === null ? (
-            <span className="leading-snug text-cendre">{c.missing}</span>
-          ) : (
-            <span className="flex min-w-0 flex-col gap-0.5 leading-snug">
-              <span className={CONFIDENCE_STYLE[c.confidence!]}>{CONFIDENCE_LABELS[c.confidence!]}</span>
-              {c.change && (
-                <span className="text-cendre tabular-nums">
-                  {c.change.delta === 0
-                    ? 'Stable sur 4 semaines'
-                    : `${c.change.delta > 0 ? '+' : ''}${c.change.delta} en 4 semaines, surtout : ${c.change.factor.toLocaleLowerCase('fr-FR')}`}
-                </span>
-              )}
-            </span>
-          )}
-          <Icon name="chevron" size={14} className="mt-0.5 shrink-0 text-cendre transition-transform group-open:rotate-90" />
-        </span>
-      </summary>
-      <div className="flex flex-col gap-2 pt-3">
-        <p className="text-[13px] leading-snug text-cendre">{CHARACTERISTIC_TEXTS[c.key]}</p>
-        {c.factors.map((f) => (
-          <div key={f.label} className="flex flex-col gap-1">
-            <p className="flex justify-between gap-3 text-[13px]">
-              <span>
-                {f.label} <span className="text-cendre">({f.weight} %)</span>
-              </span>
-              <span className="text-cendre tabular-nums">{Math.round(f.value)}/100</span>
-            </p>
-            <p className="text-[12px] text-cendre">{f.detail}</p>
-          </div>
-        ))}
-        {journal && (
-          <Link to="/progression/joueur/activites" viewTransition className="self-start text-[13px] font-semibold text-module">
-            Ouvrir le journal d’activité
-          </Link>
-        )}
-      </div>
-    </details>
-  );
-}
-
-function BadgeTile({ badge, unlock }: { badge: BadgeDef; unlock: { date: string; detail: string } | null }) {
-  const rare = badge.rarity === 'rare';
-  return (
-    <li
-      className={`flex flex-col gap-1 rounded-[16px] p-3 ${unlock ? 'bg-anthracite' : 'bg-anthracite/50'}`}
-      aria-label={`${badge.name}, ${rare ? 'rare' : 'commun'}, ${unlock ? `débloqué le ${formatDayMonth(unlock.date)}` : `à débloquer : ${badge.condition}`}`}
-    >
-      <span className="flex items-center justify-between gap-2">
-        <Icon name="trophy" size={18} className={unlock ? (rare ? 'text-citron' : 'text-module') : 'text-cendre/50'} />
-        <span className="text-[11px] text-cendre">{BADGE_CATEGORY_LABELS[badge.category]}</span>
-      </span>
-      <span className={`text-[15px] leading-tight font-semibold ${unlock ? '' : 'text-cendre'}`}>{badge.name}</span>
-      <span className="text-[12px] leading-snug text-cendre">{unlock ? `${formatDayMonth(unlock.date)}, ${unlock.detail}` : badge.condition}</span>
-      {rare && <span className="text-[11px] font-semibold text-citron">Rare</span>}
-    </li>
-  );
-}
-
-function Rules() {
-  const X = LEVEL_SETTINGS.xp;
-  const rows: [string, string][] = [
-    [`Séance terminée, ${X.workout.minSets} séries ou plus`, `${X.workout.xp} XP, une par jour, ${X.workout.maxPerWeek} par semaine au plus`],
-    ['Semaine du programme respectée', `${X.programWeek.xp} XP`],
-    ['Record personnel', `${X.record.xp} XP, ${X.record.maxPerWorkout} par séance au plus`],
-    ['Objectif de charge proposé atteint', `${X.loadTarget.xp} XP, ${X.loadTarget.maxPerWorkout} par séance au plus`],
-    ['Pratique Mind terminée', `${X.mind.xp} XP par jour`],
-    ['Cardio ou mobilité notés', `${X.activity.xp} XP par jour`],
-    ['Objectif de protéines atteint', `${X.protein.xp} XP, ${X.protein.maxPerWeek} jours par semaine au plus`],
-    ['Bilan de la semaine rempli', `${X.weekNote.xp} XP`],
-    ['Badge débloqué', `${X.badge.commun} XP, ${X.badge.rare} s’il est rare`],
-    ['Cycle terminé avec 80 % des séances', `${X.cycle.xp} XP`],
-  ];
-  return (
-    <details className="group rounded-[18px] bg-anthracite px-4 py-3">
-      <summary className="flex min-h-9 cursor-pointer list-none items-center justify-between gap-3 [&::-webkit-details-marker]:hidden">
-        <span className="text-[15px] font-semibold">Comment se gagne l’XP</span>
-        <Icon name="chevron" size={14} className="text-cendre transition-transform group-open:rotate-90" />
-      </summary>
-      <div className="flex flex-col gap-2 pt-2">
-        <dl className="flex flex-col gap-1.5">
-          {rows.map(([k, v]) => (
-            <div key={k} className="flex flex-col">
-              <dt className="text-[13px]">{k}</dt>
-              <dd className="text-[12px] text-cendre">{v}</dd>
-            </div>
-          ))}
-        </dl>
-        <p className="text-[12px] leading-snug text-cendre">
-          Ni le volume ni la durée ne rapportent d’XP : pas de course au surentraînement. Une séance allégée par PULSE rapporte autant qu’une séance normale. Tout se recalcule à
-          partir de tes données : supprimer une séance retire l’XP qu’elle avait rapportée.
-        </p>
-      </div>
-    </details>
   );
 }

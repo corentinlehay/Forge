@@ -21,6 +21,20 @@ import { computeLevel, type LevelState } from '../../domain/level/level';
 import type { MuscleResolver } from '../../domain/muscleVolume';
 import { PRIORITY_MUSCLES } from '../../domain/plan';
 
+function resolverFor(exercises: NonNullable<ReturnType<typeof useExercises>>): MuscleResolver {
+  const catalog = buildCatalog(exercises);
+  return (id) => {
+    const item = catalogItem(catalog, id);
+    return item ? { muscle: item.muscle, secondary: item.secondary } : null;
+  };
+}
+
+/** Le muscle de chaque exercice, pour les calculs de volume de FORGE LEVEL. */
+export function useLevelResolver(): MuscleResolver | undefined {
+  const exercises = useExercises();
+  return useMemo(() => (exercises ? resolverFor(exercises) : undefined), [exercises]);
+}
+
 /** FORGE LEVEL calculé à partir de toutes les données enregistrées ; undefined pendant le chargement. */
 export function useLevel(): LevelState | undefined {
   const workouts = useWorkouts();
@@ -56,11 +70,7 @@ export function useLevel(): LevelState | undefined {
       !checkIns
     )
       return undefined;
-    const catalog = buildCatalog(exercises);
-    const resolve: MuscleResolver = (id) => {
-      const item = catalogItem(catalog, id);
-      return item ? { muscle: item.muscle, secondary: item.secondary } : null;
-    };
+    const resolve = resolverFor(exercises);
     return computeLevel(
       {
         workouts,

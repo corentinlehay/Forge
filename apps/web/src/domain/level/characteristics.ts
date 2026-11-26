@@ -78,7 +78,7 @@ function windowWeeks(today: string): string[] {
   return Array.from({ length: C.windowWeeks }, (_, i) => addDays(last, -7 * (C.windowWeeks - 1 - i)));
 }
 
-type Raw = Omit<Characteristic, 'change'>;
+export type Raw = Omit<Characteristic, 'change'>;
 const insufficient = (key: CharacteristicKey, missing: string): Raw => ({ key, score: null, confidence: null, factors: [], missing });
 
 function force(m: LevelModel, today: string, from: string): Raw {
@@ -276,6 +276,11 @@ function recovery(m: LevelModel, today: string, from: string): Raw {
     detail: `${(Math.round((mindDays / weeks) * 10) / 10).toString().replace('.', ',')} jours par semaine sur ${R.mindDaysPerWeek}`,
   });
   return { key: 'recuperation', score: combine(factors), confidence: confidenceFor(new Set(checkIns.map((c) => weekStart(c.date))).size), factors, missing: null };
+}
+
+/** Les six notes à une date (sans leur variation), pour l'historique des caractéristiques. */
+export function characteristicsAt(m: LevelModel, today: string, resolve: MuscleResolver, muscles: readonly MuscleGroup[]): Raw[] {
+  return raw(m, today, resolve, muscles);
 }
 
 function raw(m: LevelModel, today: string, resolve: MuscleResolver, muscles: readonly MuscleGroup[]): Raw[] {

@@ -3,7 +3,7 @@ import type { Specialization } from '../../db/types';
 import type { MuscleResolver } from '../muscleVolume';
 import { badgeUnlocks, badgeXp, type BadgeUnlock } from './badges';
 import { characteristics, type Characteristic, type CharacteristicKey } from './characteristics';
-import { baseXpEvents, buildModel, levelFor, levelUps, type LevelInput, type LevelProgress, type XpEvent } from './xp';
+import { baseXpEvents, buildModel, levelFor, levelUps, type LevelInput, type LevelModel, type LevelProgress, type XpEvent } from './xp';
 
 export type { Specialization };
 
@@ -18,6 +18,8 @@ export const SPECIALIZATIONS: readonly { id: Specialization; characteristic: Cha
 ];
 
 export interface LevelState {
+  /** Les données préparées, pour les écrans d'historique. */
+  model: LevelModel;
   events: XpEvent[];
   progress: LevelProgress;
   unlocks: BadgeUnlock[];
@@ -43,6 +45,7 @@ export function computeLevel(input: LevelInput, resolve: MuscleResolver, muscles
   const specializations = SPECIALIZATIONS.filter((s) => !['endurance', 'mobilite'].includes(s.characteristic) || scored.some((c) => c.key === s.characteristic));
   const best = [...scored].sort((a, b) => b.score! - a.score!)[0];
   return {
+    model,
     events,
     progress: levelFor(total),
     unlocks: unlocks.sort((a, b) => b.date.localeCompare(a.date)),

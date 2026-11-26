@@ -312,6 +312,15 @@ html[data-nav='backward']::view-transition-new(root) {
   transform-origin: left center;
   animation: brick var(--forge-duration-base) var(--forge-ease-spring) both;
 }
+/* FORGE LEVEL : halo derrière l'emblème quand le nouveau niveau est atteint. */
+@utility level-glow {
+  animation: level-glow 1600ms var(--forge-ease-standard) both;
+}
+@keyframes level-glow {
+  0% { opacity: 0; transform: scale(0.6); }
+  40% { opacity: 1; transform: scale(1.12); }
+  100% { opacity: 0.55; transform: scale(1); }
+}
 /* Fin du compteur : le chiffre encaisse le dernier ajout. */
 @utility motion-impact {
   animation: impact 560ms var(--forge-ease-spring) both;

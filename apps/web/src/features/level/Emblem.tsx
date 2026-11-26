@@ -2,8 +2,8 @@
  * Emblème FORGE de la carte joueur : un écusson hexagonal avec l'initiale et le niveau.
  * Version de départ ; il deviendra personnalisable (couleurs, cadres débloqués) avec l'avatar.
  */
-export function Emblem({ name, level, size = 72 }: { name: string | null; level: number; size?: number }) {
-  const initial = name?.trim().charAt(0).toLocaleUpperCase('fr-FR') || 'F';
+export function Emblem({ name, level, size = 72, label }: { name: string | null; level: number; size?: number; label?: string }) {
+  const initial = label ?? (name?.trim().charAt(0).toLocaleUpperCase('fr-FR') || 'F');
   return (
     <svg width={size} height={size} viewBox="0 0 100 100" role="img" aria-label={`Emblème, niveau ${level}`} className="shrink-0">
       <defs>
@@ -14,7 +14,7 @@ export function Emblem({ name, level, size = 72 }: { name: string | null; level:
       </defs>
       <path d="M50 4 90 27v46L50 96 10 73V27z" fill="url(#emblem-fill)" stroke="var(--forge-module)" strokeWidth="3" strokeLinejoin="round" />
       <path d="M50 14 81 32v36L50 86 19 68V32z" fill="none" stroke="var(--forge-module)" strokeOpacity="0.35" strokeWidth="1.5" strokeLinejoin="round" />
-      <text x="50" y="54" textAnchor="middle" dominantBaseline="middle" className="font-metal" fontSize="44" fill="var(--forge-text)">
+      <text x="50" y="54" textAnchor="middle" dominantBaseline="middle" className="font-metal" fontSize={initial.length > 1 ? 36 : 44} fill="var(--forge-text)">
         {initial}
       </text>
     </svg>

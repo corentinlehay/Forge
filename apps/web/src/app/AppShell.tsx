@@ -4,6 +4,7 @@ import { repos, useMeta, useWeighIns } from '../db/hooks';
 import { nextOnboardingStep, ONBOARDING_KEY, type OnboardingState } from '../domain/onboarding';
 import { isDemoMode } from '../db/dataMode';
 import { OnboardingFlow } from '../features/onboarding/OnboardingFlow';
+import { LevelAnnouncer } from '../features/level/LevelMoment';
 import { CheckInSheetProvider } from '../features/wellbeing/CheckInSheet';
 import { AudioPlayerProvider, MiniPlayer } from '../features/audio/AudioPlayer';
 import { ToastProvider } from '../ui/Toast';
@@ -14,6 +15,9 @@ import { isStandalone, requestPersistentStorage } from '../services/storage';
 import { TabBar } from '../ui/TabBar';
 import { UpdateBanner } from './UpdateBanner';
 import { moduleOf } from './modules';
+
+/** Écrans où FORGE LEVEL n'annonce rien : pendant une séance ou une pratique Mind. */
+const QUIET_PATHS = ['/training/seance', '/mind/exercice', '/mind/routine', '/mind/preparation', '/mind/audio/'];
 
 /** Coquille de l'app : onboarding tant qu'il n'est pas terminé, puis les 5 espaces. */
 export function AppShell() {
@@ -65,6 +69,7 @@ function ShellContent() {
       <Outlet />
       {withTabBar && <TabBar />}
       {!pathname.startsWith('/training/seance') && <MiniPlayer withTabBar={withTabBar} />}
+      {!QUIET_PATHS.some((p) => pathname.startsWith(p)) && <LevelAnnouncer />}
     </div>
   );
 }

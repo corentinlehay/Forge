@@ -1,5 +1,36 @@
 # Journal des versions
 
+## FORGE LEVEL, livraison 2 (version de test, branche `level-2`, par-dessus `level-1`)
+
+- **Fiche joueur remaniée :**
+    - carte joueur ;
+    - hexagone des six caractéristiques ;
+    - accès à Progression XP, Badges, Historique et au journal d'activité ;
+    - derniers badges en médailles ;
+    - dernière XP.
+- **Caractéristiques** (`/progression/joueur/caracteristiques`) :
+    - hexagone : une caractéristique sans note n'a pas de point, le tracé s'interrompt au lieu d'inventer un zéro ;
+    - chaque note avec sa courbe sur 12 semaines, ses facteurs et ses sources.
+- **Progression XP** (`/progression/joueur/xp`) :
+    - niveau, XP au total, rythme des dernières semaines et délai estimé pour le niveau suivant ;
+    - XP par semaine (touche une barre pour le détail par source), XP par source ;
+    - passages de niveau datés, et tous les gains semaine par semaine ;
+    - règles.
+- **Badges** (`/progression/joueur/badges`) :
+    - par catégorie, en médailles (commun dans la couleur de l'espace, rare en citron, à débloquer en pointillé) ;
+    - pour ceux qui se comptent, où tu en es (« 46 séances sur 100 »).
+- **Historique** (`/progression/joueur/historique`) : frise mois par mois des passages de niveau, badges, records et cycles terminés.
+- **Annonce plein écran** (passage de niveau, badges débloqués, records des 7 derniers jours) :
+    - l'emblème apparaît et le niveau monte cran par cran, avec un halo et un retour haptique ;
+    - les badges et les records se posent l'un après l'autre ;
+    - « Voir ma fiche joueur » ou « Continuer ».
+- **Règles de l'annonce :**
+    - chaque étape n'est annoncée qu'une fois (état gardé dans la table meta) ;
+    - rien n'est annoncé à la toute première visite ;
+    - jamais pendant une séance ou une pratique Mind, ni par-dessus une fenêtre ouverte ;
+    - avec « réduire les animations », tout s'affiche d'emblée.
+- 7 nouveaux tests (396 pour l'app).
+
 ## FORGE LEVEL, livraison 1 (version de test, branche `level-1`, par-dessus `suivi-1`)
 
 - **Moteur, calculé à partir des données** (`domain/level/`), sans journal d'XP stocké : chaque gain a une clé unique, une même donnée ne rapporte qu'une fois, tout se recalcule après une restauration, et supprimer une séance retire son XP.
