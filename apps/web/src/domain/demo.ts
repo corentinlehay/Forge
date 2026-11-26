@@ -19,6 +19,7 @@ import type {
   WaterLog,
   WeekNote,
   PulseDay,
+  WorkoutAdjustment,
   WeighIn,
   Workout,
   WorkoutSet,
@@ -31,6 +32,7 @@ import { ONBOARDING_KEY } from './onboarding';
 import { BUDGET_KEY } from './budget';
 import { DEFAULT_ROUTINES, routineSeconds } from './mind';
 import { isoWeekday, weekStart } from './training';
+import { PULSE_ENGINE_VERSION } from './pulse/settings';
 
 /**
  * Jeu de données de démonstration, entièrement fictif, généré autour d'aujourd'hui.
@@ -461,11 +463,16 @@ export function generateDemoData(today: string, now: Date): DemoTables {
   // Séances des 6 dernières semaines (hier compris), avec une progression lente des charges.
   const workouts: Workout[] = [];
   const workoutSets: WorkoutSet[] = [];
+  const skipped: { date: string; templateId: string }[] = [];
   for (let i = 42; i >= 1; i--) {
     const date = addDays(today, -i);
     const plan = PROGRAM.find((t) => t.weekday === isoWeekday(date));
-    if (!plan || rand() < 0.1) continue;
+    if (!plan) continue;
     const template = workoutTemplates.find((t) => t.name === plan.name)!;
+    if (rand() < 0.1) {
+      skipped.push({ date, templateId: template.id });
+      continue;
+    }
     const weeksIn = (42 - i) / 7;
     const workout: Workout = {
       ...sync('seance', localIso(date, 18)),
@@ -496,6 +503,43 @@ export function generateDemoData(today: string, now: Date): DemoTables {
       }
     }
   }
+
+  // Deux choix faits avec PULSE, pour le suivi du programme : une séance allégée, et une récupération active à la place de la dernière séance manquée.
+  const pulseDays: PulseDay[] = [];
+  const pulseDay = (date: string, templateId: string, choice: 'alleger' | 'remplacer', adjustment: WorkoutAdjustment | null): PulseDay => ({
+    ...sync('pulse', localIso(date, 7, 30)),
+    date,
+    engineVersion: PULSE_ENGINE_VERSION,
+    readiness: choice === 'alleger' ? 52 : 38,
+    confidence: 'moyenne',
+    mode: choice === 'alleger' ? 'allege' : 'recuperation',
+    components: [
+      { key: 'sommeil', score: choice === 'alleger' ? 48 : 32, weight: 35 },
+      { key: 'physiologie', score: null, weight: 0 },
+      { key: 'ressenti', score: 55, weight: 30 },
+      { key: 'charge', score: 58, weight: 20 },
+      { key: 'mental', score: 50, weight: 15 },
+    ],
+    nutritionKind: 'incomplet',
+    nutritionScore: null,
+    rules: [],
+    plannedTemplateId: templateId,
+    plan: [],
+    level: 'moderee',
+    coverage: 4,
+    trainingKind: choice === 'alleger' ? 'lighten' : 'replace',
+    choice,
+    choiceAt: localIso(date, 7, 35),
+    adjustment,
+    decisions: [{ at: localIso(date, 7, 35), action: 'accepter', choice, adjustment }],
+  });
+  const lightened = workouts.find((w) => w.date >= addDays(today, -12));
+  if (lightened) {
+    lightened.adjustment = { source: 'pulse', setsDelta: -1, rirDelta: 1 };
+    pulseDays.push(pulseDay(lightened.date, lightened.templateId!, 'alleger', lightened.adjustment));
+  }
+  const missed = skipped.at(-1);
+  if (missed) pulseDays.push(pulseDay(missed.date, missed.templateId, 'remplacer', null));
 
   // Aliments et prix de la démo (pour l'écran Budget).
   const foods = new Map<string, Food>();
@@ -730,7 +774,7 @@ export function generateDemoData(today: string, now: Date): DemoTables {
     measurements,
     pains,
     weekNotes,
-    pulseDays: [],
+    pulseDays,
     programVersions: [v1, v2],
     activities: [],
   };

@@ -23,6 +23,7 @@ import { Button } from '../../ui/Button';
 import { Icon } from '../../ui/Icon';
 import { Screen } from '../../ui/Screen';
 import { useToast } from '../../ui/Toast';
+import { useProgramTracking } from './ProgramTracking';
 
 const DAY_SHORT = ['lun.', 'mar.', 'mer.', 'jeu.', 'ven.', 'sam.', 'dim.'];
 const DAY_LETTERS = ['L', 'M', 'M', 'J', 'V', 'S', 'D'];
@@ -323,6 +324,7 @@ export function ProgramScreen() {
         </p>
       )}
 
+      <TrackingRow program={program} />
       {versions && versions.length > 0 && <VersionRow programId={program.id} currentId={program.currentVersionId} versions={versions} />}
 
       <section aria-label="Séances" className="flex flex-col gap-2">
@@ -438,5 +440,30 @@ export function ProgramScreen() {
         <p className="text-center text-[13px] text-cendre">Les séances déjà faites restent toujours dans ton historique.</p>
       </section>
     </Screen>
+  );
+}
+
+/** Entrée du suivi : régularité du cycle en une ligne, et le lien vers le tableau de bord. */
+function TrackingRow({ program }: { program: Program }) {
+  const data = useProgramTracking(program, false);
+  if (!data || (!program.startDate && !data.workouts.length)) return null;
+  const a = data.adherence;
+  const line = program.startDate
+    ? a.planned
+      ? `${a.done} séance${a.done > 1 ? 's' : ''} faite${a.done > 1 ? 's' : ''} sur ${a.planned} prévue${a.planned > 1 ? 's' : ''}, régularité ${a.rate} %`
+      : 'Aucune séance due pour l’instant'
+    : `${data.workouts.length} séance${data.workouts.length > 1 ? 's' : ''} faite${data.workouts.length > 1 ? 's' : ''} avec ce programme`;
+  return (
+    <Link
+      to={`/training/programmes/${program.id}/suivi`}
+      viewTransition
+      className="flex min-h-[60px] items-center justify-between gap-3 rounded-[18px] bg-anthracite px-4 py-3 active:scale-[0.99]"
+    >
+      <span className="min-w-0">
+        <span className="block text-[17px] font-semibold">Suivi</span>
+        <span className="block text-[13px] text-cendre">{line}</span>
+      </span>
+      <Icon name="chevron" size={18} className="shrink-0 text-cendre" />
+    </Link>
   );
 }

@@ -94,9 +94,14 @@ export function TrainingScreen() {
           <div className="min-w-0">
             <h2 className="text-[17px] font-semibold">Programme</h2>
             {program ? (
-              <Link to={`/training/programmes/${program.id}`} viewTransition className="block truncate text-[13px] text-cendre underline-offset-2 active:underline">
-                {program.name}
-              </Link>
+              <span className="flex min-w-0 items-baseline gap-3">
+                <Link to={`/training/programmes/${program.id}`} viewTransition className="block truncate text-[13px] text-cendre underline-offset-2 active:underline">
+                  {program.name}
+                </Link>
+                <Link to={`/training/programmes/${program.id}/suivi`} viewTransition className="-my-2 shrink-0 px-1 py-2 text-[13px] font-semibold text-citron">
+                  Suivi
+                </Link>
+              </span>
             ) : (
               programs && programs.length > 0 && <p className="text-[13px] text-cendre">Aucun programme actif</p>
             )}

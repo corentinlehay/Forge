@@ -1,5 +1,20 @@
 # Journal des versions
 
+## FORGE PROGRAMS, livraison 5 : suivi du programme (version de test, branche `suivi-1`)
+
+- **Écran « Suivi »** d'un programme : depuis sa fiche (ligne « Suivi », avec la régularité) et depuis Training (lien « Suivi » à côté du programme actif).
+- **En bref :** régularité du cycle, séances faites cette semaine sur celles prévues, volume de la semaine.
+    - Une séance prévue est faite si une séance du même modèle est terminée dans la même semaine du cycle, quel que soit le jour.
+    - Une séance allégée avec PULSE compte comme faite. Une récupération active choisie avec PULSE n'est pas comptée comme due : récupérer ne coûte rien.
+    - Les séances prévues suivent la version du programme en vigueur chaque jour.
+- **Semaines du cycle,** passées et à venir : chaque séance prévue avec son état (faite, allégée, pas faite, déplacée ou récupération avec PULSE, aujourd'hui, à venir), les séances en plus, et le détail de la semaine en la touchant.
+- **Volume par semaine** du cycle (charge × répétitions), **séries par muscle** faites sur celles prévues (la semaine précédente tant que la nouvelle n'a rien).
+- **Progression** des exercices du programme : 1RM estimé de la première séance du cycle et meilleur depuis, avec la tendance. **Records** battus pendant le cycle.
+- **Historique :** les versions du programme et les choix faits avec PULSE sur ses séances, du plus récent au plus ancien.
+- Sans date de début, pas de semaines ni de régularité (rien n'est deviné) : l'écran propose de l'indiquer.
+- Démo : une séance allégée et une récupération active avec PULSE.
+- 7 nouveaux tests (376 pour l'app).
+
 ## Mise en production du 26 novembre 2026
 
 - **Fusion dans `main`** des quatre livraisons FORGE PROGRAMS validées par Coz : programmes-1, programmes-2, generateur-1 et generateur-2.

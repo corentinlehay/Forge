@@ -1,6 +1,6 @@
 # État du projet FORGE
 
-Mis à jour le 26 novembre 2026 : FORGE PROGRAMS en production (`programmes-1`, `programmes-2`, `generateur-1`, `generateur-2`).
+Mis à jour le 26 novembre 2026 : FORGE PROGRAMS en production (`programmes-1`, `programmes-2`, `generateur-1`, `generateur-2`) ; `suivi-1` en version de test.
 
 ## En production (branche `main`, depuis le 26 novembre 2026)
 
@@ -35,7 +35,9 @@ Base de données locale : version 12. Serveur : relais Open Food Facts et séanc
 
 ## En attente de validation (version de test)
 
-Aucune version de test en attente.
+| Branche | Contenu |
+|---|---|
+| `suivi-1` | FORGE PROGRAMS, livraison 5 : tableau de bord d'un programme (fiche programme, « Suivi » ; lien « Suivi » dans Training). Régularité du cycle (séances prévues faites, allégées comprises ; récupération active choisie avec PULSE non comptée comme due), séances de la semaine, volume. Semaines du cycle passées et à venir, chaque séance prévue avec son état (faite, allégée, pas faite, déplacée, récupération, à venir) et les séances en plus. Volume par semaine, séries par muscle faites sur prévues, progression du 1RM estimé par exercice, records du cycle, historique des versions et des choix PULSE. La démo a une séance allégée et une récupération active |
 
 ## Audit FORGE LEVEL et FORGE PROGRAMS (26 novembre 2026)
 
@@ -111,7 +113,7 @@ Document complet, avec l'architecture, les cinq scénarios et le plan : https://
 
 ## Reste à faire
 
-1. **Vérifier FORGE PROGRAMS sur ton iPhone** (mise à jour de l'app, ton programme gardé et actif, date de début à indiquer) ; ensuite `suivi-1`.
+1. **Vérifier FORGE PROGRAMS sur ton iPhone** (mise à jour de l'app, ton programme gardé et actif, date de début à indiquer), puis **valider `suivi-1`** ; ensuite `suivi-2`.
 2. **Tes amis** : refaire le questionnaire (Réglages, Refaire le questionnaire) pour recevoir les nouveaux programmes (zone « Épaules » cochée ; « Haut, bas, haut » sur 3 jours).
 3. **Vérifier la production sur ton iPhone** :
     - la mise à jour de l'app et la reprise de tes données ;
