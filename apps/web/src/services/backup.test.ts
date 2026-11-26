@@ -44,13 +44,17 @@ describe('sauvegarde et restauration', () => {
 
   it('garde le journal d’activité et la spécialisation FORGE LEVEL', async () => {
     await createActivityRepo(source).add({ date: '2026-11-24', kind: 'cardio', minutes: 40, note: 'Vélo' });
-    await createProfileRepo(source).update({ specialization: 'BUILDER' });
+    await createProfileRepo(source).update({
+      specialization: 'BUILDER',
+      avatar: { forme: 'bouclier', cadre: 'rivets', couleur: 'or', fond: 'noir', centre: 'haltere', initiales: 'CL', etoiles: true, bandeau: true },
+    });
     const parsed = parseBackup(serializeBackup(await exportBackup(source)));
     if (!parsed.ok) throw new Error('sauvegarde illisible');
     const target = await freshDb();
     await importBackup(target, parsed.backup, 'replace');
     expect(await target.activities.toArray()).toEqual(await source.activities.toArray());
     expect((await target.profile.get('me'))?.specialization).toBe('BUILDER');
+    expect((await target.profile.get('me'))?.avatar).toMatchObject({ forme: 'bouclier', initiales: 'CL' });
   });
 
   it('refuse une activité ou une spécialisation invalide', async () => {
@@ -58,6 +62,9 @@ describe('sauvegarde et restauration', () => {
     await expect(activities.add({ date: '2026-11-24', kind: 'cardio', minutes: 0 })).rejects.toThrow('Durée : de 1 à 600 minutes.');
     await expect(activities.add({ date: '2026-11-24', kind: 'natation' as never, minutes: 30 })).rejects.toThrow('Type d’activité invalide.');
     await expect(createProfileRepo(source).update({ specialization: 'NINJA' as never })).rejects.toThrow('Spécialisation inconnue.');
+    const avatar = { forme: 'hexagone', cadre: 'simple', couleur: 'bleu', fond: 'noir', centre: 'initiales', initiales: 'C', etoiles: false, bandeau: false };
+    await expect(createProfileRepo(source).update({ avatar: { ...avatar, initiales: 'ABC' } })).rejects.toThrow('Initiales : deux lettres au plus.');
+    await expect(createProfileRepo(source).update({ avatar: { ...avatar, forme: '<script>' } })).rejects.toThrow('Emblème invalide.');
     await createProfileRepo(source).update({ specialization: null });
   });
 

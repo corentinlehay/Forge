@@ -2,6 +2,7 @@ import { useEffect, useId, useRef, useState } from 'react';
 import { useNavigate } from 'react-router';
 import { repos, useMeta, useProfile, useToday } from '../../db/hooks';
 import { BADGES } from '../../domain/level/badges';
+import { acquiredPieces, AVATAR_LAYERS, readAvatar, withPiece } from '../../domain/level/avatar';
 import { announcement, LEVEL_SEEN_KEY, readSeen, seenFrom, type Announcement } from '../../domain/level/history';
 import type { LevelState } from '../../domain/level/level';
 import { xpForLevel } from '../../domain/level/xp';
@@ -11,9 +12,11 @@ import { useReducedMotion } from '../../lib/motion';
 import { haptic } from '../../services/haptics';
 import { Button } from '../../ui/Button';
 import { Icon } from '../../ui/Icon';
-import { Emblem } from './Emblem';
+import { Emblem, UserEmblem } from './Emblem';
 import { BadgeMedal } from './parts';
 import { useLevel } from './useLevel';
+
+const LAYER_NAMES = Object.fromEntries(AVATAR_LAYERS.map((l) => [l.layer, l.label])) as Record<string, string>;
 
 /** Délai avant l'annonce : on laisse l'écran se poser, et on ne coupe jamais une fenêtre ouverte. */
 const DELAY_MS = 1200;
@@ -29,31 +32,38 @@ const MAX_RECORDS = 4;
 export function LevelAnnouncer() {
   const level = useLevel();
   const seenRaw = useMeta<unknown>(LEVEL_SEEN_KEY);
+  const profile = useProfile();
   const today = useToday();
-  const [moment, setMoment] = useState<{ a: Announcement; state: LevelState } | null>(null);
+  const [moment, setMoment] = useState<{ a: Announcement; state: LevelState; acquired: Set<string> } | null>(null);
 
   useEffect(() => {
-    if (!level || seenRaw === undefined || moment) return;
+    if (!level || seenRaw === undefined || profile === undefined || moment) return;
     const seen = readSeen(seenRaw);
+    const acquired = acquiredPieces(level, profile?.specialization, seen?.pieces);
     if (!seen) {
-      void repos.meta.set(LEVEL_SEEN_KEY, seenFrom(level, today, nowIso()));
+      void repos.meta.set(LEVEL_SEEN_KEY, seenFrom(level, today, nowIso(), acquired));
       return;
     }
-    const a = announcement(level, seen, today);
+    // Première visite depuis l'avatar : les pièces déjà gagnées sont notées sans être annoncées.
+    if (!seen.pieces) {
+      void repos.meta.set(LEVEL_SEEN_KEY, { ...seen, pieces: [...acquired] });
+      return;
+    }
+    const a = announcement(level, seen, today, acquired);
     if (!a) return;
     let timer = 0;
     const tryShow = () => {
       if (document.querySelector('dialog[open]')) timer = window.setTimeout(tryShow, RETRY_MS);
-      else setMoment({ a, state: level });
+      else setMoment({ a, state: level, acquired });
     };
     timer = window.setTimeout(tryShow, DELAY_MS);
     return () => window.clearTimeout(timer);
-  }, [level, seenRaw, today, moment]);
+  }, [level, seenRaw, profile, today, moment]);
 
   const close = () => {
     if (!moment) return;
     const seen = readSeen(seenRaw);
-    const next = seenFrom(moment.state, today, nowIso());
+    const next = seenFrom(moment.state, today, nowIso(), new Set([...moment.acquired, ...(seen?.pieces ?? [])]));
     // Un niveau perdu (données supprimées) puis regagné n'est pas annoncé deux fois.
     void repos.meta.set(LEVEL_SEEN_KEY, { ...next, level: Math.max(next.level, seen?.level ?? 1) });
     setMoment(null);
@@ -66,6 +76,7 @@ function LevelMomentDialog({ announcement: a, state, onClose }: { announcement: 
   const titleId = useId();
   const navigate = useNavigate();
   const profile = useProfile();
+  const config = readAvatar(profile?.avatar);
   const reduce = useReducedMotion();
   const target = a.level?.to ?? state.progress.level;
   const [shown, setShown] = useState(reduce || !a.level ? target : a.level.from);
@@ -94,9 +105,13 @@ function LevelMomentDialog({ announcement: a, state, onClose }: { announcement: 
       ? a.badges.length > 1
         ? `${a.badges.length} badges débloqués`
         : 'Badge débloqué'
-      : a.records.length > 1
-        ? `${a.records.length} records`
-        : 'Nouveau record';
+      : a.records.length
+        ? a.records.length > 1
+          ? `${a.records.length} records`
+          : 'Nouveau record'
+        : a.pieces.length > 1
+          ? 'Nouvelles pièces'
+          : 'Nouvelle pièce';
   const records = a.records.slice(0, MAX_RECORDS).map((e) => {
     const r = state.model.records.find((x) => `record:${x.workoutId}:${x.exerciseId}` === e.key);
     return {
@@ -127,7 +142,7 @@ function LevelMomentDialog({ announcement: a, state, onClose }: { announcement: 
               aria-hidden="true"
             />
             <div className={reduce ? '' : 'motion-pop'}>
-              <Emblem name={profile?.firstName ?? null} level={target} size={132} label={a.level ? String(shown) : undefined} />
+              <UserEmblem level={target} size={132} label={a.level ? String(shown) : undefined} />
             </div>
           </div>
           <div className="flex flex-col gap-1">
@@ -200,6 +215,31 @@ function LevelMomentDialog({ announcement: a, state, onClose }: { announcement: 
                 </li>
               ))}
             </ul>
+          </section>
+        )}
+
+        {a.pieces.length > 0 && (
+          <section aria-label="Nouvelles pièces d’emblème" className="flex flex-col gap-2">
+            <h2 className="text-[13px] text-cendre">{a.pieces.length > 1 ? 'Nouvelles pièces d’emblème' : 'Nouvelle pièce d’emblème'}</h2>
+            <ul className="grid grid-cols-3 gap-2">
+              {a.pieces.map((piece) => (
+                <li key={piece.id} className="motion-rise flex flex-col items-center gap-1.5 rounded-[18px] bg-anthracite p-3 text-center" style={{ ['--i' as string]: ++i }}>
+                  <Emblem config={withPiece(config, piece)} name={profile?.firstName ?? null} level={target} size={56} specialization={profile?.specialization ?? null} />
+                  <span className="text-[13px] leading-tight font-semibold">{piece.name}</span>
+                  <span className="text-[11px] text-cendre">{LAYER_NAMES[piece.layer]}</span>
+                </li>
+              ))}
+            </ul>
+            <button
+              type="button"
+              onClick={() => {
+                onClose();
+                navigate('/progression/joueur/embleme', { viewTransition: true });
+              }}
+              className="self-center text-[15px] font-semibold text-module"
+            >
+              Ouvrir l’atelier de l’emblème
+            </button>
           </section>
         )}
 

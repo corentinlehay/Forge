@@ -3,7 +3,7 @@ import { useProfile } from '../../db/hooks';
 import { BADGES } from '../../domain/level/badges';
 import { formatNumber } from '../../lib/format';
 import { Icon } from '../../ui/Icon';
-import { Emblem } from './Emblem';
+import { UserEmblem } from './Emblem';
 import { useLevel } from './useLevel';
 
 /** Entrée de FORGE LEVEL (Progression et accueil) : niveau, XP vers le suivant, dernier badge. */
@@ -21,7 +21,7 @@ export function LevelCard() {
       aria-label={`Niveau ${progress.level}, ${formatNumber(progress.totalXp, 0)} XP. Ouvrir la fiche joueur`}
       className="flex items-center gap-4 rounded-[22px] bg-anthracite p-[18px] transition-transform duration-[var(--forge-duration-press)] active:scale-[0.985]"
     >
-      <Emblem name={profile?.firstName ?? null} level={progress.level} size={56} />
+      <UserEmblem level={progress.level} size={56} bare />
       <span className="flex min-w-0 flex-1 flex-col gap-1.5">
         <span className="flex items-baseline justify-between gap-2">
           <span className="flex items-baseline gap-1.5">

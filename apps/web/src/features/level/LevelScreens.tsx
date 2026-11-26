@@ -11,7 +11,7 @@ import { BarChart } from '../../ui/BarChart';
 import { Button } from '../../ui/Button';
 import { Icon } from '../../ui/Icon';
 import { Screen } from '../../ui/Screen';
-import { Emblem } from './Emblem';
+import { UserEmblem } from './Emblem';
 import { BackButton, BadgeMedal, BadgeRow, CharacteristicRow, Rules } from './parts';
 import { Radar, Sparkline } from './Radar';
 import { useLevel, useLevelResolver } from './useLevel';
@@ -301,7 +301,7 @@ function EntryIcon({ entry }: { entry: TimelineEntry }) {
     const def = BADGES.find((b) => b.id === entry.badgeId);
     return def ? <BadgeMedal badge={def} unlocked size={36} /> : null;
   }
-  if (entry.kind === 'niveau') return <Emblem name={null} level={entry.level} size={36} label={String(entry.level)} />;
+  if (entry.kind === 'niveau') return <UserEmblem level={entry.level} size={36} label={String(entry.level)} bare />;
   return (
     <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-graphite" aria-hidden="true">
       <Icon name={entry.kind === 'record' ? 'trophy' : 'check'} size={18} className={entry.kind === 'record' ? 'text-citron' : 'text-module'} />

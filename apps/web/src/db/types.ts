@@ -25,6 +25,20 @@ export interface GainRate {
 /** Titre FORGE LEVEL choisi par l'utilisateur ; il ne change aucun calcul. */
 export type Specialization = 'POWER' | 'BUILDER' | 'ENGINE' | 'DISCIPLINE' | 'MOBILITY' | 'RECOVERY';
 
+/** Emblème FORGE LEVEL : une pièce par couche (identifiants du catalogue de domain/level/avatar). */
+export interface AvatarConfig {
+  forme: string;
+  cadre: string;
+  couleur: string;
+  fond: string;
+  /** « initiales » ou un symbole. */
+  centre: string;
+  /** Une ou deux lettres ; vide : l'initiale du prénom. */
+  initiales: string;
+  etoiles: boolean;
+  bandeau: boolean;
+}
+
 export interface Profile extends SyncFields {
   id: 'me';
   firstName?: string;
@@ -41,6 +55,8 @@ export interface Profile extends SyncFields {
   nutritionTargets?: NutritionTargets;
   /** FORGE LEVEL : titre choisi, null quand l'utilisateur l'a retiré. */
   specialization?: Specialization | null;
+  /** FORGE LEVEL : composition de l'emblème. */
+  avatar?: AvatarConfig;
 }
 
 export interface NutritionTargets {

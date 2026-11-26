@@ -33,6 +33,18 @@ const profileSchema = z.object({
   gainRate: z.object({ lowPctPerWeek: z.number().min(-2).max(2), highPctPerWeek: z.number().min(-2).max(2) }),
   goal: z.enum(['muscle', 'perte', 'recompo', 'force', 'forme']).optional(),
   specialization: z.enum(['POWER', 'BUILDER', 'ENGINE', 'DISCIPLINE', 'MOBILITY', 'RECOVERY']).nullable().optional(),
+  avatar: z
+    .object({
+      forme: z.string().max(24),
+      cadre: z.string().max(24),
+      couleur: z.string().max(24),
+      fond: z.string().max(24),
+      centre: z.string().max(24),
+      initiales: z.string().max(2),
+      etoiles: z.boolean(),
+      bandeau: z.boolean(),
+    })
+    .optional(),
 });
 
 const weighInSchema = z.object({

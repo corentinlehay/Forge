@@ -51,6 +51,7 @@ const paths = {
   flat: 'M4 12h16M16 8l4 4-4 4',
   list: 'M9 6h11M9 12h11M9 18h11M4.5 6h.01M4.5 12h.01M4.5 18h.01',
   swap: 'M7 4 3 8l4 4M3 8h14M17 20l4-4-4-4M21 16H7',
+  lock: 'M7.5 10.5V8a4.5 4.5 0 0 1 9 0v2.5M5.5 10.5h13v10h-13zM12 14.5v2.5',
   bolt2: 'M4 12h16',
 } as const;
 

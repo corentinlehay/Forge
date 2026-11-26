@@ -27,6 +27,13 @@ function validate(patch: ProfilePatch): void {
   if (patch.specialization !== undefined && patch.specialization !== null && !SPECIALIZATIONS.includes(patch.specialization)) {
     throw new ProfileError('Spécialisation inconnue.');
   }
+  if (patch.avatar) {
+    const a = patch.avatar;
+    const word = (v: unknown) => typeof v === 'string' && /^[a-z-]{1,24}$/.test(v);
+    if (!['forme', 'cadre', 'couleur', 'fond', 'centre'].every((k) => word(a[k as keyof typeof a])) || typeof a.etoiles !== 'boolean' || typeof a.bandeau !== 'boolean')
+      throw new ProfileError('Emblème invalide.');
+    if (typeof a.initiales !== 'string' || a.initiales.length > 2 || /[^\p{L}]/u.test(a.initiales)) throw new ProfileError('Initiales : deux lettres au plus.');
+  }
   if (patch.nutritionTargets) {
     const { kcal, proteinG, carbsG, fatG } = patch.nutritionTargets;
     const ok = (v: number, max: number) => Number.isFinite(v) && v >= 0 && v <= max;

@@ -2,6 +2,7 @@ import type { MuscleGroup } from '../../data/muscles';
 import { addDays } from '../../lib/dates';
 import type { MuscleResolver } from '../muscleVolume';
 import { activeOnly, weekStart } from '../training';
+import { AVATAR_PIECES, isAnnounced, type AvatarPiece } from './avatar';
 import { BADGES, type BadgeUnlock } from './badges';
 import { characteristicsAt, CHARACTERISTIC_ORDER, type CharacteristicKey } from './characteristics';
 import type { LevelState } from './level';
@@ -127,6 +128,8 @@ export interface LevelSeen {
   badges: string[];
   /** Records déjà annoncés, limités aux 30 derniers jours. */
   records: string[];
+  /** Pièces d'emblème acquises ; absent avant l'avatar (rien n'est alors annoncé, tout est noté). */
+  pieces?: string[];
   at: string;
 }
 
@@ -139,6 +142,8 @@ export interface Announcement {
   level: { from: number; to: number } | null;
   badges: BadgeUnlock[];
   records: XpEvent[];
+  /** Pièces d'emblème gagnées par un niveau ou un badge. */
+  pieces: AvatarPiece[];
   xp: number;
 }
 
@@ -146,24 +151,26 @@ export interface Announcement {
  * Ce qu'il y a à annoncer depuis la dernière visite : un passage de niveau, des badges, des records des 7 derniers jours.
  * Sans visite enregistrée, rien n'est annoncé : tout l'historique passerait d'un coup.
  */
-export function announcement(state: LevelState, seen: LevelSeen | null, today: string): Announcement | null {
+export function announcement(state: LevelState, seen: LevelSeen | null, today: string, acquired: ReadonlySet<string> = new Set()): Announcement | null {
   if (!seen) return null;
+  const pieces = seen.pieces ? AVATAR_PIECES.filter((p) => isAnnounced(p) && acquired.has(p.id) && !seen.pieces!.includes(p.id)) : [];
   const badges = state.unlocks.filter((u) => !seen.badges.includes(u.id));
   const since = addDays(today, -RECORD_DAYS + 1);
   const records = state.events.filter((e) => e.kind === 'record' && e.date >= since && !seen.records.includes(e.key));
   const level = state.progress.level > seen.level ? { from: seen.level, to: state.progress.level } : null;
-  if (!level && !badges.length && !records.length) return null;
+  if (!level && !badges.length && !records.length && !pieces.length) return null;
   const xp = [...records, ...state.events.filter((e) => e.kind === 'badge' && badges.some((b) => e.key === `badge:${b.id}`))].reduce((n, e) => n + e.xp, 0);
-  return { level, badges, records, xp };
+  return { level, badges, records, pieces, xp };
 }
 
 /** L'état « déjà annoncé » après avoir montré l'état actuel. */
-export function seenFrom(state: LevelState, today: string, at: string): LevelSeen {
+export function seenFrom(state: LevelState, today: string, at: string, acquired: ReadonlySet<string> = new Set()): LevelSeen {
   const keep = addDays(today, -KEEP_RECORD_DAYS + 1);
   return {
     level: state.progress.level,
     badges: state.unlocks.map((u) => u.id),
     records: state.events.filter((e) => e.kind === 'record' && e.date >= keep).map((e) => e.key),
+    pieces: [...acquired],
     at,
   };
 }
@@ -177,6 +184,7 @@ export function readSeen(v: unknown): LevelSeen | null {
     level: Math.max(1, Math.floor(r.level)),
     badges: r.badges.filter((x): x is string => typeof x === 'string'),
     records: r.records.filter((x): x is string => typeof x === 'string'),
+    ...(Array.isArray(r.pieces) ? { pieces: r.pieces.filter((x): x is string => typeof x === 'string') } : {}),
     at: typeof r.at === 'string' ? r.at : '',
   };
 }

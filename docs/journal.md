@@ -1,5 +1,28 @@
 # Journal des versions
 
+## Avatar FORGE, livraison 1 (version de test, branche `avatar-1`, par-dessus `level-2`)
+
+Choix de Coz du 26 novembre : une pièce gagnée reste acquise ; l'emblème remplace l'icône du profil ; la carte joueur s'exporte en image.
+
+- **Emblème composé** de 33 pièces sur 6 couches :
+    - **Forme** : hexagone, cercle, bouclier, losange, octogone, bouclier double.
+    - **Cadre** : simple, double, cranté, biseauté, rivets.
+    - **Couleur** : bleu, citron, violet, cuivre, argent, or, platine.
+    - **Fond** : anthracite, noir, teinté.
+    - **Centre** : initiales (deux lettres au plus) ou un symbole.
+    - **Ornements** : étoiles de palier (une par dizaine de niveaux), bandeau de spécialisation.
+- **Déblocage :**
+    - au départ : hexagone, cercle, cadre simple, bleu, citron, violet, anthracite, noir, initiales ;
+    - niveaux 2, 5, 10, 15, 20, 30, 40 et 50 : une pièce chacun ;
+    - badges : premier record, programme respecté, et chaque badge rare (12 semaines actives, 100 séances, premier cycle, 140 kg, série Mind, tonnages) ;
+    - spécialisation : son symbole (éclair, haltère, onde, flamme, boucle, lune) et le bandeau.
+- **Une pièce gagnée reste acquise**, même si le niveau baisse ensuite. Rien ne s'achète, rien ne change une note ni l'XP.
+- **Atelier de l'emblème** (`/progression/joueur/embleme`, ou en touchant l'emblème de la fiche) : aperçu en direct, chaque pièce dessinée sur ton emblème, pièces verrouillées grisées avec ce qui les débloque.
+- **L'emblème partout :** fiche joueur, cartes Niveau, annonces, historique, et bouton « Profil et réglages » de l'accueil.
+- **Annonce plein écran :** les pièces gagnées par un niveau ou un badge s'y ajoutent, avec un lien vers l'atelier.
+- **« Partager ma carte »** : une image de 1080 × 1350 (emblème, prénom, spécialisation, niveau, XP, six notes, badges), dessinée sur le téléphone. Elle passe par la feuille de partage de l'iPhone, ou se télécharge.
+- 6 nouveaux tests, et la sauvegarde vérifie l’emblème (402 pour l’app).
+
 ## FORGE LEVEL, livraison 2 (version de test, branche `level-2`, par-dessus `level-1`)
 
 - **Fiche joueur remaniée :**

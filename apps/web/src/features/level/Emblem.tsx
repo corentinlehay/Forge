@@ -1,22 +1,56 @@
-/**
- * Emblème FORGE de la carte joueur : un écusson hexagonal avec l'initiale et le niveau.
- * Version de départ ; il deviendra personnalisable (couleurs, cadres débloqués) avec l'avatar.
- */
-export function Emblem({ name, level, size = 72, label }: { name: string | null; level: number; size?: number; label?: string }) {
-  const initial = label ?? (name?.trim().charAt(0).toLocaleUpperCase('fr-FR') || 'F');
+import { useProfile } from '../../db/hooks';
+import type { AvatarConfig, Specialization } from '../../db/types';
+import { cleanInitials, DEFAULT_AVATAR, readAvatar } from '../../domain/level/avatar';
+import { EMBLEM_VIEWBOX, emblemMarkup } from './emblemMarkup';
+
+interface EmblemProps {
+  config?: AvatarConfig | null;
+  name: string | null;
+  level: number;
+  size?: number;
+  /** Remplace le centre (le chiffre du niveau dans une annonce ou l'historique). */
+  label?: string;
+  specialization?: Specialization | null;
+  /** Sans étoiles ni bandeau, pour les petites tailles. */
+  bare?: boolean;
+}
+
+/** Initiales affichées : celles choisies, sinon la première lettre du prénom, sinon F. */
+export function emblemText(config: AvatarConfig | null | undefined, name: string | null): string {
+  return config?.initiales || cleanInitials(name ?? '').slice(0, 1) || 'F';
+}
+
+/** L'emblème FORGE LEVEL de l'utilisateur, dessiné d'après sa composition. */
+export function Emblem({ config, name, level, size = 72, label, specialization, bare = false }: EmblemProps) {
+  const c = config ?? DEFAULT_AVATAR;
+  const markup = emblemMarkup(c, { text: emblemText(c, name), label, level, specialization, bare });
   return (
-    <svg width={size} height={size} viewBox="0 0 100 100" role="img" aria-label={`Emblème, niveau ${level}`} className="shrink-0">
-      <defs>
-        <linearGradient id="emblem-fill" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0" stopColor="var(--forge-surface-secondary)" />
-          <stop offset="1" stopColor="var(--forge-bg)" />
-        </linearGradient>
-      </defs>
-      <path d="M50 4 90 27v46L50 96 10 73V27z" fill="url(#emblem-fill)" stroke="var(--forge-module)" strokeWidth="3" strokeLinejoin="round" />
-      <path d="M50 14 81 32v36L50 86 19 68V32z" fill="none" stroke="var(--forge-module)" strokeOpacity="0.35" strokeWidth="1.5" strokeLinejoin="round" />
-      <text x="50" y="54" textAnchor="middle" dominantBaseline="middle" className="font-metal" fontSize={initial.length > 1 ? 36 : 44} fill="var(--forge-text)">
-        {initial}
-      </text>
-    </svg>
+    <svg
+      width={size}
+      height={Math.round((size * EMBLEM_VIEWBOX.height) / EMBLEM_VIEWBOX.width)}
+      viewBox={`0 0 ${EMBLEM_VIEWBOX.width} ${EMBLEM_VIEWBOX.height}`}
+      role="img"
+      aria-label={label ? `Niveau ${label}` : `Emblème, niveau ${level}`}
+      className="shrink-0"
+      // Le dessin est produit à partir du catalogue et de lettres filtrées (voir emblemMarkup).
+      dangerouslySetInnerHTML={{ __html: markup }}
+    />
+  );
+}
+
+/** L'emblème de l'utilisateur, d'après son profil. */
+export function UserEmblem({ level, size, label, bare }: { level: number; size?: number; label?: string; bare?: boolean }) {
+  const profile = useProfile();
+  if (profile === undefined) return <span style={{ width: size, height: size }} className="inline-block shrink-0" />;
+  return (
+    <Emblem
+      config={readAvatar(profile?.avatar)}
+      name={profile?.firstName ?? null}
+      level={level}
+      size={size}
+      label={label}
+      specialization={profile?.specialization ?? null}
+      bare={bare}
+    />
   );
 }

@@ -16,6 +16,7 @@ import { useWeighInSheet } from '../weight/WeighInSheet';
 import { statusView } from '../weight/weightStatus';
 import { SessionHero } from '../training/SessionHero';
 import { CoachButton } from '../../ui/CoachButton';
+import { UserEmblem } from '../level/Emblem';
 import { LevelCard } from '../level/LevelCard';
 import { BackupReminder } from './BackupReminder';
 import { WeekCard } from '../review/WeekCard';
@@ -39,13 +40,8 @@ export function HomeScreen() {
         </div>
         <div className="flex gap-2">
           <CoachButton />
-          <Link
-            to="/reglages"
-            viewTransition
-            aria-label="Profil et réglages"
-            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-graphite text-base font-semibold"
-          >
-            {data?.profile.firstName?.charAt(0).toLocaleUpperCase('fr-FR') ?? <Icon name="user" size={20} />}
+          <Link to="/reglages" viewTransition aria-label="Profil et réglages" className="flex h-11 w-11 shrink-0 items-center justify-center active:opacity-80">
+            <UserEmblem level={1} size={42} bare />
           </Link>
         </div>
       </header>

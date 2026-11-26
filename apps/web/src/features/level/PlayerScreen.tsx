@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router';
-import { repos, useProfile } from '../../db/hooks';
+import { repos, useMeta, useProfile } from '../../db/hooks';
 import type { Specialization } from '../../db/types';
 import { BADGES } from '../../domain/level/badges';
 import { CHARACTERISTIC_LABELS } from '../../domain/level/characteristics';
@@ -12,7 +12,10 @@ import { Screen } from '../../ui/Screen';
 import { Sheet } from '../../ui/Sheet';
 import { useToast } from '../../ui/Toast';
 import { useHistoryBack } from '../mind/mindShared';
-import { Emblem } from './Emblem';
+import { acquiredPieces, AVATAR_PIECES, readAvatar } from '../../domain/level/avatar';
+import { LEVEL_SEEN_KEY, readSeen } from '../../domain/level/history';
+import { emblemText, UserEmblem } from './Emblem';
+import { renderPlayerCard, sharePlayerCard } from './playerCard';
 import { BadgeMedal, NavRow } from './parts';
 import { Radar } from './Radar';
 import { useLevel } from './useLevel';
@@ -42,11 +45,44 @@ export function PlayerScreen() {
 function Player({ level, firstName, specialization }: { level: LevelState; firstName: string | null; specialization: Specialization | null }) {
   const { progress } = level;
   const [choosing, setChoosing] = useState(false);
+  const [sharing, setSharing] = useState(false);
   const toast = useToast();
+  const profile = useProfile();
+  const seenRaw = useMeta<unknown>(LEVEL_SEEN_KEY);
+  const acquired = acquiredPieces(level, specialization, readSeen(seenRaw)?.pieces);
+  const share = async () => {
+    setSharing(true);
+    try {
+      const config = readAvatar(profile?.avatar);
+      const blob = await renderPlayerCard({
+        config,
+        initials: emblemText(config, firstName),
+        firstName,
+        specialization: chosen,
+        level: progress.level,
+        totalXp: progress.totalXp,
+        toNext: progress.next ? progress.next - progress.totalXp : null,
+        progress: progress.progress,
+        characteristics: level.characteristics,
+        badges: level.unlocks.length,
+        badgesTotal: BADGES.length,
+        today: level.model.input.today,
+      });
+      const result = await sharePlayerCard(blob);
+      if (result === 'telechargement') toast.show('Image de ta carte téléchargée');
+    } catch (e) {
+      toast.show(e instanceof Error ? e.message : 'Image impossible à créer.');
+    } finally {
+      setSharing(false);
+    }
+  };
   const chosen = specialization && level.specializations.some((s) => s.id === specialization) ? specialization : null;
   const choose = async (s: Specialization | null) => {
     try {
       await repos.profile.update({ specialization: s });
+      // Le symbole et le bandeau de la spécialisation choisie restent acquis, même si elle change ensuite.
+      const seen = readSeen(seenRaw);
+      if (seen && s) await repos.meta.set(LEVEL_SEEN_KEY, { ...seen, pieces: [...new Set([...(seen.pieces ?? []), ...acquiredPieces(level, s, seen.pieces)])] });
       setChoosing(false);
       toast.show(s ? `Spécialisation : ${s}` : 'Spécialisation retirée');
     } catch {
@@ -59,7 +95,12 @@ function Player({ level, firstName, specialization }: { level: LevelState; first
     <>
       <section aria-label="Carte joueur" className="relative flex flex-col gap-4 overflow-hidden rounded-[26px] bg-anthracite p-5">
         <div className="flex items-center gap-4">
-          <Emblem name={firstName} level={progress.level} size={84} />
+          <Link to="/progression/joueur/embleme" viewTransition aria-label="Modifier ton emblème" className="relative shrink-0 active:opacity-80">
+            <UserEmblem level={progress.level} size={96} />
+            <span className="absolute right-0 bottom-1 flex h-7 w-7 items-center justify-center rounded-full bg-graphite text-craie ring-2 ring-anthracite" aria-hidden="true">
+              <Icon name="edit" size={14} />
+            </span>
+          </Link>
           <div className="min-w-0 flex-1">
             {firstName && <p className="truncate text-[20px] leading-tight font-semibold">{firstName}</p>}
             <button type="button" onClick={() => setChoosing(true)} className="-ml-1 flex min-h-9 items-center gap-1 px-1 text-[13px] font-semibold text-module">
@@ -89,6 +130,10 @@ function Player({ level, firstName, specialization }: { level: LevelState; first
         >
           <div className="h-full rounded-full bg-module" style={{ width: `${Math.max(2, progress.progress * 100)}%` }} />
         </div>
+        <Button size="small" variant="secondary" className="self-start" disabled={sharing} onClick={() => void share()}>
+          <Icon name="share" size={16} />
+          {sharing ? 'Création de l’image…' : 'Partager ma carte'}
+        </Button>
       </section>
 
       <Link
@@ -107,6 +152,12 @@ function Player({ level, firstName, specialization }: { level: LevelState; first
 
       <nav aria-label="FORGE LEVEL" className="flex flex-col gap-2">
         <NavRow to="/progression/joueur/xp" icon="bolt" title="Progression XP" aside={xp(progress.totalXp)} />
+        <NavRow
+          to="/progression/joueur/embleme"
+          icon="shield"
+          title="Emblème"
+          aside={`${AVATAR_PIECES.filter((p) => acquired.has(p.id)).length} pièces sur ${AVATAR_PIECES.length}`}
+        />
         <NavRow to="/progression/joueur/badges" icon="trophy" title="Badges" aside={`${unlocked.size} sur ${BADGES.length}`} />
         <NavRow to="/progression/joueur/historique" icon="clock" title="Historique" />
         <NavRow to="/progression/joueur/activites" icon="calendar" title="Journal d’activité" aside="Cardio, mobilité" />
