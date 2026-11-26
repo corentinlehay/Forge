@@ -1,6 +1,16 @@
 # Journal des versions
 
-## Avatar FORGE, livraison 1 (version de test, branche `avatar-1`, par-dessus `level-2`)
+## Deuxième mise en production du 26 novembre 2026
+
+- **Fusion dans `main`** des quatre livraisons validées par Coz : suivi-1, level-1, level-2 et avatar-1.
+- **Avant la fusion :**
+    - `main` n'avait pas bougé depuis la mise en production de FORGE PROGRAMS du matin ;
+    - la fusion se fait en avance rapide, sans conflit ;
+    - `npm run check` passe sur l'état exact mis en production.
+- **Base locale :** toujours la version 12, aucun changement de schéma. FORGE LEVEL calcule l'XP, les badges et les notes depuis les données déjà enregistrées ; l'emblème et la spécialisation s'ajoutent au profil comme champs facultatifs.
+- **Première ouverture :** le niveau, les badges et les pièces d'emblème déjà gagnés sont notés sans annonce ; seules les nouveautés suivantes s'annoncent.
+
+## Avatar FORGE, livraison 1 (branche `avatar-1`, en production le 26 novembre 2026)
 
 Choix de Coz du 26 novembre : une pièce gagnée reste acquise ; l'emblème remplace l'icône du profil ; la carte joueur s'exporte en image.
 
@@ -23,7 +33,7 @@ Choix de Coz du 26 novembre : une pièce gagnée reste acquise ; l'emblème remp
 - **« Partager ma carte »** : une image de 1080 × 1350 (emblème, prénom, spécialisation, niveau, XP, six notes, badges), dessinée sur le téléphone. Elle passe par la feuille de partage de l'iPhone, ou se télécharge.
 - 6 nouveaux tests, et la sauvegarde vérifie l’emblème (402 pour l’app).
 
-## FORGE LEVEL, livraison 2 (version de test, branche `level-2`, par-dessus `level-1`)
+## FORGE LEVEL, livraison 2 (branche `level-2`, en production le 26 novembre 2026)
 
 - **Fiche joueur remaniée :**
     - carte joueur ;
@@ -54,7 +64,7 @@ Choix de Coz du 26 novembre : une pièce gagnée reste acquise ; l'emblème remp
     - avec « réduire les animations », tout s'affiche d'emblée.
 - 7 nouveaux tests (396 pour l'app).
 
-## FORGE LEVEL, livraison 1 (version de test, branche `level-1`, par-dessus `suivi-1`)
+## FORGE LEVEL, livraison 1 (branche `level-1`, en production le 26 novembre 2026)
 
 - **Moteur, calculé à partir des données** (`domain/level/`), sans journal d'XP stocké : chaque gain a une clé unique, une même donnée ne rapporte qu'une fois, tout se recalcule après une restauration, et supprimer une séance retire son XP.
 - **XP :**
@@ -78,7 +88,7 @@ Choix de Coz du 26 novembre : une pièce gagnée reste acquise ; l'emblème remp
 - Calcul sur un an de données : environ 40 ms.
 - 13 nouveaux tests (389 pour l'app).
 
-## FORGE PROGRAMS, livraison 5 : suivi du programme (version de test, branche `suivi-1`)
+## FORGE PROGRAMS, livraison 5 : suivi du programme (branche `suivi-1`, en production le 26 novembre 2026)
 
 - **Écran « Suivi »** d'un programme : depuis sa fiche (ligne « Suivi », avec la régularité) et depuis Training (lien « Suivi » à côté du programme actif).
 - **En bref :** régularité du cycle, séances faites cette semaine sur celles prévues, volume de la semaine.
