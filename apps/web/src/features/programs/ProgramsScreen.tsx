@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router';
-import { repos, useAllTemplates, usePrograms, useToday } from '../../db/hooks';
+import { repos, useAllTemplates, usePrograms, useProgramVersions, useToday } from '../../db/hooks';
+import { toLocalDateKey } from '../../lib/dates';
 import { DataError } from '../../db/repositories/entities';
-import type { Program, ProgramStatus, WorkoutTemplate } from '../../db/types';
+import type { Program, ProgramStatus, ProgramVersion, WorkoutTemplate } from '../../db/types';
 import {
   actionLabel,
   canDelete,
@@ -177,6 +178,30 @@ function CycleBar({ week, total }: { week: number; total: number }) {
   );
 }
 
+/** Version courante du programme et accès à l'historique. */
+function VersionRow({ programId, currentId, versions }: { programId: string; currentId?: string | null; versions: ProgramVersion[] }) {
+  const current = versions.find((v) => v.id === currentId) ?? versions.at(-1)!;
+  const since = formatDayMonthLong(toLocalDateKey(new Date(current.createdAt)));
+  return (
+    <Link
+      to={`/training/programmes/${programId}/versions`}
+      viewTransition
+      className="flex min-h-[56px] items-center justify-between gap-3 rounded-[18px] bg-anthracite px-4 py-3 active:scale-[0.99]"
+    >
+      <span className="min-w-0">
+        <span className="block text-[15px] font-semibold">Version {current.version}</span>
+        <span className="block text-[13px] text-cendre">
+          {current.version === 1 ? `Version de départ, depuis le ${since}` : `Depuis le ${since}`}, {countLabel(versions.length, 'version')} en tout
+        </span>
+      </span>
+      <span className="flex shrink-0 items-center gap-1 text-[13px] text-cendre">
+        Historique
+        <Icon name="chevron" size={16} />
+      </span>
+    </Link>
+  );
+}
+
 /** Fiche d'un programme : cycle, séances, statut et actions. */
 export function ProgramScreen() {
   const { id = '' } = useParams();
@@ -188,6 +213,7 @@ export function ProgramScreen() {
   const [error, setError] = useState<string | null>(null);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [busy, setBusy] = useState(false);
+  const versions = useProgramVersions(id);
 
   if (!programs || !templates)
     return (
@@ -291,6 +317,8 @@ export function ProgramScreen() {
           {[cycleLine(program, today), status !== 'termine' && program.startDate ? `démarré le ${formatDayMonthLong(program.startDate)}` : null].filter(Boolean).join(', ')}
         </p>
       )}
+
+      {versions && versions.length > 0 && <VersionRow programId={program.id} currentId={program.currentVersionId} versions={versions} />}
 
       <section aria-label="Séances" className="flex flex-col gap-2">
         <div className="flex items-baseline justify-between gap-3">

@@ -1,4 +1,5 @@
 import { useLiveQuery } from 'dexie-react-hooks';
+import { EFFORT_SCALE_KEY, isEffortScale, type EffortScale } from '../domain/effort';
 import { useEffect, useState } from 'react';
 import { toLocalDateKey } from '../lib/dates';
 import { getDb } from './schema';
@@ -21,6 +22,7 @@ import {
   createMealTemplateRepo,
   createPriceRepo,
   createProgramRepo,
+  createProgramVersionRepo,
   createRecipePhotoRepo,
   createRecipeRepo,
   createSetRepo,
@@ -49,6 +51,7 @@ import type {
   PriceRecord,
   Profile,
   Program,
+  ProgramVersion,
   RecipePhoto,
   RecipeRecord,
   ShoppingList,
@@ -104,6 +107,9 @@ export const repos = {
   },
   get programs() {
     return createProgramRepo(getDb());
+  },
+  get programVersions() {
+    return createProgramVersionRepo(getDb());
   },
   get recipes() {
     return createRecipeRepo(getDb());
@@ -214,6 +220,11 @@ export function usePrograms(): Program[] | undefined {
   return useLiveQuery(async () => (await repos.programs.listActive()).sort((a, b) => a.createdAt.localeCompare(b.createdAt)), []);
 }
 
+/** Versions d'un programme, de la première à la plus récente. */
+export function useProgramVersions(programId: string | null | undefined): ProgramVersion[] | undefined {
+  return useLiveQuery(async () => (programId ? repos.programVersions.list(programId) : []), [programId]);
+}
+
 /** Toutes les séances-types, tous programmes confondus. */
 export function useAllTemplates(): WorkoutTemplate[] | undefined {
   return useLiveQuery(async () => (await repos.templates.listActive()).sort((a, b) => a.position - b.position), []);
@@ -267,6 +278,12 @@ export function useProfile(): Profile | undefined {
 /** Valeur d'un réglage : `null` si absente, `undefined` pendant le chargement. */
 export function useMeta<T>(key: string): T | null | undefined {
   return useLiveQuery(() => repos.meta.get<T>(key), [key]);
+}
+
+/** Échelle d'effort choisie dans Réglages : RIR par défaut. */
+export function useEffortScale(): EffortScale {
+  const value = useMeta<EffortScale>(EFFORT_SCALE_KEY);
+  return isEffortScale(value) ? value : 'rir';
 }
 
 /** Le jour local, mis à jour au retour dans l'app et à minuit. */

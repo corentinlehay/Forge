@@ -1,7 +1,8 @@
 import { useLiveQuery } from 'dexie-react-hooks';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router';
-import { repos, useAllTemplates, useExercises, useWorkouts, useWorkoutSets } from '../../db/hooks';
+import { repos, useAllTemplates, useEffortScale, useExercises, usePrograms, useProgramVersions, useWorkouts, useWorkoutSets } from '../../db/hooks';
+import { effortText } from '../../domain/effort';
 import type { TemplateExercise, Workout, WorkoutSet } from '../../db/types';
 import { buildCatalog, catalogItem, type CatalogItem } from '../../domain/exerciseCatalog';
 import { exerciseSessions, holdLoad, parseRepRange, suggestNext, type Suggestion } from '../../domain/progression';
@@ -73,11 +74,17 @@ export function WorkoutScreen() {
         <BackLink />
       </Screen>
     );
-  const targets = adjustTargets(templates.find((t) => t.id === workout.templateId)?.exercises ?? [], workout.adjustment);
-  return <LiveWorkout workout={workout} workouts={workouts} sets={sets} targets={targets} />;
+  const template = templates.find((t) => t.id === workout.templateId);
+  const targets = adjustTargets(template?.exercises ?? [], workout.adjustment);
+  return <LiveWorkout workout={workout} workouts={workouts} sets={sets} targets={targets} warmup={template?.warmup ?? ''} />;
 }
 
-function LiveWorkout({ workout, workouts, sets, targets }: { workout: Workout; workouts: Workout[]; sets: WorkoutSet[]; targets: TemplateExercise[] }) {
+function LiveWorkout({ workout, workouts, sets, targets, warmup }: { workout: Workout; workouts: Workout[]; sets: WorkoutSet[]; targets: TemplateExercise[]; warmup: string }) {
+  const scale = useEffortScale();
+  const programs = usePrograms();
+  const versions = useProgramVersions(workout.programId);
+  const followedProgram = programs?.find((p) => p.id === workout.programId);
+  const followedVersion = versions?.find((v) => v.id === workout.programVersionId);
   const navigate = useNavigate();
   const toast = useToast();
   const exercises = useExercises() ?? [];
@@ -141,7 +148,9 @@ function LiveWorkout({ workout, workouts, sets, targets }: { workout: Workout; w
         rir: lastToday.rir ?? null,
       };
     const perf = lastPerformance(exerciseId, workouts, sets, workout.id);
-    return perf ? { weight: perf.weightKg, reps: perf.reps, rir: null } : { weight: null, reps: null, rir: null };
+    if (perf) return { weight: perf.weightKg, reps: perf.reps, rir: null };
+    // Première fois : la charge de départ prévue dans le programme, s'il y en a une.
+    return { weight: targetOf(exerciseId)?.startWeightKg ?? null, reps: null, rir: null };
   };
 
   const addSet = async (exerciseId: string, weightKg: number, reps: number, rir: number | null) => {
@@ -200,7 +209,26 @@ function LiveWorkout({ workout, workouts, sets, targets }: { workout: Workout; w
         <p className="text-[15px] text-cendre">
           {formatDayShort(workout.date)}, {ended ? 'terminée' : minutes < 1 ? 'commencée à l’instant' : `en cours depuis ${minutes} min`}
         </p>
+        {followedProgram && followedVersion && (
+          <Link
+            to={`/training/programmes/${followedProgram.id}/versions/${followedVersion.id}`}
+            viewTransition
+            className="self-start text-[13px] text-cendre underline decoration-graphite underline-offset-2"
+          >
+            Prévue dans « {followedProgram.name} », version {followedVersion.version}
+          </Link>
+        )}
       </div>
+
+      {warmup && !ended && (
+        <section aria-label="Échauffement" className="flex gap-3 rounded-[18px] bg-anthracite p-3.5">
+          <Icon name="bolt" size={18} className="mt-0.5 shrink-0 text-citron" />
+          <p className="text-[15px] leading-snug">
+            <span className="font-semibold">Échauffement : </span>
+            {warmup}
+          </p>
+        </section>
+      )}
 
       <dl className="grid grid-cols-3 gap-2 rounded-[18px] bg-anthracite p-3.5">
         {[
@@ -274,7 +302,7 @@ function LiveWorkout({ workout, workouts, sets, targets }: { workout: Workout; w
         const targetLine = target
           ? [
               `${target.sets} × ${target.reps || 'libre'}`,
-              target.rir !== null && target.rir !== undefined ? `RIR ${target.rir}` : null,
+              target.rir !== null && target.rir !== undefined ? effortText(target.rir, scale) : null,
               target.restSec ? `repos ${formatRest(target.restSec)}` : null,
             ]
               .filter(Boolean)
@@ -296,6 +324,7 @@ function LiveWorkout({ workout, workouts, sets, targets }: { workout: Workout; w
               <div className="min-w-0 flex-1">
                 <h2 className="text-[17px] leading-tight font-semibold">{nameOf(exerciseId)}</h2>
                 {targetLine && <p className="text-[13px] text-cendre">{targetLine}</p>}
+                {target?.notes && <p className="mt-1 text-[13px] leading-snug text-craie/90">{target.notes}</p>}
               </div>
               <IconButton icon="dots" label={`Options : ${nameOf(exerciseId)}`} onClick={() => setSheet({ kind: 'menu', exerciseId })} />
             </div>
@@ -307,6 +336,10 @@ function LiveWorkout({ workout, workouts, sets, targets }: { workout: Workout; w
                     {kgText(perf.weightKg)} kg × {perf.reps}
                   </span>
                   , {formatDayShort(perf.date).toLocaleLowerCase('fr-FR')}
+                </>
+              ) : target?.startWeightKg !== undefined && target.startWeightKg !== null ? (
+                <>
+                  Première fois. Charge de départ prévue : <span className="font-semibold text-craie">{kgText(target.startWeightKg)} kg</span>
                 </>
               ) : (
                 'Première fois : pas de performance à battre.'
@@ -340,7 +373,7 @@ function LiveWorkout({ workout, workouts, sets, targets }: { workout: Workout; w
                       <span className="font-metal flex-1 text-[24px]">
                         {kgText(s.weightKg)} <span className="font-sans text-[13px] font-normal text-cendre">kg</span> × {s.reps}
                       </span>
-                      {s.rir !== null && s.rir !== undefined && <span className="text-[13px] text-cendre">RIR {s.rir === 5 ? '5+' : s.rir}</span>}
+                      {s.rir !== null && s.rir !== undefined && <span className="text-[13px] text-cendre">{effortText(s.rir, scale)}</span>}
                       {isRecord(s) && (
                         <span
                           className={`flex items-center gap-1 rounded-full bg-citron px-2 py-0.5 text-[12px] font-semibold text-noir shadow-[0_0_10px_color-mix(in_oklab,var(--forge-accent)_40%,transparent)] ${stamped === s.id ? 'motion-pop' : ''}`}
@@ -422,6 +455,7 @@ function LiveWorkout({ workout, workouts, sets, targets }: { workout: Workout; w
       <Sheet open={sheet.kind !== 'none'} title={sheetTitle} onClose={() => setSheet({ kind: 'none' })}>
         {sheet.kind === 'add' && (
           <SetForm
+            scale={scale}
             key={`add-${sheet.exerciseId}-${mine.length}`}
             initialWeight={prefill(sheet.exerciseId).weight}
             initialReps={prefill(sheet.exerciseId).reps}
@@ -434,6 +468,7 @@ function LiveWorkout({ workout, workouts, sets, targets }: { workout: Workout; w
         )}
         {sheet.kind === 'edit' && (
           <SetForm
+            scale={scale}
             key={`edit-${sheet.set.id}`}
             initialWeight={sheet.set.weightKg}
             initialReps={sheet.set.reps}

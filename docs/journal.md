@@ -1,5 +1,27 @@
 # Journal des versions
 
+## FORGE PROGRAMS, livraison 2 (version de test, branche `programmes-2`, par-dessus `programmes-1`)
+
+- **Éditeur de séance :**
+    - échauffement de la séance, en texte libre ;
+    - par exercice : consigne (200 caractères) et charge de départ en kg (vide : à déterminer) ;
+    - effort visé affiché en RIR ou en RPE selon le réglage.
+- **Séance du jour :**
+    - l'échauffement s'affiche en tête tant que la séance est en cours ;
+    - la consigne sous chaque exercice ;
+    - la première fois sur un exercice, la charge de départ prévue est indiquée et préremplie dans la saisie ;
+    - « Prévue dans « programme », version N », avec un lien vers cette version.
+- **RIR ou RPE** (Réglages, Effort des séries) : seul l'affichage change (RPE = 10 − RIR). FORGE enregistre toujours le RIR, donc les séries passées restent justes.
+- **Versions des programmes :**
+    - une version est la photo du programme et de ses séances ;
+    - modifier un programme déjà suivi par une séance crée une nouvelle version, avec la liste des changements (séances ajoutées ou retirées, jours, séries, répétitions, repos, effort, charge de départ, consigne, ordre) ;
+    - tant qu'aucune séance n'a suivi la version courante, la modification la met simplement à jour ;
+    - les anciennes versions ne sont jamais modifiées ; chaque séance garde la version qu'elle a suivie ;
+    - fiche programme : version courante et « Historique » ; détail d'une version : changements, séances telles qu'elles étaient, séances faites avec elle.
+    - Un programme d'avant reçoit sa version de départ à sa première modification ou à sa première séance. Les séances d'avant restent sans version, rien n'est inventé.
+- **Démo :** deux versions (la version 2 ajoute une série au développé couché d'Upper A) et des séances rattachées à chacune.
+- 10 nouveaux tests (346 pour l'app).
+
 ## FORGE PROGRAMS, livraison 1 (version de test, branche `programmes-1`)
 
 - **Audit validé** (phase 0) : https://claude.ai/artifact/24EFHzYVpamQstVjdLs9w9. Huit décisions cochées, avatar V1 en emblème.

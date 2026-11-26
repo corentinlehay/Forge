@@ -3,7 +3,7 @@ import type { ProgramObjective } from './types';
 import { saveTargets } from './targets';
 import { libraryExercise } from '../data/exerciseLibrary';
 import { toLocalTimeKey } from '../lib/dates';
-import { createExerciseRepo, createProgramRepo, createTemplateRepo } from './repositories/entities';
+import { createExerciseRepo, createProgramRepo, createProgramVersionRepo, createTemplateRepo } from './repositories/entities';
 import { createMetaRepo } from './repositories/meta';
 import { createProfileRepo } from './repositories/profile';
 import { createWeighInRepo } from './repositories/weighIns';
@@ -81,6 +81,7 @@ export async function adoptPlan(
       }
       await templates.add({ name: session.name, weekdays: [session.weekday], exercises: list, position, programId: program.id }, now);
     }
+    await createProgramVersionRepo(db).sync(program.id, now);
     await programs.activate(program.id, now);
     programId = program.id;
   }

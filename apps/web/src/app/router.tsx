@@ -10,6 +10,7 @@ import { WorkoutScreen } from '../features/training/WorkoutScreen';
 import { TemplateScreen } from '../features/training/TemplateScreen';
 import { ProgramScreen, ProgramsScreen } from '../features/programs/ProgramsScreen';
 import { ProgramFormScreen } from '../features/programs/ProgramForm';
+import { ProgramVersionScreen, ProgramVersionsScreen } from '../features/programs/ProgramVersions';
 import { ExerciseLibraryScreen } from '../features/training/ExerciseLibraryScreen';
 import { ExerciseDetailScreen } from '../features/training/ExerciseDetailScreen';
 import { PlanScreen } from '../features/plan/PlanScreen';
@@ -54,6 +55,8 @@ export const router = createBrowserRouter([
       { path: 'training/programmes/nouveau', element: <ProgramFormScreen /> },
       { path: 'training/programmes/:id', element: <ProgramScreen /> },
       { path: 'training/programmes/:id/modifier', element: <ProgramFormScreen /> },
+      { path: 'training/programmes/:id/versions', element: <ProgramVersionsScreen /> },
+      { path: 'training/programmes/:id/versions/:versionId', element: <ProgramVersionScreen /> },
       { path: 'training/exercices', element: <ExerciseLibraryScreen /> },
       { path: 'training/exercices/:key', element: <ExerciseDetailScreen /> },
       { path: 'reglages/plan', element: <PlanScreen /> },

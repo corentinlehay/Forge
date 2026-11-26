@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { Link, useNavigate } from 'react-router';
-import { repos, useMeta, useProfile, useToday, useWeighIns } from '../../db/hooks';
+import { repos, useEffortScale, useMeta, useProfile, useToday, useWeighIns } from '../../db/hooks';
 import { clearAllData } from '../../db/maintenance';
 import { DEFAULT_GAIN_RATE, ProfileError } from '../../db/repositories/profile';
 import { getDb } from '../../db/schema';
@@ -15,6 +15,8 @@ import { Button } from '../../ui/Button';
 import { Icon } from '../../ui/Icon';
 import { Screen } from '../../ui/Screen';
 import { Sheet } from '../../ui/Sheet';
+import { Segmented } from '../../ui/Segmented';
+import { EFFORT_SCALE_KEY } from '../../domain/effort';
 import { ImportBackup } from '../backup/ImportBackup';
 import { exportMessage, useBackupExport } from '../backup/useBackupExport';
 import { InstallGuide } from '../onboarding/InstallGuide';
@@ -53,6 +55,7 @@ export function SettingsScreen() {
       <ProfileSection />
       <PlanSection />
       <GainRateSection />
+      <EffortSection />
       <DemoSection />
       {!isDemoMode() && <BackupSection />}
       <DeviceSection />
@@ -171,6 +174,30 @@ function PlanSection() {
       <Link to="/reglages/plan" viewTransition className="flex h-[52px] items-center justify-center rounded-[16px] bg-graphite text-[17px] font-semibold">
         {record ? 'Refaire le questionnaire' : 'Construire mon plan'}
       </Link>
+    </Section>
+  );
+}
+
+/** Affichage de l'effort des séries : RIR ou RPE. FORGE enregistre toujours le RIR. */
+function EffortSection() {
+  const scale = useEffortScale();
+  return (
+    <Section title="Effort des séries">
+      <Segmented
+        label="Échelle d’effort"
+        options={[
+          { value: 'rir', label: 'RIR' },
+          { value: 'rpe', label: 'RPE' },
+        ]}
+        value={scale}
+        onChange={(v) => void repos.meta.set(EFFORT_SCALE_KEY, v)}
+      />
+      <p className="text-[13px] leading-snug text-cendre">
+        {scale === 'rpe'
+          ? 'RPE : effort ressenti sur 10. RPE 8 = tu aurais pu faire 2 répétitions de plus.'
+          : 'RIR : répétitions gardées en réserve. RIR 2 = tu aurais pu faire 2 répétitions de plus.'}{' '}
+        Change seulement l’affichage : tes séries passées restent justes.
+      </p>
     </Section>
   );
 }

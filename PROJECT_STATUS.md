@@ -1,6 +1,6 @@
 # État du projet FORGE
 
-Mis à jour le 26 novembre 2026 : audit FORGE LEVEL et FORGE PROGRAMS validé (8 décisions), première livraison `programmes-1` en version de test.
+Mis à jour le 26 novembre 2026 : FORGE PROGRAMS, livraisons `programmes-1` et `programmes-2` en version de test (empilées).
 
 ## En production (branche `main`, depuis le 25 novembre 2026)
 
@@ -34,6 +34,7 @@ Base de données locale : version 11. Serveur : relais Open Food Facts et séanc
 | Branche | Contenu |
 |---|---|
 | `programmes-1` | FORGE PROGRAMS, livraison 1 : base Dexie v12 (table des versions, table du journal d'activité encore vide, champs facultatifs des programmes, rien de réécrit), statuts brouillon, actif, pause, terminé, archivé, objectif et objectif secondaire, durée et début du cycle, description. Écrans plein format : liste par statut, fiche programme (semaine du cycle, semaine type, séances, actions), création et modification. Remplace la feuille « Programmes » de Training |
+| `programmes-2` | FORGE PROGRAMS, livraison 2 (par-dessus `programmes-1`) : échauffement par séance, consigne et charge de départ par exercice, affichage RIR ou RPE (Réglages, Effort des séries). Versions : nouvelle version quand un programme déjà suivi est modifié, avec la liste des changements ; historique et détail de chaque version ; chaque séance retient la version suivie |
 
 ## Audit FORGE LEVEL et FORGE PROGRAMS (26 novembre 2026)
 
@@ -109,7 +110,7 @@ Document complet, avec l'architecture, les cinq scénarios et le plan : https://
 
 ## Reste à faire
 
-1. **Valider `programmes-1`**, puis mise en production ; ensuite `programmes-2` (éditeur complet et versions).
+1. **Valider `programmes-1` et `programmes-2`**, puis mise en production des deux ; ensuite `generateur-1`.
 2. **Tes amis** : refaire le questionnaire (Réglages, Refaire le questionnaire) pour recevoir les nouveaux programmes (zone « Épaules » cochée ; « Haut, bas, haut » sur 3 jours).
 3. **Vérifier la production sur ton iPhone** :
     - la mise à jour de l'app et la reprise de tes données ;

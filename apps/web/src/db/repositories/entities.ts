@@ -16,6 +16,7 @@ import type {
   PriceRecord,
   Program,
   ProgramStatus,
+  ProgramVersion,
   RecipePhoto,
   RecipeRecord,
   PulseAction,
@@ -35,6 +36,7 @@ import type {
 import type { LibraryExercise } from '../../data/exerciseLibrary';
 import { isDateKey, isTimeKey, toLocalDateKey } from '../../lib/dates';
 import { MAX_CYCLE_WEEKS, OBJECTIVES, programStatus } from '../../domain/programs/status';
+import { planVersion, snapshotOf } from '../../domain/programs/versions';
 import { newId, nowIso } from '../../lib/ids';
 
 /** Erreur de saisie, au message affichable tel quel. */
@@ -221,6 +223,52 @@ export function createProgramRepo(db: ForgeDB) {
   };
 }
 
+/**
+ * Versions des programmes. `sync` se lance après chaque modification d'un programme ou de ses séances, et au
+ * démarrage d'une séance : il crée la version de départ, met à jour la version courante tant qu'aucune séance
+ * ne l'a suivie, ou crée une nouvelle version avec ce qui a changé. Les anciennes versions ne sont jamais modifiées.
+ */
+export function createProgramVersionRepo(db: ForgeDB) {
+  const table = db.programVersions as unknown as Table<ProgramVersion, string>;
+  const list = async (programId: string) => (await table.where('programId').equals(programId).toArray()).filter((v) => !v.deletedAt).sort((a, b) => a.version - b.version);
+  return {
+    list,
+    async get(id: string): Promise<ProgramVersion | undefined> {
+      return table.get(id);
+    },
+    /** Met la version à jour d'après le programme tel qu'il est ; renvoie la version courante (null : programme introuvable). */
+    async sync(programId: string, now: Date = new Date()): Promise<ProgramVersion | null> {
+      return db.transaction('rw', [db.programs, db.workoutTemplates, db.programVersions, db.workouts, db.exercises], async () => {
+        const program = await db.programs.get(programId);
+        if (!program || program.deletedAt) return null;
+        const templates = (await db.workoutTemplates.toArray()).filter((t) => !t.deletedAt && t.programId === programId);
+        const versions = await list(programId);
+        const snapshot = snapshotOf(program, templates);
+        const followedIds = new Set(
+          (await db.workouts.toArray()).filter((w) => !w.deletedAt && w.programId === programId && w.programVersionId).map((w) => w.programVersionId as string),
+        );
+        const names = new Map((await db.exercises.toArray()).map((e) => [e.id, e.name]));
+        const plan = planVersion(versions, program.currentVersionId, snapshot, (id) => followedIds.has(id), (id) => names.get(id) ?? 'Exercice');
+        const stamp = nowIso(now);
+        if (plan.kind === 'rien') {
+          const current = versions.find((v) => v.id === program.currentVersionId) ?? versions.at(-1)!;
+          if (program.currentVersionId !== current.id) await db.programs.update(programId, { currentVersionId: current.id, updatedAt: stamp });
+          return current;
+        }
+        if (plan.kind === 'mettre-a-jour') {
+          await table.update(plan.id, { snapshot, changeSummary: plan.summary, updatedAt: stamp });
+          if (program.currentVersionId !== plan.id) await db.programs.update(programId, { currentVersionId: plan.id, updatedAt: stamp });
+          return (await table.get(plan.id))!;
+        }
+        const record: ProgramVersion = { id: newId(), createdAt: stamp, updatedAt: stamp, deletedAt: null, programId, version: plan.version, snapshot, changeSummary: plan.summary };
+        await table.add(record);
+        await db.programs.update(programId, { currentVersionId: record.id, updatedAt: stamp });
+        return record;
+      });
+    },
+  };
+}
+
 export function createTemplateRepo(db: ForgeDB) {
   return templateRepo(db);
 }
@@ -236,8 +284,11 @@ function templateRepo(db: ForgeDB) {
         check(e.reps.length <= 20, 'Répétitions : 20 caractères maximum.');
         if (e.restSec !== undefined && e.restSec !== null) check(Number.isInteger(e.restSec) && between(e.restSec, 0, 900), 'Repos entre 0 et 15 minutes.');
         if (e.rir !== undefined && e.rir !== null) check(Number.isInteger(e.rir) && between(e.rir, 0, 10), 'RIR cible entre 0 et 10.');
+        if (e.notes !== undefined) check(e.notes.length <= 200, 'Consigne : 200 caractères maximum.');
+        if (e.startWeightKg !== undefined && e.startWeightKg !== null) check(between(e.startWeightKg, 0, 500), 'Charge de départ entre 0 et 500 kg.');
       }
     }
+    if (i.warmup !== undefined) check(i.warmup.length <= 300, 'Échauffement : 300 caractères maximum.');
   });
 }
 

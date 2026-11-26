@@ -257,6 +257,8 @@ const templateExerciseSchema = z.object({
   reps: z.string().max(20),
   restSec: z.number().int().min(0).max(900).nullable().optional(),
   rir: z.number().int().min(0).max(10).nullable().optional(),
+  notes: z.string().max(200).optional(),
+  startWeightKg: z.number().min(0).max(500).nullable().optional(),
 });
 
 const templateSchema = z.object({
@@ -266,6 +268,7 @@ const templateSchema = z.object({
   exercises: z.array(templateExerciseSchema),
   position: z.number(),
   programId: z.string().nullable().optional(),
+  warmup: z.string().max(300).optional(),
 });
 
 const activitySchema = z.object({
@@ -296,6 +299,7 @@ const programVersionSchema = z.object({
         name: z.string().min(1).max(60),
         weekdays: z.array(z.number().int().min(1).max(7)),
         position: z.number(),
+        warmup: z.string().max(300).optional(),
         exercises: z.array(templateExerciseSchema),
       }),
     ),
@@ -316,6 +320,8 @@ const workoutSchema = z.object({
   note: z.string().max(2000).optional(),
   exerciseNotes: z.record(z.string(), z.string().max(1000)).optional(),
   adjustment: adjustmentSchema.nullable().optional(),
+  programId: z.string().nullable().optional(),
+  programVersionId: z.string().nullable().optional(),
 });
 
 const setSchema = z.object({

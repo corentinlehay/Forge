@@ -13,6 +13,8 @@ export async function startWorkout(template: WorkoutTemplate | null, now: Date =
     const record = template ? await repos.pulseDays.byDate(date) : null;
     adjustment = record?.choice === 'alleger' && record.adjustment && record.plannedTemplateId === template?.id ? record.adjustment : null;
   }
+  // La séance retient le programme et la version suivis : une modification ultérieure du programme ne la réécrit pas.
+  const version = template?.programId ? await repos.programVersions.sync(template.programId, now) : null;
   const workout = await repos.workouts.add({
     date,
     name: template?.name ?? 'Séance libre',
@@ -21,6 +23,7 @@ export async function startWorkout(template: WorkoutTemplate | null, now: Date =
     startedAt: nowIso(now),
     endedAt: null,
     ...(adjustment ? { adjustment } : {}),
+    ...(version ? { programId: version.programId, programVersionId: version.id } : {}),
   });
   return workout.id;
 }

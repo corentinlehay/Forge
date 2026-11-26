@@ -1,10 +1,13 @@
 import { useMemo, useState } from 'react';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router';
-import { repos, useAllTemplates, useExercises, useTemplates } from '../../db/hooks';
+import { repos, useAllTemplates, useEffortScale, useExercises, useTemplates } from '../../db/hooks';
 import { DataError } from '../../db/repositories/entities';
 import type { TemplateExercise, WorkoutTemplate } from '../../db/types';
 import { buildCatalog, catalogItem, defaultReps } from '../../domain/exerciseCatalog';
 import { parseRepRange } from '../../domain/progression';
+import { EFFORT_LABELS, effortValue, type EffortScale } from '../../domain/effort';
+import { formatNumber, parseDecimal } from '../../lib/format';
+import { TextArea } from '../../ui/TextArea';
 import { moveItem } from '../../domain/workoutFlow';
 import { Button } from '../../ui/Button';
 import { Field } from '../../ui/Field';
@@ -19,11 +22,12 @@ import { restOptions } from './restOptions';
 
 const DAYS = ['L', 'M', 'M', 'J', 'V', 'S', 'D'];
 const DAY_NAMES = ['lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi', 'dimanche'];
-const RIR_OPTIONS = [
+/** Effort visé : la valeur enregistrée est le RIR, le libellé suit le réglage RIR ou RPE. */
+const effortOptions = (scale: EffortScale) => [
   { value: '', label: 'Libre' },
   ...[0, 1, 2, 3, 4].map((n) => ({
     value: String(n),
-    label: n === 0 ? '0 (échec)' : String(n),
+    label: n === 0 ? `${effortValue(0, scale)} (échec)` : effortValue(n, scale),
   })),
 ];
 
@@ -34,6 +38,9 @@ interface Row {
   reps: string;
   restSec: string;
   rir: string;
+  /** Charge de départ, en kg (vide : à déterminer). */
+  startWeight: string;
+  notes: string;
 }
 
 const toRow = (e: TemplateExercise, i: number, fallbackRest: number | null): Row => ({
@@ -43,6 +50,8 @@ const toRow = (e: TemplateExercise, i: number, fallbackRest: number | null): Row
   reps: e.reps,
   restSec: String(e.restSec ?? fallbackRest ?? 90),
   rir: e.rir === null || e.rir === undefined ? '' : String(e.rir),
+  startWeight: e.startWeightKg === null || e.startWeightKg === undefined ? '' : formatNumber(e.startWeightKg, e.startWeightKg % 1 ? 1 : 0),
+  notes: e.notes ?? '',
 });
 
 /** Retour après l'édition : la fiche d'un programme quand on en vient, sinon Training. */
@@ -89,6 +98,8 @@ function TemplateEditor({ editing, nextPosition, programId }: { editing: Workout
   const restOf = (exerciseId: string) => exercises?.find((e) => e.id === exerciseId)?.restSec ?? null;
   const [name, setName] = useState(editing?.name ?? '');
   const [weekdays, setWeekdays] = useState<number[]>(editing?.weekdays ?? []);
+  const [warmup, setWarmup] = useState(editing?.warmup ?? '');
+  const scale = useEffortScale();
   const [rows, setRows] = useState<Row[]>(() => (editing?.exercises ?? []).map((e, i) => toRow(e, i, restOf(e.exerciseId))));
   const [picking, setPicking] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -107,6 +118,9 @@ function TemplateEditor({ editing, nextPosition, programId }: { editing: Workout
     if (bad) return setError(`Séries de « ${nameOf(bad.exerciseId)} » : un nombre entre 1 et 20.`);
     const badReps = rows.find((r) => r.reps.trim() && !parseRepRange(r.reps));
     if (badReps) return setError(`Répétitions de « ${nameOf(badReps.exerciseId)} » : un nombre ou une fourchette, par exemple 8-12.`);
+    const startOf = (r: Row) => (r.startWeight.trim() ? parseDecimal(r.startWeight) : null);
+    const badStart = rows.find((r) => r.startWeight.trim() && (startOf(r) === null || startOf(r)! < 0 || startOf(r)! > 500));
+    if (badStart) return setError(`Charge de départ de « ${nameOf(badStart.exerciseId)} » : entre 0 et 500 kg, ou vide.`);
     setBusy(true);
     try {
       const list: TemplateExercise[] = rows.map((r) => ({
@@ -115,16 +129,21 @@ function TemplateEditor({ editing, nextPosition, programId }: { editing: Workout
         reps: r.reps.trim(),
         restSec: Number(r.restSec),
         rir: r.rir === '' ? null : Number(r.rir),
+        ...(startOf(r) !== null ? { startWeightKg: startOf(r) } : {}),
+        ...(r.notes.trim() ? { notes: r.notes.trim() } : {}),
       }));
-      const input = { name: name.trim(), weekdays, exercises: list };
-      if (editing) await repos.templates.update(editing.id, input);
-      else {
+      const input = { name: name.trim(), weekdays, exercises: list, warmup: warmup.trim() };
+      if (editing) {
+        await repos.templates.update(editing.id, input);
+        if (editing.programId) await repos.programVersions.sync(editing.programId);
+      } else {
         const target = programId && (await repos.programs.get(programId)) ? programId : (await repos.programs.ensureActive()).id;
         await repos.templates.add({
           ...input,
           position: nextPosition,
           programId: target,
         });
+        await repos.programVersions.sync(target);
       }
       toast.show(editing ? 'Séance modifiée' : 'Séance ajoutée au programme');
       navigate(back.to, { viewTransition: true });
@@ -143,6 +162,7 @@ function TemplateEditor({ editing, nextPosition, programId }: { editing: Workout
       position: nextPosition,
       programId: editing.programId ?? null,
     });
+    if (editing.programId) await repos.programVersions.sync(editing.programId);
     toast.show('Séance dupliquée : choisis ses jours');
     navigate(`/training/programme/${copy.id}${back.to === '/training' ? '' : `?retour=${encodeURIComponent(back.to)}`}`, { replace: true });
   };
@@ -150,6 +170,7 @@ function TemplateEditor({ editing, nextPosition, programId }: { editing: Workout
   const remove = async () => {
     if (!editing) return;
     await repos.templates.remove(editing.id);
+    if (editing.programId) await repos.programVersions.sync(editing.programId);
     toast.show('Séance retirée du programme');
     navigate(back.to, { replace: true });
   };
@@ -177,6 +198,16 @@ function TemplateEditor({ editing, nextPosition, programId }: { editing: Workout
         </div>
       </fieldset>
 
+      <TextArea
+        label="Échauffement"
+        hint="facultatif"
+        value={warmup}
+        onChange={(e) => setWarmup(e.target.value)}
+        maxLength={300}
+        rows={2}
+        placeholder="Ex. 5 min de rameur, 2 séries légères au premier exercice"
+      />
+
       <section aria-label="Exercices" className="flex flex-col gap-3">
         <h2 className="text-[17px] font-semibold">Exercices</h2>
         {!rows.length && <p className="text-[15px] text-cendre">Ajoute les exercices dans l’ordre où tu les fais.</p>}
@@ -201,7 +232,30 @@ function TemplateEditor({ editing, nextPosition, programId }: { editing: Workout
                 <Field label="Séries" value={row.sets} onChange={(e) => update(row.key, { sets: e.target.value })} inputMode="numeric" maxLength={2} />
                 <Field label="Répétitions" value={row.reps} onChange={(e) => update(row.key, { reps: e.target.value })} maxLength={20} placeholder="8-12" />
                 <SelectField label="Repos" value={row.restSec} onChange={(e) => update(row.key, { restSec: e.target.value })} options={restOptions(Number(row.restSec))} />
-                <SelectField label="RIR visé" value={row.rir} onChange={(e) => update(row.key, { rir: e.target.value })} options={RIR_OPTIONS} />
+                <SelectField
+                  label={`${EFFORT_LABELS[scale].short} visé`}
+                  value={row.rir}
+                  onChange={(e) => update(row.key, { rir: e.target.value })}
+                  options={effortOptions(scale)}
+                />
+                <Field
+                  label="Charge de départ"
+                  suffix="kg"
+                  value={row.startWeight}
+                  onChange={(e) => update(row.key, { startWeight: e.target.value })}
+                  inputMode="decimal"
+                  maxLength={6}
+                  placeholder="à déterminer"
+                  className="col-span-2"
+                />
+                <Field
+                  label="Consigne"
+                  value={row.notes}
+                  onChange={(e) => update(row.key, { notes: e.target.value })}
+                  maxLength={200}
+                  placeholder="facultative, ex. descente en 3 secondes"
+                  className="col-span-2"
+                />
               </div>
             </div>
           );
@@ -210,7 +264,11 @@ function TemplateEditor({ editing, nextPosition, programId }: { editing: Workout
           <Icon name="plus" size={18} />
           Ajouter un exercice
         </Button>
-        <p className="text-[13px] leading-snug text-cendre">RIR : répétitions que tu gardes en réserve à la fin de la série. RIR 2 = tu aurais pu en faire 2 de plus.</p>
+        <p className="text-[13px] leading-snug text-cendre">
+          {scale === 'rpe'
+            ? 'RPE : effort ressenti sur 10. RPE 8 = tu aurais pu faire 2 répétitions de plus.'
+            : 'RIR : répétitions que tu gardes en réserve à la fin de la série. RIR 2 = tu aurais pu en faire 2 de plus.'}
+        </p>
       </section>
 
       {error && (
@@ -253,6 +311,8 @@ function TemplateEditor({ editing, nextPosition, programId }: { editing: Workout
                   reps: defaultReps(kind),
                   restSec: String(exercise.restSec ?? item?.rest ?? 90),
                   rir: '2',
+                  startWeight: '',
+                  notes: '',
                 },
               ]);
               setPicking(false);

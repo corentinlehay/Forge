@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { applyKey, toKeypadValue, type KeypadKey } from '../../domain/keypadInput';
-import { rpeFromRir, type Suggestion } from '../../domain/progression';
+import { type Suggestion } from '../../domain/progression';
+import { EFFORT_LABELS, effortText, effortValue, type EffortScale } from '../../domain/effort';
 import { formatNumber, parseDecimal } from '../../lib/format';
 import { Button } from '../../ui/Button';
 import { Icon } from '../../ui/Icon';
@@ -17,6 +18,8 @@ interface SetFormProps {
   /** Objectif proposé : appliqué seulement si tu le touches. */
   suggestion?: Suggestion | null;
   targetRir?: number | null;
+  /** Affichage de l'effort : RIR ou RPE (la valeur enregistrée reste le RIR). */
+  scale?: EffortScale;
   editing: boolean;
   onSave: (weightKg: number, reps: number, rir: number | null) => Promise<void>;
   onDelete?: () => Promise<void>;
@@ -28,7 +31,7 @@ const kgText = (v: number) => formatNumber(v, v % 1 ? (Math.round(v * 100) % 10 
  * Saisie d'une série : charge et répétitions au pavé, RIR en un toucher.
  * La valeur proposée (dernière série) est remplacée dès la première touche.
  */
-export function SetForm({ initialWeight, initialReps, initialRir, suggestion, targetRir, editing, onSave, onDelete }: SetFormProps) {
+export function SetForm({ initialWeight, initialReps, initialRir, suggestion, targetRir, scale = 'rir', editing, onSave, onDelete }: SetFormProps) {
   const [weight, setWeight] = useState(initialWeight !== null ? toKeypadValue(initialWeight) : '');
   const [reps, setReps] = useState(initialReps !== null ? String(initialReps) : '');
   const [rir, setRir] = useState<number | null>(initialRir);
@@ -118,10 +121,10 @@ export function SetForm({ initialWeight, initialReps, initialRir, suggestion, ta
       <fieldset className="m-0 border-0 p-0">
         <legend className="mb-1.5 flex w-full justify-between text-[13px] text-cendre">
           <span>
-            Répétitions en réserve (RIR)
-            {targetRir !== null && targetRir !== undefined ? `, visé ${targetRir}` : ''}
+            {EFFORT_LABELS[scale].long}
+            {targetRir !== null && targetRir !== undefined ? `, visé ${effortValue(targetRir, scale)}` : ''}
           </span>
-          <span>{rir !== null ? `RPE ${rpeFromRir(rir)}` : 'facultatif'}</span>
+          <span>{rir !== null ? effortText(rir, scale === 'rir' ? 'rpe' : 'rir') : 'facultatif'}</span>
         </legend>
         <div className="grid grid-cols-6 gap-1.5">
           {RIR_VALUES.map((n) => (
@@ -129,11 +132,11 @@ export function SetForm({ initialWeight, initialReps, initialRir, suggestion, ta
               key={n}
               type="button"
               aria-pressed={rir === n}
-              aria-label={n === 0 ? 'RIR 0, à l’échec' : n === 5 ? 'RIR 5 ou plus' : `RIR ${n}`}
+              aria-label={n === 0 ? `${effortText(0, scale)}, à l’échec` : n === 5 ? (scale === 'rpe' ? 'RPE 5 ou moins' : 'RIR 5 ou plus') : effortText(n, scale)}
               onClick={() => setRir((cur) => (cur === n ? null : n))}
               className={`h-11 rounded-[12px] font-display text-[18px] font-semibold ${rir === n ? 'bg-citron text-noir' : 'bg-graphite text-craie'}`}
             >
-              {n === 5 ? '5+' : n}
+              {effortValue(n, scale)}
             </button>
           ))}
         </div>

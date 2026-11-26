@@ -69,6 +69,7 @@ function ProgramForm({ editing }: { editing: Program | null }) {
       };
       if (editing) {
         await repos.programs.update(editing.id, { ...fields, ...(showStart ? { startDate: startDate || null } : {}) });
+        await repos.programVersions.sync(editing.id);
         toast.show('Programme modifié');
         navigate(`/training/programmes/${editing.id}`, { viewTransition: true });
       } else {

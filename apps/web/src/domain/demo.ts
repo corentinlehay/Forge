@@ -24,6 +24,7 @@ import type {
   WorkoutSet,
   WorkoutTemplate,
 } from '../db/types';
+import { diffSnapshots, FIRST_VERSION_SUMMARY, snapshotOf, summaryText } from './programs/versions';
 import { EXERCISE_LIBRARY } from '../data/exerciseLibrary';
 import { addDays } from '../lib/dates';
 import { ONBOARDING_KEY } from './onboarding';
@@ -432,6 +433,31 @@ export function generateDemoData(today: string, now: Date): DemoTables {
   }));
   workoutTemplates.push(...previousTemplates);
 
+  // Versions du programme démo : la version 2 ajoute une série au premier exercice de Upper A, il y a 20 jours.
+  const demoSessions = workoutTemplates.filter((t) => t.programId === program.id);
+  const nameById = new Map([...exercises.values()].map((e) => [e.id, e.name]));
+  const v2Snapshot = snapshotOf(program, demoSessions);
+  const v1Snapshot = {
+    ...v2Snapshot,
+    sessions: v2Snapshot.sessions.map((s, i) => (i === 0 ? { ...s, exercises: s.exercises.map((e, j) => (j === 0 ? { ...e, sets: Math.max(1, e.sets - 1) } : e)) } : s)),
+  };
+  const versionDate = addDays(today, -20);
+  const v1: ProgramVersion = {
+    ...sync('version', localIso(addDays(today, -42), 9)),
+    programId: program.id,
+    version: 1,
+    snapshot: v1Snapshot,
+    changeSummary: FIRST_VERSION_SUMMARY,
+  };
+  const v2: ProgramVersion = {
+    ...sync('version', localIso(versionDate, 9)),
+    programId: program.id,
+    version: 2,
+    snapshot: v2Snapshot,
+    changeSummary: summaryText(diffSnapshots(v1Snapshot, v2Snapshot, (eid) => nameById.get(eid) ?? 'Exercice')),
+  };
+  program.currentVersionId = v2.id;
+
   // Séances des 6 dernières semaines (hier compris), avec une progression lente des charges.
   const workouts: Workout[] = [];
   const workoutSets: WorkoutSet[] = [];
@@ -449,6 +475,8 @@ export function generateDemoData(today: string, now: Date): DemoTables {
       exerciseIds: plan.exercises.map((e) => exerciseId(e.name)),
       startedAt: localIso(date, 18),
       endedAt: localIso(date, 19, 10),
+      programId: program.id,
+      programVersionId: date < versionDate ? v1.id : v2.id,
     };
     workouts.push(workout);
     let position = 0;
@@ -703,7 +731,7 @@ export function generateDemoData(today: string, now: Date): DemoTables {
     pains,
     weekNotes,
     pulseDays: [],
-    programVersions: [],
+    programVersions: [v1, v2],
     activities: [],
   };
 }

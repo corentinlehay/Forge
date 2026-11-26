@@ -177,6 +177,10 @@ export interface TemplateExercise {
   restSec?: number | null;
   /** Répétitions en réserve visées (RIR). */
   rir?: number | null;
+  /** Consigne pour cet exercice (FORGE PROGRAMS), facultative. */
+  notes?: string;
+  /** Charge de départ prévue, en kg, tant qu'aucune performance n'est enregistrée. */
+  startWeightKg?: number | null;
 }
 
 /** Cycle de vie d'un programme. Un seul est `actif` à la fois. */
@@ -229,7 +233,7 @@ export interface ProgramSnapshot {
   secondaryObjective?: ProgramObjective | null;
   note?: string;
   durationWeeks?: number | null;
-  sessions: { templateId: string; name: string; weekdays: number[]; position: number; exercises: TemplateExercise[] }[];
+  sessions: { templateId: string; name: string; weekdays: number[]; position: number; warmup?: string; exercises: TemplateExercise[] }[];
 }
 
 /** Version d'un programme : la photo, et ce qui a changé par rapport à la précédente. */
@@ -247,6 +251,8 @@ export interface WorkoutTemplate extends SyncFields {
   exercises: TemplateExercise[];
   position: number;
   programId?: string | null;
+  /** Échauffement de la séance, en texte libre, facultatif. */
+  warmup?: string;
 }
 
 /** Version allégée d'une séance, proposée par PULSE et acceptée : séries en moins, répétitions en réserve en plus. */
@@ -270,6 +276,9 @@ export interface Workout extends SyncFields {
   exerciseNotes?: Record<string, string>;
   /** Séance allégée sur proposition de PULSE (absente : séance du programme telle quelle). */
   adjustment?: WorkoutAdjustment | null;
+  /** Programme et version suivis au démarrage (absents : séance libre ou d'avant les versions). */
+  programId?: string | null;
+  programVersionId?: string | null;
 }
 
 export interface WorkoutSet extends SyncFields {
