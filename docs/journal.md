@@ -1,5 +1,22 @@
 # Journal des versions
 
+## FORGE PROGRAMS, livraison 4 (version de test, branche `generateur-2`, par-dessus `generateur-1`)
+
+- **Changer un exercice dans la proposition** (toucher l'exercice, ou « Changer ») :
+    - « Même mouvement » d'abord : les exercices qui font le même geste, faisables avec ton matériel et tes zones à ménager, tes favoris en tête, puis selon ta préférence machines ou poids libres ;
+    - puis d'autres exercices du même muscle, et « Chercher dans toute la bibliothèque » : les exercices impossibles restent visibles, grisés, avec leur raison (« Écarté pour ménager tes épaules », « Se fait en salle », « Demande une barre de traction », « Dans tes exercices à éviter ») ;
+    - le remplaçant garde le nombre de séries ; répétitions, repos et effort suivent le nouvel exercice ;
+    - dans la même feuille : séries (1 à 8), monter, descendre, retirer (une séance garde au moins un exercice).
+- **Ajouter un exercice** à chaque séance, depuis la bibliothèque.
+- **Tout se recalcule :** durée de chaque séance, volume par muscle, avertissements. Les exercices modifiés portent « Ton choix ».
+- **« Tes changements »** liste chaque modification par séance, avec « Revenir à la proposition de FORGE ». « Modifier mes réponses » demande confirmation quand il y a des changements.
+- **« Autre proposition »** : d'autres exercices pour les mêmes mouvements, favoris et exercices des zones gardés. Une carte compare avec la proposition d'avant (remplacements, retraits, séries, ordre), avec « Revenir à celle d'avant ».
+- La note d'un programme ajusté avant validation le dit (« Ajusté par toi avant validation »).
+- **Éditeur de séance** (programmes déjà créés) : « Remplacer » sous chaque exercice, avec les mêmes suggestions en tête de liste. Séries, répétitions, repos, effort et consigne restent ; la charge de départ repart de zéro.
+- Préférence machines ou poids libres : elle fait passer ces exercices devant, le reste garde l'ordre habituel (avant, le poids du corps passait devant les poids libres avec « machines d'abord »).
+- Les noms gardent leurs majuscules au milieu d'une phrase (« curl à la barre EZ »).
+- 10 nouveaux tests (369 pour l'app).
+
 ## FORGE PROGRAMS, livraison 3 (version de test, branche `generateur-1`, par-dessus `programmes-2`)
 
 - **Assistant « Générer avec FORGE »** (Training, Programmes ; aussi depuis Training quand aucune séance n'existe) :

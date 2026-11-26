@@ -1,12 +1,15 @@
 import { useMemo, useState } from 'react';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router';
-import { repos, useAllTemplates, useEffortScale, useExercises, useTemplates } from '../../db/hooks';
+import { QUESTIONNAIRE_KEY, type QuestionnaireRecord } from '../../db/adoptPlan';
+import { repos, useAllTemplates, useEffortScale, useExercises, useMeta, useTemplates } from '../../db/hooks';
 import { DataError } from '../../db/repositories/entities';
 import type { TemplateExercise, WorkoutTemplate } from '../../db/types';
 import { buildCatalog, catalogItem, defaultReps } from '../../domain/exerciseCatalog';
+import { swapOptions } from '../../domain/plan';
+import { GENERATOR_KEY, readGeneratorRecord, swapContext } from '../../domain/programs/generator';
 import { parseRepRange } from '../../domain/progression';
 import { EFFORT_LABELS, effortValue, type EffortScale } from '../../domain/effort';
-import { formatNumber, parseDecimal } from '../../lib/format';
+import { formatNumber, lowerFirst, parseDecimal } from '../../lib/format';
 import { TextArea } from '../../ui/TextArea';
 import { moveItem } from '../../domain/workoutFlow';
 import { Button } from '../../ui/Button';
@@ -16,7 +19,7 @@ import { Screen } from '../../ui/Screen';
 import { SelectField } from '../../ui/SelectField';
 import { Sheet } from '../../ui/Sheet';
 import { useToast } from '../../ui/Toast';
-import { ExercisePicker } from './ExercisePicker';
+import { ExercisePicker, type PickerSuggestion } from './ExercisePicker';
 import { ExerciseThumb } from './ExerciseVisual';
 import { restOptions } from './restOptions';
 
@@ -101,11 +104,26 @@ function TemplateEditor({ editing, nextPosition, programId }: { editing: Workout
   const [warmup, setWarmup] = useState(editing?.warmup ?? '');
   const scale = useEffortScale();
   const [rows, setRows] = useState<Row[]>(() => (editing?.exercises ?? []).map((e, i) => toRow(e, i, restOf(e.exerciseId))));
-  const [picking, setPicking] = useState(false);
+  /** « add » : ajouter un exercice ; sinon la clé de la ligne à remplacer. */
+  const [picking, setPicking] = useState<'add' | string | null>(null);
+  const generatorRecord = useMeta<unknown>(GENERATOR_KEY);
+  const questionnaire = useMeta<QuestionnaireRecord>(QUESTIONNAIRE_KEY);
   const [error, setError] = useState<string | null>(null);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [busy, setBusy] = useState(false);
 
+  const replacing = picking !== null && picking !== 'add' ? (rows.find((r) => r.key === picking) ?? null) : null;
+  const replaceSuggestions = useMemo<PickerSuggestion[]>(() => {
+    const libraryId = replacing ? catalogItem(catalog, replacing.exerciseId)?.library?.id : undefined;
+    if (!libraryId) return [];
+    const inSession = rows.map((r) => catalogItem(catalog, r.exerciseId)?.library?.id).filter((id): id is string => Boolean(id));
+    const context = swapContext(readGeneratorRecord(generatorRecord), questionnaire?.answers);
+    const { movement, muscle } = swapOptions(libraryId, context, inSession);
+    return [
+      { title: 'Même mouvement', libraryIds: movement },
+      { title: 'Même muscle, autre mouvement', libraryIds: muscle.slice(0, 6) },
+    ];
+  }, [replacing, catalog, rows, generatorRecord, questionnaire]);
   const nameOf = (id: string) => catalogItem(catalog, id)?.name ?? exercises?.find((e) => e.id === id)?.name ?? 'Exercice';
   const toggleDay = (d: number) => setWeekdays((w) => (w.includes(d) ? w.filter((x) => x !== d) : [...w, d].sort()));
   const update = (key: string, patch: Partial<Row>) => setRows((r) => r.map((row) => (row.key === key ? { ...row, ...patch } : row)));
@@ -218,10 +236,21 @@ function TemplateEditor({ editing, nextPosition, programId }: { editing: Workout
             <div key={row.key} className="flex flex-col gap-3 rounded-[18px] bg-anthracite p-3.5">
               <div className="flex items-center gap-3">
                 {item && <ExerciseThumb item={item} size={40} />}
-                <p className="min-w-0 flex-1 text-[15px] leading-tight font-semibold">
-                  <span className="mr-1.5 text-cendre tabular-nums">{i + 1}.</span>
-                  {label}
-                </p>
+                <div className="min-w-0 flex-1">
+                  <p className="text-[15px] leading-tight font-semibold">
+                    <span className="mr-1.5 text-cendre tabular-nums">{i + 1}.</span>
+                    {label}
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => setPicking(row.key)}
+                    aria-label={`Remplacer ${label}`}
+                    className="-ml-1 flex min-h-9 items-center gap-1 px-1 text-[13px] font-medium text-citron"
+                  >
+                    <Icon name="swap" size={14} />
+                    Remplacer
+                  </button>
+                </div>
                 <div className="-mr-1.5 flex shrink-0">
                   <IconButton icon="up" label={`Monter ${label}`} disabled={i === 0} onClick={() => setRows((r) => moveItem(r, i, -1))} />
                   <IconButton icon="down" label={`Descendre ${label}`} disabled={i === rows.length - 1} onClick={() => setRows((r) => moveItem(r, i, 1))} />
@@ -260,7 +289,7 @@ function TemplateEditor({ editing, nextPosition, programId }: { editing: Workout
             </div>
           );
         })}
-        <Button variant="secondary" onClick={() => setPicking(true)}>
+        <Button variant="secondary" onClick={() => setPicking('add')}>
           <Icon name="plus" size={18} />
           Ajouter un exercice
         </Button>
@@ -296,8 +325,8 @@ function TemplateEditor({ editing, nextPosition, programId }: { editing: Workout
           </Button>
         ))}
 
-      <Sheet open={picking} title="Ajouter un exercice" onClose={() => setPicking(false)}>
-        {picking && (
+      <Sheet open={picking !== null} title={picking === 'add' ? 'Ajouter un exercice' : 'Remplacer l’exercice'} onClose={() => setPicking(null)}>
+        {picking === 'add' && (
           <ExercisePicker
             exclude={rows.map((r) => r.exerciseId)}
             onPick={async (exercise, item) => {
@@ -315,9 +344,25 @@ function TemplateEditor({ editing, nextPosition, programId }: { editing: Workout
                   notes: '',
                 },
               ]);
-              setPicking(false);
+              setPicking(null);
             }}
           />
+        )}
+        {picking !== null && picking !== 'add' && replacing && (
+          <>
+            <p className="-mt-2 mb-3 text-[15px] leading-snug text-cendre">
+              À la place de « {nameOf(replacing.exerciseId)} ». Séries, répétitions, repos, effort et consigne restent ; la charge de départ repart de zéro.
+            </p>
+            <ExercisePicker
+              exclude={rows.map((r) => r.exerciseId)}
+              suggestions={replaceSuggestions}
+              onPick={async (exercise) => {
+                update(replacing.key, { exerciseId: exercise.id, startWeight: '' });
+                setPicking(null);
+                toast.show(`Remplacé par ${lowerFirst(exercise.name)}`);
+              }}
+            />
+          </>
         )}
       </Sheet>
     </Screen>

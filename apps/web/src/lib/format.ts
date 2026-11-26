@@ -61,6 +61,11 @@ export function capitalize(text: string): string {
   return text.charAt(0).toLocaleUpperCase(fr) + text.slice(1);
 }
 
+/** Un nom au milieu d'une phrase : seule la première lettre passe en minuscule (« curl à la barre EZ »). */
+export function lowerFirst(text: string): string {
+  return text.charAt(0).toLocaleLowerCase(fr) + text.slice(1);
+}
+
 /** Les clés AAAA-MM-JJ sont lues à midi UTC et formatées en UTC : aucun décalage de jour possible. */
 function keyToDate(key: string): Date {
   return new Date(`${key}T12:00:00Z`);

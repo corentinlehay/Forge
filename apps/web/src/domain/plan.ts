@@ -3,6 +3,7 @@ import { canDo, TRAITS, type Need, type Pattern } from '../data/exerciseTraits';
 import { MUSCLE_LABELS, type MuscleGroup } from '../data/muscles';
 import type { Experience, GainRate, NutritionTargets, ProgramObjective, Sex } from '../db/types';
 import { VOLUME_REFERENCE } from './muscleVolume';
+import { lowerFirst } from '../lib/format';
 
 /**
  * Plan de départ calculé à partir du questionnaire, sans IA, avec des règles explicites.
@@ -44,10 +45,25 @@ export interface PlanAnswers {
   equipmentStyle?: 'machines' | 'libres' | null;
   /** Séries plus courtes et plus lourdes, ou plus longues et plus légères. */
   repStyle?: 'lourd' | 'leger' | null;
+  /** « Autre proposition » : 0 pour la première, puis 1, 2… pour faire tourner les exercices d'un même mouvement. */
+  variation?: number;
 }
 
 type TrainingFields =
-  'experience' | 'returning' | 'weekdays' | 'sessionMinutes' | 'place' | 'equipment' | 'zones' | 'split' | 'priorities' | 'avoid' | 'favorites' | 'equipmentStyle' | 'repStyle';
+  | 'experience'
+  | 'returning'
+  | 'weekdays'
+  | 'sessionMinutes'
+  | 'place'
+  | 'equipment'
+  | 'zones'
+  | 'split'
+  | 'priorities'
+  | 'avoid'
+  | 'favorites'
+  | 'equipmentStyle'
+  | 'repStyle'
+  | 'variation';
 /** Ce que lit le moteur d'entraînement : ni le sexe, ni la taille, ni le poids. Sans objectif de programme, celui du questionnaire choisit les répétitions. */
 export type TrainingAnswers = Pick<PlanAnswers, TrainingFields> & ({ goal: Goal; programGoal?: ProgramObjective } | { goal?: Goal; programGoal: ProgramObjective });
 
@@ -456,6 +472,8 @@ export interface TrainingPlan {
   /** Noms des exercices écartés pour les zones à ménager ou à ta demande. */
   excluded: string[];
   warnings: string[];
+  /** Avertissements qui ne dépendent pas des exercices choisis (matériel, jours, zones) : ils restent quand tu modifies la proposition. */
+  fixedWarnings: string[];
   /** Pourquoi ces choix : une phrase par décision, avec sa source quand il y en a une. */
   reasons: string[];
   /** Volume hebdomadaire des groupes musculaires proposés en priorité dans l'assistant. */
@@ -630,6 +648,126 @@ const SCHEME_REASONS: Record<Scheme, string> = {
   endurance: 'Répétitions : 12 à 20, repos d’une minute au plus, la plage de l’endurance musculaire (repères ACSM 2009).',
 };
 
+/** « tes épaules » : la zone dans une phrase. */
+const ZONE_CARE: Record<Zone, string> = { epaules: 'tes épaules', genoux: 'tes genoux', dos: 'ton bas du dos' };
+
+type AccessAnswers = Pick<TrainingAnswers, 'place' | 'equipment' | 'zones' | 'avoid'>;
+
+/**
+ * Ce que la personne peut faire avec son matériel, ses zones à ménager et ses exercices à éviter ;
+ * pour un exercice écarté, la raison en une phrase.
+ */
+export function exerciseAccess(a: AccessAnswers): { usable: (id: string) => boolean; blocked: (id: string) => string | null } {
+  const gym = a.place === 'salle';
+  const available = new Set<Need>(a.equipment);
+  const avoided = new Set(a.avoid ?? []);
+  const blocked = (id: string): string | null => {
+    const traits = TRAITS[id];
+    if (!traits || !libraryExercise(id)) return 'FORGE ne sait pas encore placer cet exercice.';
+    if (avoided.has(id)) return 'Dans tes exercices à éviter.';
+    const zone = a.zones.find((z) => ZONE_EXCLUSIONS[z].includes(id));
+    if (zone) return `Écarté pour ménager ${ZONE_CARE[zone]}.`;
+    if (canDo(traits.needs, available, gym)) return null;
+    if (traits.needs.includes('salle')) return 'Se fait en salle.';
+    const missing = traits.needs.filter((n) => !canDo([n], available, gym));
+    return `Demande ${missing.map((n) => NEED_LABELS.find(([k]) => k === n)?.[1] ?? n).join(' et ')}.`;
+  };
+  return { usable: (id) => blocked(id) === null, blocked };
+}
+
+const rotate = <T>(xs: readonly T[], n: number): T[] => (xs.length ? [...xs.slice(n % xs.length), ...xs.slice(0, n % xs.length)] : [...xs]);
+
+/**
+ * Exercices d'un mouvement, du plus indiqué au moins indiqué : ceux des zones à ménager et les favoris d'abord,
+ * puis l'ordre habituel, réordonné par la préférence machines ou poids libres (jamais avant la sécurité).
+ * La variation fait tourner chaque niveau de préférence, sans toucher aux favoris.
+ */
+function makeRanking(a: TrainingAnswers, usable: (id: string) => boolean): (pattern: Pattern) => string[] {
+  const zoneFirst = (pattern: Pattern) => a.zones.flatMap((z) => ZONE_FIRST[z]?.[pattern] ?? []);
+  const favorites = a.favorites ?? [];
+  const styleRank = (id: string) => {
+    if (!a.equipmentStyle) return 0;
+    const eq = libraryExercise(id)?.equipment;
+    const machine = eq === 'machine' || eq === 'poulie';
+    const free = eq === 'barre' || eq === 'halteres' || eq === 'kettlebell';
+    // La préférence passe devant ; le reste garde l'ordre habituel.
+    return (a.equipmentStyle === 'machines' ? machine : free) ? 0 : 1;
+  };
+  const variation = Math.max(0, Math.floor(a.variation ?? 0));
+  return (pattern) => {
+    const list = (PREFERENCES[pattern] ?? EXERCISE_LIBRARY.filter((e) => TRAITS[e.id]?.pattern === pattern).map((e) => e.id)).filter(usable);
+    const styled = [0, 1, 2].flatMap((rank) =>
+      rotate(
+        list.filter((id) => styleRank(id) === rank),
+        variation,
+      ),
+    );
+    const first = [...zoneFirst(pattern), ...favorites].filter((id, i, all) => styled.includes(id) && all.indexOf(id) === i);
+    return [...first, ...styled.filter((id) => !first.includes(id))];
+  };
+}
+
+/** Prescription d'un exercice ajouté ou choisi à la place d'un autre, à sa place dans la séance. */
+export function prescribe(id: string, index: number, a: TrainingAnswers): PlannedExercise {
+  return prescription(id, index, a);
+}
+
+/** Pour remplacer un exercice : d'abord le même mouvement, puis d'autres exercices du même muscle. Tous faisables. */
+export function swapOptions(id: string, a: AccessAnswers & Partial<TrainingAnswers>, exclude: readonly string[] = []): { movement: string[]; muscle: string[] } {
+  const { usable } = exerciseAccess(a);
+  const lib = libraryExercise(id);
+  const pattern = TRAITS[id]?.pattern;
+  const skip = new Set([id, ...exclude]);
+  // Comme dans le moteur : avec du matériel, les exercices chargés avant ceux au poids du corps ; favoris et exercices des zones gardent la tête.
+  const ranked = pattern ? makeRanking(a as TrainingAnswers, usable)(pattern).filter((x) => !skip.has(x)) : [];
+  const lead = new Set([...(a.favorites ?? []), ...a.zones.flatMap((z) => (pattern && ZONE_FIRST[z]?.[pattern]) || [])]);
+  const loaded = (x: string) => (lead.has(x) ? 0 : TRAITS[x]!.needs.length > 0 ? 1 : 2);
+  const movement = [...ranked].sort((x, y) => loaded(x) - loaded(y));
+  const muscle = lib
+    ? EXERCISE_LIBRARY.filter((e) => e.muscle === lib.muscle && TRAITS[e.id] && TRAITS[e.id]!.pattern !== pattern && !skip.has(e.id) && usable(e.id))
+        .sort((x, y) => Number(x.kind !== lib.kind) - Number(y.kind !== lib.kind))
+        .map((e) => e.id)
+    : [];
+  return { movement, muscle };
+}
+
+/** Ce qui dépend des exercices choisis : durées, volume par muscle et leurs avertissements. Recalculé à chaque modification. */
+export function reviewSessions(sessions: readonly PlannedSession[], a: TrainingAnswers): { sessions: PlannedSession[]; volume: PlannedVolume[]; warnings: string[] } {
+  const out = sessions.map((s) => ({ ...s, estimatedMinutes: estimateMinutes(s.exercises) }));
+  const warnings: string[] = [];
+  const tooLong = out.filter((s) => s.estimatedMinutes > a.sessionMinutes + 10);
+  if (tooLong.length)
+    warnings.push(
+      `${tooLong.map((s) => `« ${s.name} »`).join(', ')} : environ ${Math.max(...tooLong.map((s) => s.estimatedMinutes))} min, au-delà des ${a.sessionMinutes} prévues. Retire un exercice d’isolation, ou garde ces séances pour les jours où tu as le temps.`,
+    );
+  const totals = weeklyVolume(out);
+  const volume: PlannedVolume[] = PRIORITY_MUSCLES.map((muscle) => {
+    const v = totals.get(muscle) ?? { direct: 0, indirect: 0 };
+    return { muscle, direct: v.direct, indirect: v.indirect, total: v.direct + v.indirect };
+  });
+  if (schemeFor(a) === 'hypertrophie') {
+    const low = volume.filter((v) => MAJOR_MUSCLES.includes(v.muscle) && v.total < VOLUME_REFERENCE.low);
+    const high = volume.filter((v) => v.direct > VOLUME_REFERENCE.high);
+    const list = (vs: PlannedVolume[]) => vs.map((v) => `${MUSCLE_LABELS[v.muscle].toLocaleLowerCase('fr-FR')} ${formatSets(v.total)}`).join(', ');
+    if (low.length)
+      warnings.push(
+        `Sous le repère de 10 séries par semaine (Schoenfeld et al. 2017) : ${list(low)}. Une séance de plus, des séances plus longues ou une priorité les augmentent.`,
+      );
+    if (high.length)
+      warnings.push(
+        `Au-delà de 20 séries directes par semaine, les gains en plus sont incertains : ${high.map((v) => `${MUSCLE_LABELS[v.muscle].toLocaleLowerCase('fr-FR')} ${v.direct}`).join(', ')}.`,
+      );
+  }
+  const used = new Set(out.flatMap((s) => s.exercises.map((e) => e.libraryId)));
+  const avoided = new Set(a.avoid ?? []);
+  const unplaced = (a.favorites ?? []).filter((id) => !used.has(id) && !avoided.has(id) && libraryExercise(id));
+  if (unplaced.length)
+    warnings.push(
+      `Favoris non placés : ${unplaced.map((id) => lowerFirst(libraryExercise(id)!.name)).join(', ')}. Il manque le matériel, ta zone à ménager les écarte, ou leurs séances sont déjà complètes.`,
+    );
+  return { sessions: out, volume, warnings };
+}
+
 export function trainingPlan(a: TrainingAnswers): TrainingPlan {
   const days = [...new Set(a.weekdays)].filter((d) => d >= 1 && d <= 7).sort();
   const split = splitFor(days.length, a.split);
@@ -639,26 +777,9 @@ export function trainingPlan(a: TrainingAnswers): TrainingPlan {
   const zoneExcluded = new Set(a.zones.flatMap((z) => ZONE_EXCLUSIONS[z]));
   const avoided = new Set((a.avoid ?? []).filter((id) => libraryExercise(id)));
   const excludedIds = new Set([...zoneExcluded, ...avoided]);
-  const usable = (id: string) => {
-    const traits = TRAITS[id];
-    return Boolean(traits && libraryExercise(id) && !excludedIds.has(id) && canDo(traits.needs, available, gym));
-  };
-  const zoneFirst = (pattern: Pattern) => a.zones.flatMap((z) => ZONE_FIRST[z]?.[pattern] ?? []);
+  const { usable } = exerciseAccess(a);
   const favorites = (a.favorites ?? []).filter((id) => !excludedIds.has(id));
-  /** Machines et poulies, ou poids libres : la préférence passe avant l'ordre habituel, jamais avant la sécurité. */
-  const styleRank = (id: string) => {
-    if (!a.equipmentStyle) return 0;
-    const eq = libraryExercise(id)?.equipment;
-    const machine = eq === 'machine' || eq === 'poulie';
-    const free = eq === 'barre' || eq === 'halteres' || eq === 'kettlebell';
-    return a.equipmentStyle === 'machines' ? (machine ? 0 : free ? 2 : 1) : free ? 0 : machine ? 2 : 1;
-  };
-  const candidates = (pattern: Pattern) => {
-    const list = (PREFERENCES[pattern] ?? EXERCISE_LIBRARY.filter((e) => TRAITS[e.id]?.pattern === pattern).map((e) => e.id)).filter(usable);
-    const styled = [...list].sort((x, y) => styleRank(x) - styleRank(y));
-    const first = [...zoneFirst(pattern), ...favorites].filter((id, i, all) => styled.includes(id) && all.indexOf(id) === i);
-    return [...first, ...styled.filter((id) => !first.includes(id))];
-  };
+  const candidates = makeRanking(a, usable);
   const scheme = schemeFor(a);
   const perSession = Math.max(3, EXERCISES_PER_MINUTES[a.sessionMinutes] - (scheme === 'force' ? 1 : 0));
   const missing = new Set<string>();
@@ -718,9 +839,8 @@ export function trainingPlan(a: TrainingAnswers): TrainingPlan {
       }
     }
     const label = MUSCLE_LABELS[muscle].toLocaleLowerCase('fr-FR');
-    reasons.push(`Priorité ${label} : ${directOf()} séries directes par semaine${added ? `, avec ${added.name.toLocaleLowerCase('fr-FR')} ajouté à « ${added.session} »` : ''}.`);
+    reasons.push(`Priorité ${label} : ${directOf()} séries directes par semaine${added ? `, avec ${lowerFirst(added.name)} ajouté à « ${added.session} »` : ''}.`);
   }
-  for (const s of sessions) s.estimatedMinutes = estimateMinutes(s.exercises);
   if (split.label === 'haut, bas, haut') sessions.sort((x, y) => x.weekday - y.weekday);
 
   /** Matériel qui ajouterait un exercice de ces schémas, sans revenir sur les zones à ménager (deux idées au plus). */
@@ -752,29 +872,6 @@ export function trainingPlan(a: TrainingAnswers): TrainingPlan {
       `${capitalizeDay(pair[0])} et ${DAY_NAMES_FR[pair[1] - 1]} se suivent : en corps entier, les mêmes muscles travaillent deux jours de suite. Laisse si possible un jour entre deux séances${days.length === 3 ? ', ou choisis « Haut, bas, haut »' : ''}.`,
     );
   for (const z of a.zones) if (ZONE_ADVICE[z]) warnings.push(ZONE_ADVICE[z]);
-  const tooLong = sessions.filter((s) => s.estimatedMinutes > a.sessionMinutes + 10);
-  if (tooLong.length)
-    warnings.push(
-      `${tooLong.map((s) => `« ${s.name} »`).join(', ')} : environ ${Math.max(...tooLong.map((s) => s.estimatedMinutes))} min, au-delà des ${a.sessionMinutes} prévues. Retire un exercice d’isolation, ou garde ces séances pour les jours où tu as le temps.`,
-    );
-  const totals = weeklyVolume(sessions);
-  const volume: PlannedVolume[] = PRIORITY_MUSCLES.map((muscle) => {
-    const v = totals.get(muscle) ?? { direct: 0, indirect: 0 };
-    return { muscle, direct: v.direct, indirect: v.indirect, total: v.direct + v.indirect };
-  });
-  if (scheme === 'hypertrophie') {
-    const low = volume.filter((v) => MAJOR_MUSCLES.includes(v.muscle) && v.total < VOLUME_REFERENCE.low);
-    const high = volume.filter((v) => v.direct > VOLUME_REFERENCE.high);
-    const list = (vs: PlannedVolume[]) => vs.map((v) => `${MUSCLE_LABELS[v.muscle].toLocaleLowerCase('fr-FR')} ${formatSets(v.total)}`).join(', ');
-    if (low.length)
-      warnings.push(
-        `Sous le repère de 10 séries par semaine (Schoenfeld et al. 2017) : ${list(low)}. Une séance de plus, des séances plus longues ou une priorité les augmentent.`,
-      );
-    if (high.length)
-      warnings.push(
-        `Au-delà de 20 séries directes par semaine, les gains en plus sont incertains : ${high.map((v) => `${MUSCLE_LABELS[v.muscle].toLocaleLowerCase('fr-FR')} ${v.direct}`).join(', ')}.`,
-      );
-  }
   if (a.zones.length)
     warnings.push(
       'Zones à ménager : FORGE écarte les mouvements les plus exigeants pour elles. Ça ne remplace pas l’avis d’un professionnel de santé ; arrête un exercice qui fait mal.',
@@ -782,12 +879,12 @@ export function trainingPlan(a: TrainingAnswers): TrainingPlan {
 
   const nameList = (ids: Iterable<string>) =>
     [...ids]
-      .map((id) => libraryExercise(id)?.name.toLocaleLowerCase('fr-FR'))
+      .map((id) => libraryExercise(id)?.name)
+      .map((n) => n && lowerFirst(n))
       .filter(Boolean)
       .join(', ');
   const used = new Set(sessions.flatMap((s) => s.exercises.map((e) => e.libraryId)));
-  const unplaced = (a.favorites ?? []).filter((id) => !used.has(id) && !avoided.has(id));
-  if (unplaced.length) warnings.push(`Favoris non placés : ${nameList(unplaced)}. Il manque le matériel, ta zone à ménager les écarte, ou leurs séances sont déjà complètes.`);
+  const review = reviewSessions(sessions, a);
   reasons.unshift(
     ...[
       (SPLIT_REASONS[split.label] ?? (() => null))(days.length),
@@ -810,10 +907,11 @@ export function trainingPlan(a: TrainingAnswers): TrainingPlan {
   return {
     programName: `Plan FORGE, ${days.length} séance${days.length > 1 ? 's' : ''} par semaine`,
     splitLabel: split.label,
-    sessions,
+    sessions: review.sessions,
     excluded: [...excludedIds].map((id) => libraryExercise(id)?.name).filter((n): n is string => Boolean(n)),
-    warnings,
+    warnings: [...warnings, ...review.warnings],
+    fixedWarnings: warnings,
     reasons,
-    volume,
+    volume: review.volume,
   };
 }

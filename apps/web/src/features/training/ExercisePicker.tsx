@@ -30,8 +30,22 @@ export async function exerciseFor(item: CatalogItem): Promise<Exercise> {
   return item.exercise!;
 }
 
-/** Choisir un exercice : recherche, filtre par muscle, bibliothèque et exercices perso, création. */
-export function ExercisePicker({ exclude, onPick }: { exclude: readonly string[]; onPick: (exercise: Exercise, item: CatalogItem | null) => Promise<void> }) {
+/** Groupe d'exercices de la bibliothèque proposés en tête (remplaçants), par identifiant de bibliothèque. */
+export interface PickerSuggestion {
+  title: string;
+  libraryIds: string[];
+}
+
+/** Choisir un exercice : suggestions éventuelles, recherche, filtre par muscle, bibliothèque et exercices perso, création. */
+export function ExercisePicker({
+  exclude,
+  onPick,
+  suggestions = [],
+}: {
+  exclude: readonly string[];
+  onPick: (exercise: Exercise, item: CatalogItem | null) => Promise<void>;
+  suggestions?: PickerSuggestion[];
+}) {
   const exercises = useExercises();
   const [query, setQuery] = useState('');
   const [filter, setFilter] = useState<Filter>('tous');
@@ -62,6 +76,33 @@ export function ExercisePicker({ exclude, onPick }: { exclude: readonly string[]
 
   return (
     <div className="flex flex-col gap-3 pb-1">
+      {!query.trim() &&
+        filter === 'tous' &&
+        suggestions.map((group) => {
+          const items = group.libraryIds
+            .map((id) => catalog.find((i) => i.library?.id === id))
+            .filter((i): i is CatalogItem => Boolean(i && !(i.exercise && exclude.includes(i.exercise.id))));
+          if (!items.length) return null;
+          return (
+            <section key={group.title} aria-label={group.title} className="flex flex-col">
+              <h3 className="text-[13px] text-cendre">{group.title}</h3>
+              <ul className="flex flex-col">
+                {items.map((item) => (
+                  <li key={item.key} className="border-b border-graphite last:border-b-0">
+                    <button type="button" onClick={() => void pick(item)} className="flex min-h-16 w-full items-center gap-3 py-2 text-left">
+                      <ExerciseThumb item={item} size={48} />
+                      <span className="min-w-0 flex-1">
+                        <span className="block text-[15px] leading-tight">{item.name}</span>
+                        <span className="block text-[13px] text-cendre">{describeItem(item)}</span>
+                      </span>
+                      <Icon name="plus" size={20} className="shrink-0 text-citron" />
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          );
+        })}
       <Field label="Chercher un exercice" value={query} onChange={(e) => setQuery(e.target.value)} maxLength={80} placeholder="Ex. développé, squat, curl" enterKeyHint="search" />
       <Chips label="Groupe musculaire" hideLabel layout="scroll" options={filters} selected={[filter]} onToggle={setFilter} />
       <ul className="flex flex-col">

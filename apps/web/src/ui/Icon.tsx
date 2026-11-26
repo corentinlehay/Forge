@@ -50,6 +50,7 @@ const paths = {
   trendDown: 'M3 7l6 6 4-4 8 8M15 17h6v-6',
   flat: 'M4 12h16M16 8l4 4-4 4',
   list: 'M9 6h11M9 12h11M9 18h11M4.5 6h.01M4.5 12h.01M4.5 18h.01',
+  swap: 'M7 4 3 8l4 4M3 8h14M17 20l4-4-4-4M21 16H7',
   bolt2: 'M4 12h16',
 } as const;
 

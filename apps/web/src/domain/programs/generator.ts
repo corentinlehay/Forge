@@ -197,11 +197,12 @@ export function defaultProgramName(objective: ProgramObjective, sessions: number
   return `${OBJECTIVE_LABELS[objective]}, ${sessions} séance${sessions > 1 ? 's' : ''}`;
 }
 
-/** Note du programme : d'où il vient et les choix qui le distinguent. */
-export function generatedNote(plan: TrainingPlan, a: GeneratorAnswers): string {
+/** Note du programme : d'où il vient, les choix qui le distinguent, et s'il a été ajusté à la main avant validation. */
+export function generatedNote(plan: Pick<TrainingPlan, 'sessions' | 'splitLabel'>, a: GeneratorAnswers, adjusted = false): string {
   const n = plan.sessions.length;
   const parts = [`Généré par l’assistant FORGE : ${n} séance${n > 1 ? 's' : ''} par semaine, ${plan.splitLabel}.`];
   if (a.priorities.length) parts.push(`Priorités : ${a.priorities.map((m) => MUSCLE_LABELS[m].toLocaleLowerCase('fr-FR')).join(', ')}.`);
+  if (adjusted) parts.push('Ajusté par toi avant validation.');
   return parts.join(' ').slice(0, 500);
 }
 
@@ -220,4 +221,26 @@ export function trainedWeeks(workouts: readonly Pick<Workout, 'date' | 'endedAt'
 export function historyHint(weeks: number): string | null {
   if (!weeks) return null;
   return `Dans FORGE, tu as terminé des séances sur ${weeks} semaine${weeks > 1 ? 's' : ''}. Ton niveau tient aussi compte de ce que tu as fait avant.`;
+}
+
+/**
+ * Contexte pour proposer des remplaçants hors de l'assistant (éditeur de séance) : matériel, zones, exercices à éviter
+ * et préférences connues, tirés des dernières réponses de l'assistant, sinon du questionnaire. Inconnu : aucun filtre.
+ */
+export function swapContext(
+  generator: GeneratorAnswers | null,
+  questionnaire: Partial<PlanAnswers> | null | undefined,
+): Pick<TrainingAnswers, 'place' | 'equipment' | 'zones' | 'avoid' | 'favorites' | 'equipmentStyle'> {
+  if (generator?.place)
+    return {
+      place: generator.place,
+      equipment: generator.place === 'maison' ? generator.equipment : [],
+      zones: generator.zones,
+      avoid: generator.avoid,
+      favorites: generator.favorites,
+      equipmentStyle: generator.place === 'salle' ? generator.equipmentStyle : null,
+    };
+  if (questionnaire?.place)
+    return { place: questionnaire.place, equipment: questionnaire.place === 'maison' ? (questionnaire.equipment ?? []) : [], zones: questionnaire.zones ?? [] };
+  return { place: 'salle', equipment: [], zones: [] };
 }

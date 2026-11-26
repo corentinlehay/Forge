@@ -9,6 +9,7 @@ import {
   readGeneratorRecord,
   stepProblem,
   toTrainingAnswers,
+  swapContext,
   trainedWeeks,
   type GeneratorAnswers,
 } from './generator';
@@ -104,6 +105,7 @@ describe('assistant de programme', () => {
     expect(defaultProgramName('force', 1)).toBe('Force, 1 séance');
     const plan = trainingPlan(toTrainingAnswers(full));
     expect(generatedNote(plan, full)).toBe('Généré par l’assistant FORGE : 3 séances par semaine, poussée, tirage, jambes. Priorités : pectoraux.');
+    expect(generatedNote(plan, full, true)).toMatch(/Ajusté par toi avant validation\.$/);
   });
 
   it('historique : semaines entraînées, du lundi au dimanche, séances terminées seulement', () => {
@@ -112,5 +114,16 @@ describe('assistant de programme', () => {
     expect(trainedWeeks([w('2026-11-23'), w('2026-11-29'), w('2026-11-30'), w('2026-12-02', false), w('2026-12-09', true, true)])).toBe(2);
     expect(historyHint(0)).toBeNull();
     expect(historyHint(1)).toMatch(/^Dans FORGE, tu as terminé des séances sur 1 semaine\./);
+  });
+
+  it('contexte des remplaçants : assistant, sinon questionnaire, sinon aucun filtre', () => {
+    expect(swapContext({ ...full, zones: ['epaules'], avoid: ['pushups'] }, { place: 'maison' })).toMatchObject({
+      place: 'salle',
+      zones: ['epaules'],
+      avoid: ['pushups'],
+      equipmentStyle: 'machines',
+    });
+    expect(swapContext(null, { place: 'maison', equipment: ['halteres'], zones: ['genoux'] })).toEqual({ place: 'maison', equipment: ['halteres'], zones: ['genoux'] });
+    expect(swapContext(emptyAnswers(), null)).toEqual({ place: 'salle', equipment: [], zones: [] });
   });
 });

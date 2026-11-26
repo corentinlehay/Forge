@@ -1,21 +1,13 @@
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router';
-import { libraryExercise } from '../../data/exerciseLibrary';
-import { TRAITS } from '../../data/exerciseTraits';
-import { MUSCLE_GROUPS, MUSCLE_LABELS, type MuscleGroup } from '../../data/muscles';
+import { MUSCLE_LABELS } from '../../data/muscles';
 import { QUESTIONNAIRE_KEY, type QuestionnaireRecord } from '../../db/adoptPlan';
-import { saveGeneratedProgram } from '../../db/generatedProgram';
-import { repos, useEffortScale, useMeta, useProfile, usePrograms, useToday, useWorkouts } from '../../db/hooks';
-import { getDb } from '../../db/schema';
+import { repos, useMeta, useProfile, usePrograms, useToday, useWorkouts } from '../../db/hooks';
 import type { Program } from '../../db/types';
-import { effortText } from '../../domain/effort';
-import { buildCatalog, searchCatalog, type CatalogItem } from '../../domain/exerciseCatalog';
-import { ageOn, MIN_AGE, PRIORITY_MUSCLES, trainingPlan, type TrainingPlan } from '../../domain/plan';
+import { ageOn, MIN_AGE, PRIORITY_MUSCLES } from '../../domain/plan';
 import {
-  defaultProgramName,
   GENERATOR_KEY,
   GENERATOR_STEPS,
-  generatedNote,
   historyHint,
   MAX_PICKS,
   MAX_PRIORITIES,
@@ -24,15 +16,12 @@ import {
   readGeneratorRecord,
   SESSION_MINUTES,
   stepProblem,
-  toTrainingAnswers,
   trainedWeeks,
   type GeneratorAnswers,
   type GeneratorRecord,
   type GeneratorStep,
 } from '../../domain/programs/generator';
 import { OBJECTIVE_LABELS, OBJECTIVES, programStatus } from '../../domain/programs/status';
-import { VOLUME_REFERENCE } from '../../domain/muscleVolume';
-import { formatRest } from '../../domain/workoutFlow';
 import { isDateKey } from '../../lib/dates';
 import { Button } from '../../ui/Button';
 import { Chips } from '../../ui/Chips';
@@ -40,9 +29,8 @@ import { Field } from '../../ui/Field';
 import { Icon } from '../../ui/Icon';
 import { Screen } from '../../ui/Screen';
 import { Sheet } from '../../ui/Sheet';
-import { useToast } from '../../ui/Toast';
 import { Choice, DAY_LETTERS, DAY_NAMES, EQUIPMENT, LEVELS, Question, ThreeDays, ZONES } from '../plan/PlanQuestionnaire';
-import { ExerciseThumb } from '../training/ExerciseVisual';
+import { LibraryList, libraryName, Proposal } from './ProgramProposal';
 import { BackLink } from './ProgramsScreen';
 
 type Step = 'age' | GeneratorStep | 'proposition';
@@ -301,10 +289,6 @@ function Generator({ initial, askBirthDate, weeks, active }: { initial: Generato
   );
 }
 
-/** Exercices que FORGE sait placer : ceux de la bibliothèque dont il connaît le mouvement et le matériel. */
-const PLACEABLE = buildCatalog([]).filter((i) => i.library && TRAITS[i.library.id]);
-const libraryName = (id: string) => libraryExercise(id)?.name ?? id;
-
 function ExercisesStep({ answers, set }: { answers: GeneratorAnswers; set: (patch: Partial<GeneratorAnswers>) => void }) {
   const [picking, setPicking] = useState<'favorites' | 'avoid' | null>(null);
   const chosen = [...answers.favorites, ...answers.avoid];
@@ -336,7 +320,7 @@ function ExercisesStep({ answers, set }: { answers: GeneratorAnswers; set: (patc
       />
       <p className="text-[13px] leading-snug text-cendre">Douleur, blessure récente ou traitement en cours : demande l’avis d’un professionnel de santé avant de reprendre.</p>
       <Sheet open={picking !== null} title={picking === 'avoid' ? 'Exercice à éviter' : 'Exercice favori'} onClose={() => setPicking(null)}>
-        {picking && <LibraryPicker exclude={chosen} onPick={add} />}
+        {picking && <LibraryList exclude={chosen} onPick={add} />}
       </Sheet>
     </Question>
   );
@@ -371,212 +355,6 @@ function PickList({ title, ids, addLabel, onAdd, onRemove }: { title: string; id
       ) : (
         <p className="text-[13px] text-cendre">{MAX_PICKS} exercices au plus.</p>
       )}
-    </section>
-  );
-}
-
-type Filter = MuscleGroup | 'tous';
-const FILTERS = [{ value: 'tous' as Filter, label: 'Tous' }, ...MUSCLE_GROUPS.map((m) => ({ value: m as Filter, label: MUSCLE_LABELS[m] }))];
-
-function LibraryPicker({ exclude, onPick }: { exclude: readonly string[]; onPick: (id: string) => void }) {
-  const [query, setQuery] = useState('');
-  const [filter, setFilter] = useState<Filter>('tous');
-  const matches = searchCatalog(PLACEABLE, query, filter === 'tous' ? null : filter).filter((i) => !exclude.includes(i.library!.id));
-  return (
-    <div className="flex flex-col gap-3 pb-1">
-      <Field label="Chercher un exercice" value={query} onChange={(e) => setQuery(e.target.value)} maxLength={80} placeholder="Ex. développé, squat, curl" enterKeyHint="search" />
-      <Chips label="Groupe musculaire" hideLabel layout="scroll" options={FILTERS} selected={[filter]} onToggle={setFilter} />
-      <ul className="flex flex-col">
-        {matches.map((item: CatalogItem) => (
-          <li key={item.key} className="border-b border-graphite last:border-b-0">
-            <button type="button" onClick={() => onPick(item.library!.id)} className="flex min-h-16 w-full items-center gap-3 py-2 text-left">
-              <ExerciseThumb item={item} size={48} />
-              <span className="min-w-0 flex-1">
-                <span className="block text-[15px] leading-tight">{item.name}</span>
-                <span className="block text-[13px] text-cendre">{item.muscle ? MUSCLE_LABELS[item.muscle] : ''}</span>
-              </span>
-              <Icon name="plus" size={20} className="shrink-0 text-citron" />
-            </button>
-          </li>
-        ))}
-      </ul>
-      {!matches.length && <p className="text-[15px] text-cendre">Aucun exercice ne correspond.</p>}
-    </div>
-  );
-}
-
-/** La proposition : séances, volume par muscle, avertissements et raisons ; rien n'est enregistré avant un geste. */
-function Proposal({ answers, active, onEdit }: { answers: GeneratorAnswers; active: Program | null; onEdit: () => void }) {
-  const navigate = useNavigate();
-  const toast = useToast();
-  const scale = useEffortScale();
-  const plan = useMemo(() => trainingPlan(toTrainingAnswers(answers)), [answers]);
-  const [name, setName] = useState(() => defaultProgramName(answers.objective!, plan.sessions.length));
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  const save = async (activate: boolean) => {
-    if (!name.trim()) return setError('Donne un nom au programme.');
-    setBusy(true);
-    setError(null);
-    try {
-      const program = await saveGeneratedProgram(getDb(), plan, {
-        name: name.trim(),
-        objective: answers.objective,
-        secondaryObjective: answers.secondaryObjective,
-        note: generatedNote(plan, answers),
-        activate,
-      });
-      await repos.meta.set(GENERATOR_KEY, { answers, savedAt: new Date().toISOString() } satisfies GeneratorRecord);
-      toast.show(activate ? 'Programme activé' : 'Brouillon enregistré');
-      navigate(`/training/programmes/${program.id}`, { replace: true, viewTransition: true });
-    } catch (e) {
-      setBusy(false);
-      setError(e instanceof Error ? e.message : 'Enregistrement impossible. Réessaie.');
-    }
-  };
-
-  const minutes = plan.sessions.map((s) => s.estimatedMinutes);
-  const span = Math.min(...minutes) === Math.max(...minutes) ? `${minutes[0]} min` : `${Math.min(...minutes)} à ${Math.max(...minutes)} min`;
-  return (
-    <div className="flex flex-col gap-5">
-      <div className="flex flex-col gap-2">
-        <h1 className="font-metal text-[40px] leading-none">Ta proposition</h1>
-        <p className="text-[15px] leading-snug text-cendre">
-          {OBJECTIVE_LABELS[answers.objective!]}
-          {answers.secondaryObjective ? `, puis ${OBJECTIVE_LABELS[answers.secondaryObjective].toLocaleLowerCase('fr-FR')}` : ''}. {plan.sessions.length} séance
-          {plan.sessions.length > 1 ? 's' : ''} par semaine en {plan.splitLabel}, environ {span} chacune.
-        </p>
-      </div>
-
-      <Field label="Nom du programme" value={name} onChange={(e) => (setError(null), setName(e.target.value))} maxLength={60} />
-
-      <section aria-label="Séances" className="flex flex-col gap-2">
-        {plan.sessions.map((s) => (
-          <article key={s.name} className="flex flex-col gap-2 rounded-[22px] bg-anthracite p-[18px]">
-            <div className="flex items-baseline justify-between gap-3">
-              <h2 className="min-w-0 text-[17px] font-semibold">
-                <span className="text-cendre capitalize">{DAY_NAMES[s.weekday - 1]}</span> {s.name}
-              </h2>
-              <span className="shrink-0 text-[13px] text-cendre tabular-nums">≈ {s.estimatedMinutes} min</span>
-            </div>
-            <ul className="flex flex-col">
-              {s.exercises.map((e) => (
-                <li key={e.libraryId} className="flex flex-col border-t border-graphite py-2 first:border-t-0 first:pt-0">
-                  <span className="text-[15px] leading-tight">{libraryName(e.libraryId)}</span>
-                  <span className="text-[13px] text-cendre tabular-nums">
-                    {e.sets} × {e.reps}, {effortText(e.rir, scale)}, repos {formatRest(e.restSec)}
-                  </span>
-                </li>
-              ))}
-            </ul>
-          </article>
-        ))}
-        <p className="text-[12px] leading-snug text-cendre">
-          FORGE te propose ensuite tes charges, séance après séance. Durées estimées avec 8 min d’échauffement, 40 s par série et les repos.
-        </p>
-      </section>
-
-      <VolumeChart plan={plan} />
-
-      {plan.warnings.length > 0 && (
-        <section aria-label="À savoir" className="flex flex-col gap-2 rounded-[22px] bg-anthracite p-[18px]">
-          <h2 className="text-[17px] font-semibold">À savoir</h2>
-          {plan.warnings.map((w) => (
-            <p key={w} className="text-[13px] leading-snug">
-              {w}
-            </p>
-          ))}
-        </section>
-      )}
-
-      <section aria-label="Pourquoi ces choix" className="flex flex-col gap-2">
-        <h2 className="text-[17px] font-semibold">Pourquoi ces choix</h2>
-        <ul className="flex flex-col gap-2">
-          {plan.reasons.map((r) => (
-            <li key={r} className="flex gap-2 text-[13px] leading-snug">
-              <Icon name="check" size={14} strokeWidth={3} className="mt-0.5 shrink-0 text-citron" />
-              <span>{r}</span>
-            </li>
-          ))}
-        </ul>
-        <p className="text-[12px] leading-snug text-cendre">Des repères généraux, pas un avis médical. Arrête un exercice qui fait mal.</p>
-      </section>
-
-      <div className="flex flex-col gap-2 pb-2">
-        {error && (
-          <p className="text-[15px] text-braise" role="alert">
-            {error}
-          </p>
-        )}
-        {active && <p className="text-[13px] leading-snug text-cendre">En l’activant, « {active.name} » passe en pause. Tu le retrouves dans Programmes.</p>}
-        <Button disabled={busy} onClick={() => void save(true)}>
-          Valider et activer
-        </Button>
-        <Button variant="secondary" disabled={busy} onClick={() => void save(false)}>
-          Enregistrer en brouillon
-        </Button>
-        <Button variant="quiet" disabled={busy} onClick={onEdit}>
-          Modifier mes réponses
-        </Button>
-      </div>
-    </div>
-  );
-}
-
-const sets = (n: number) => (Number.isInteger(n) ? String(n) : n.toFixed(1).replace('.', ','));
-
-/**
- * Séries par semaine et par muscle : directes en plein, indirectes (muscle secondaire, comptées pour moitié) en clair,
- * sur la bande de repère de 10 à 20 séries. Les valeurs sont écrites : la barre n'est qu'une aide.
- */
-function VolumeChart({ plan }: { plan: TrainingPlan }) {
-  const max = Math.max(VOLUME_REFERENCE.high + 4, ...plan.volume.map((v) => Math.ceil(v.total)));
-  const pct = (n: number) => `${(n / max) * 100}%`;
-  return (
-    <section aria-label="Volume par semaine" className="flex flex-col gap-3 rounded-[22px] bg-anthracite p-[18px]">
-      <div className="flex flex-col gap-1">
-        <h2 className="text-[17px] font-semibold">Volume par semaine</h2>
-        <p className="text-[13px] leading-snug text-cendre">
-          Séries par muscle. Repère pour l’hypertrophie : {VOLUME_REFERENCE.low} à {VOLUME_REFERENCE.high} séries (Schoenfeld et al. 2017).
-        </p>
-      </div>
-      <div className="flex flex-wrap gap-x-4 gap-y-1 text-[12px] text-cendre" aria-hidden="true">
-        <span className="flex items-center gap-1.5">
-          <span className="h-2.5 w-2.5 rounded-sm bg-citron" />
-          Directes
-        </span>
-        <span className="flex items-center gap-1.5">
-          <span className="h-2.5 w-2.5 rounded-sm bg-citron/35" />
-          Indirectes, pour moitié
-        </span>
-        <span className="flex items-center gap-1.5">
-          <span className="h-2.5 w-4 rounded-sm bg-craie/10" />
-          Repère
-        </span>
-      </div>
-      <ul className="flex flex-col gap-2.5">
-        {plan.volume.map((v) => (
-          <li
-            key={v.muscle}
-            className="grid grid-cols-[104px_1fr_56px] items-center gap-2"
-            aria-label={`${MUSCLE_LABELS[v.muscle]} : ${sets(v.direct)} séries directes${v.indirect ? ` et ${sets(v.indirect)} indirectes` : ''}`}
-          >
-            <span className="truncate text-[13px]">{MUSCLE_LABELS[v.muscle]}</span>
-            <span className="relative h-3 rounded-[4px] bg-graphite" aria-hidden="true">
-              <span className="absolute inset-y-0 bg-craie/10" style={{ left: pct(VOLUME_REFERENCE.low), width: pct(VOLUME_REFERENCE.high - VOLUME_REFERENCE.low) }} />
-              <span className="absolute inset-y-0 left-0 flex gap-[2px]" style={{ width: pct(v.total) }}>
-                {v.direct > 0 && <span className="h-full rounded-[4px] bg-citron" style={{ width: `${(v.direct / v.total) * 100}%` }} />}
-                {v.indirect > 0 && <span className="h-full flex-1 rounded-[4px] bg-citron/35" />}
-              </span>
-            </span>
-            <span className="text-right text-[13px] tabular-nums" aria-hidden="true">
-              {sets(v.direct)}
-              {v.indirect > 0 && <span className="text-cendre"> +{sets(v.indirect)}</span>}
-            </span>
-          </li>
-        ))}
-      </ul>
     </section>
   );
 }

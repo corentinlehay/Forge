@@ -17,7 +17,7 @@ export interface GeneratedProgramInfo {
  * Enregistre un programme généré : ses séances, les exercices de la bibliothèque, sa version de départ.
  * Il naît en brouillon ; il n'est activé que si l'utilisateur l'a demandé (l'ancien programme actif passe alors en pause).
  */
-export async function saveGeneratedProgram(db: ForgeDB, plan: TrainingPlan, info: GeneratedProgramInfo, now: Date = new Date()): Promise<Program> {
+export async function saveGeneratedProgram(db: ForgeDB, plan: Pick<TrainingPlan, 'sessions'>, info: GeneratedProgramInfo, now: Date = new Date()): Promise<Program> {
   const programs = createProgramRepo(db);
   const templates = createTemplateRepo(db);
   const exercises = createExerciseRepo(db);
