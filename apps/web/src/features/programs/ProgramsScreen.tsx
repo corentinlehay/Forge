@@ -344,9 +344,14 @@ export function ProgramScreen() {
       </section>
 
       <section aria-label="Statut du programme" className="flex flex-col gap-2">
-        {actions.map((to, i) => (
+        {actions.map((to) => (
           <div key={to} className="flex flex-col gap-1">
-            <Button variant={i === 0 ? 'primary' : 'secondary'} disabled={busy || (to === 'actif' && emptyBlocksActivation)} onClick={() => void changeStatus(to)}>
+            {/* Le bouton vert pousse à activer, ou à clore un cycle arrivé au bout ; jamais à mettre en pause. */}
+            <Button
+              variant={to === 'actif' || (to === 'termine' && cycle?.kind === 'fini') ? 'primary' : 'secondary'}
+              disabled={busy || (to === 'actif' && emptyBlocksActivation)}
+              onClick={() => void changeStatus(to)}
+            >
               {actionLabel(status, to)}
             </Button>
             {to === 'actif' && emptyBlocksActivation && <p className="text-[13px] text-cendre">Ajoute au moins une séance avant de l’activer.</p>}
